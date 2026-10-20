@@ -1,6 +1,6 @@
 # UIView 附件与生命周期验证
 
-日期：2026-10-20。基于 `160c3c4`，本记录随 V1 功能提交；按 CONTRIBUTING 集成与普通推送，不创建 PR、Tag 或 Release。
+日期：2026-10-20。基于 `160c3c4`，V1 提交为 `70e8340`；已按 CONTRIBUTING 合入 main、普通推送并核对远端 SHA 一致，任务分支已安全删除。未创建 PR、Tag 或 Release。
 
 ## 接口与实际行为
 

@@ -14,6 +14,14 @@ public enum LYGlyphTextDocumentError: Error, Equatable {
     case duplicateAttachmentID(id: String)
     /// 附件尺寸非有限，或任一边不大于 0。
     case invalidAttachmentSize(id: String)
+    /// 动作标识为空；范围使用原文 UTF-16 单位。
+    case emptyActionID(range: NSRange)
+    /// 动作范围为负、为空、越界或溢出。
+    case invalidActionRange(range: NSRange)
+    /// 动作范围切开了原文中的组合字符。
+    case actionRangeSplitsComposedCharacter(range: NSRange)
+    /// 两个动作范围重叠；按原文位置排序，相同位置保留输入顺序。
+    case overlappingActionRanges(first: NSRange, second: NSRange)
 }
 
 /// 在主线程构造的不可变富文本快照，不持有视图或业务回调。
@@ -34,14 +42,16 @@ public final class LYGlyphTextDocument {
     let styleRuns: [StyleRun]
     let attachments: [Int: LYGlyphTextAttachment]
     let viewAttachments: [Int: LYGlyphTextViewAttachment]
+    let actions: [LYGlyphTextAction]
 
     /// 复制文本与支持的样式，隔离调用方随后对可变字符串及段落样式的修改。
     /// - Parameter attachments: 以原文 UTF-16 位置关联单个 U+FFFC 的图片描述，默认无附件。
-    /// - Throws: 标准附件属性、未描述的 U+FFFC、位置冲突、非法位置／尺寸或重复 ID。
     /// - Parameter viewAttachments: 以原文 UTF-16 位置关联单个 U+FFFC 的视图描述，默认无附件。
+    /// - Parameter actions: 原文 UTF-16 动作范围；保持输入顺序，默认无动作。
+    /// - Throws: 先校验附件，再按输入顺序校验动作标识与范围，最后拒绝重叠动作。
     public init(
         attributedText: NSAttributedString, attachments: [Int: LYGlyphTextAttachment] = [:],
-        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:]
+        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:], actions: [LYGlyphTextAction] = []
     ) throws {
         var attachmentRange: NSRange?
         let fullRange = NSRange(location: 0, length: attributedText.length)
@@ -54,7 +64,8 @@ public final class LYGlyphTextDocument {
         if let attachmentRange {
             throw LYGlyphTextDocumentError.unsupportedAttachment(range: attachmentRange)
         }
-        let source = attributedText.string as NSString
+        let sourceString = attributedText.string
+        let source = sourceString as NSString
         var ids: Set<String> = []
         if let collision = Set(attachments.keys).intersection(viewAttachments.keys).sorted().first {
             throw LYGlyphTextDocumentError.conflictingAttachmentLocation(location: collision)
@@ -78,12 +89,43 @@ public final class LYGlyphTextDocument {
                 throw LYGlyphTextDocumentError.unsupportedObjectReplacementCharacter(location: location)
             }
         }
+        // NSString 的组合序列在当前系统可将 CRLF 分开，额外使用 Swift Character 边界。
+        let characterBoundaries: Set<String.Index> = actions.isEmpty
+            ? [] : Set(sourceString.indices).union([sourceString.endIndex])
+        for action in actions {
+            let range = action.range
+            guard !action.actionID.isEmpty else {
+                throw LYGlyphTextDocumentError.emptyActionID(range: range)
+            }
+            // 先验证数值，再做范围转换或求末端，避免 NSNotFound 与加法溢出。
+            guard range.location >= 0, range.length > 0, range.location <= source.length,
+                  range.length <= source.length - range.location
+            else { throw LYGlyphTextDocumentError.invalidActionRange(range: range) }
+            guard let stringRange = Range(range, in: sourceString),
+                  characterBoundaries.contains(stringRange.lowerBound),
+                  characterBoundaries.contains(stringRange.upperBound),
+                  source.rangeOfComposedCharacterSequences(for: range) == range
+            else { throw LYGlyphTextDocumentError.actionRangeSplitsComposedCharacter(range: range) }
+        }
+        // 排序仅用于重叠校验；动作存储仍保留输入顺序，重复 ID 不合并。
+        let orderedActions = actions.enumerated().sorted {
+            if $0.element.range.location == $1.element.range.location { return $0.offset < $1.offset }
+            return $0.element.range.location < $1.element.range.location
+        }
+        for (first, second) in zip(orderedActions, orderedActions.dropFirst()) {
+            let firstRange = first.element.range
+            let secondRange = second.element.range
+            if firstRange.location + firstRange.length > secondRange.location {
+                throw LYGlyphTextDocumentError.overlappingActionRanges(first: firstRange, second: secondRange)
+            }
+        }
         self.attachments = attachments
         self.viewAttachments = viewAttachments
+        self.actions = actions
 
         // 不保留 NSParagraphStyle 对象。属性字符串可能合并相等的属性对象，
         // 因而即使 copy 之后再存储，也不能依赖可变输入的对象身份隔离。
-        string = attributedText.string
+        string = sourceString
         var runs: [StyleRun] = []
         attributedText.enumerateAttributes(in: fullRange) { attributes, range, _ in
             let paragraph = attributes[.paragraphStyle] as? NSParagraphStyle
@@ -96,5 +138,48 @@ public final class LYGlyphTextDocument {
             ))
         }
         styleRuns = runs
+    }
+
+    /// 依次连接文本和附件，在初始化时建立快照并复用完整文档校验。
+    /// - Parameter segments: 顺序片段；相邻且标识相同的动作仍保持独立。
+    /// - Throws: 与 attributedText 初始化入口相同；空动作或跨片段切开组合字符也会失败。
+    public convenience init(segments: [LYGlyphTextSegment]) throws {
+        let text = NSMutableAttributedString(string: "")
+        var attachments: [Int: LYGlyphTextAttachment] = [:]
+        var viewAttachments: [Int: LYGlyphTextViewAttachment] = [:]
+        var actions: [LYGlyphTextAction] = []
+        for segment in segments {
+            let location = text.length
+            let actionID: String?
+            let pressedStyle: LYGlyphTextPressedStyle
+            switch segment {
+            case let .text(value, id, style):
+                text.append(value)
+                actionID = id
+                pressedStyle = style
+            case let .image(attachment, attributes, id, style):
+                attachments[location] = attachment
+                text.append(NSAttributedString(string: "\u{FFFC}", attributes: attributes))
+                actionID = id
+                pressedStyle = style
+            case let .view(attachment, attributes, id, style):
+                viewAttachments[location] = attachment
+                text.append(NSAttributedString(string: "\u{FFFC}", attributes: attributes))
+                actionID = id
+                pressedStyle = style
+            }
+            if let actionID {
+                actions.append(LYGlyphTextAction(
+                    actionID: actionID, range: NSRange(location: location, length: text.length - location),
+                    pressedStyle: pressedStyle
+                ))
+            }
+        }
+        try self.init(
+            attributedText: text,
+            attachments: attachments,
+            viewAttachments: viewAttachments,
+            actions: actions
+        )
     }
 }

@@ -96,23 +96,25 @@ final class DemoSamples {
         guard let cgImage = image.cgImage else { throw SampleError.missingGeneratedImage }
         let rotatedImage = UIImage(cgImage: cgImage, scale: image.scale, orientation: .right)
         imageDocuments = try texts.mapValues { text in
-            let prefix = NSMutableAttributedString(
-                string: "上 \u{FFFC} 右 \u{FFFC} ",
-                attributes: [.font: UIFont.systemFont(ofSize: 20), .foregroundColor: UIColor.label]
-            )
-            prefix.append(text)
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 20), .foregroundColor: UIColor.label
+            ]
             return try Dictionary(uniqueKeysWithValues: ImageAlignment.allCases.map { alignment in
-                let attachments = [
-                    2: LYGlyphTextAttachment(
-                        id: "up", image: image, size: CGSize(width: 32, height: 44),
-                        alignment: alignment.attachmentAlignment, alternativeText: "箭头朝上，橙色标记在左上"
-                    ),
-                    6: LYGlyphTextAttachment(
-                        id: "right", image: rotatedImage, size: CGSize(width: 44, height: 32),
-                        alignment: alignment.attachmentAlignment, alternativeText: "箭头朝右，橙色标记在右上"
-                    )
-                ]
-                return try (alignment, LYGlyphTextDocument(attributedText: prefix, attachments: attachments))
+                let up = LYGlyphTextAttachment(
+                    id: "up", image: image, size: CGSize(width: 32, height: 44),
+                    alignment: alignment.attachmentAlignment, alternativeText: "箭头朝上，橙色标记在左上"
+                )
+                let right = LYGlyphTextAttachment(
+                    id: "right", image: rotatedImage, size: CGSize(width: 44, height: 32),
+                    alignment: alignment.attachmentAlignment, alternativeText: "箭头朝右，橙色标记在右上"
+                )
+                return try (alignment, LYGlyphTextDocument(segments: [
+                    .text(NSAttributedString(string: "上 ", attributes: attributes)),
+                    .image(up, attributes: attributes),
+                    .text(NSAttributedString(string: " 右 ", attributes: attributes)),
+                    .image(right, attributes: attributes),
+                    .text(NSAttributedString(string: " ", attributes: attributes)), .text(text)
+                ]))
             })
         }
         viewDocuments = try texts.mapValues { text in

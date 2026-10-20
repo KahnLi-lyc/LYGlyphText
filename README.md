@@ -7,6 +7,7 @@
 ## 已实现
 
 - MainActor 不可变 `LYGlyphTextDocument`：隔离复制输入字符串及段落样式。
+- `init(segments:)` 自动累计 UTF-16 附件和动作范围；`actions` 输入校验非空 ID、完整字符边界及范围重叠。当前动作仅为描述数据。
 - 字体、前景色、段落对齐和基本书写方向；缺省动态 body 字体和 label 颜色。显式字号保持固定。
 - 多行单词换行、显式换行、中英文与 emoji、顶部对齐、内边距。
 - `configuration.numberOfLines`：0 或负值为无限行，正值限制显示行数；溢出时末行尾部显示 `…`。
@@ -93,6 +94,28 @@ func imageDocument(image: UIImage) throws -> LYGlyphTextDocument {
 
 文档拒绝未描述的 U+FFFC、越界或不匹配的位置、非独立占位字符、重复 ID 和非有限／非正尺寸；标准 `NSTextAttachment` 仍明确拒绝。未传附件字典的旧调用保持兼容。被省略的图片不绘制、不增加最终行高；生成省略号不继承附件属性。替换图片或声明尺寸时创建新文档，两端使用同一入口。`alternativeText` 当前只保存描述数据，完整 VoiceOver 行内语义尚未验收。
 
+## 分段与动作描述
+
+分段入口自动插入附件占位符并累计 UTF-16 位置，支持 `.text`、`.image` 和 `.view`；在 Document 初始化时建立快照。示例：
+
+```swift
+@MainActor
+func segmentedDocument(image: UIImage) throws -> LYGlyphTextDocument {
+    try LYGlyphTextDocument(segments: [
+        .text(NSAttributedString(string: "😀 查看 ")),
+        .image(
+            LYGlyphTextAttachment(id: "detail-icon", image: image, size: CGSize(width: 20, height: 20)),
+            actionID: "details"
+        ),
+        .text(NSAttributedString(string: "详情"), actionID: "details")
+    ])
+}
+```
+
+每个带 actionID 的片段产生独立动作，相邻同 ID 不合并；需要跨片段的单个动作时，使用 `init(attributedText:attachments:viewAttachments:actions:)` 并显式传入 `LYGlyphTextAction`。范围使用原文 UTF-16；从 Swift 范围转换应使用 `NSRange(swiftRange, in: originalText)`，文档仍会统一校验。
+
+拒绝空 ID、空／负／越界／溢出范围、切开的组合字符（含 emoji、重音和 CRLF）及重叠动作；相邻范围和重复 ID 允许，ID 不裁剪或改变大小写。按下样式只保存可选前景／背景色，默认背景为 tertiarySystemFill，不改变字体或附件尺寸。**M1a 只提供输入描述与校验，文字点击、长按和高亮尚未实现。**
+
 ## 行内 UIView
 
 视图描述与 UIImage 描述分开；两类附件共享 UTF-16 占位、文档内唯一 ID 和明确尺寸校验。同一位置不能同时提供两种描述。工厂按 viewID 创建新的、尚未挂载的 UIView；不要在工厂闭包中强持有 Label。
@@ -154,6 +177,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 
 - [总实施计划与阶段验收](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md)
 - [连续开发规则与执行契约](docs/superpowers/plans/2026-10-20-continuous-development.md)
+- [分段与动作描述验证记录](docs/verification/2026-10-20-m1a-document.md)
 - [UIView 附件与生命周期验证记录](docs/verification/2026-10-20-view-attachments.md)
 - [行内图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)
 - [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)
