@@ -2,7 +2,7 @@
 
 先阅读 [开发规则](AGENTS.md)、[编码规范](CODING_STYLE.md)、[实施计划](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md) 和 [参考资料](docs/REFERENCES.md)。
 
-当前已提供基础显示、行数限制／尾部省略 Package、UIKit／SwiftUI Demo 与宿主测试。能力和真实环境见 [基础显示验证记录](docs/verification/2026-10-20-basic-display.md)；行数限制见 [截断验证记录](docs/verification/2026-10-20-line-limits.md)；工具检查与组件运行分别留证。
+当前已提供基础显示、行数限制／尾部省略与 UIImage 附件 Package、UIKit／SwiftUI Demo 与宿主测试。能力和真实环境见 [基础显示验证记录](docs/verification/2026-10-20-basic-display.md)、[截断验证记录](docs/verification/2026-10-20-line-limits.md) 和 [图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)；工具检查与组件运行分别留证。
 
 ## 本地工具与检查
 
@@ -56,6 +56,14 @@ scripts/swiftformat.sh Package.swift
 Swift 6 模式编译、Swift 6.0 工具链兼容、iOS 16 运行分别验证；新 SDK、部署目标、静态阅读及 fake 测试不能代替最低系统或真实操作结果。
 
 ## 开发、集成与自动推送
+
+连续开发采用 [总计划执行队列](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md) 和 [连续开发契约](docs/superpowers/plans/2026-10-20-continuous-development.md)：
+
+- 从上到下选择第一个未完成且依赖已满足的任务，先固定公开接口、生命周期、失败／取消语义与验收范围，再写失败测试、实现最小改动、验证并更新记录。
+- 一个任务完成下述提交、集成、普通推送流程后，自动处理下一项，不等待“继续”确认。状态只按真实证据更新，保留既有测试；不以削减原定验收范围使失败消失。
+- 必须由用户决定的真实阻塞、改动冲突或反复验证失败才暂停相关任务，并报告已完成内容、阻塞原因和需要的决定；仍可独立推进的任务继续。
+- 不可用环境独立标记“未验证”，不阻塞其他工作；最低系统、旧编译器、真机、人工 VoiceOver 与发布资格仍保留各自验收门槛。普通 push 失败保留本地成果与失败证据，不强推或自动变基；不依赖远端交付的后续任务可继续。
+- 连续开发授权不包含 PR、Tag、Release 或远端删除。
 
 1. 检查工作区和活动 worktree，明确改动与验收范围。默认目标分支 `main`；使用 `codex/<task>`，需要隔离或并行时使用独立 worktree。
 2. 每次提交一个可说明、可验证的任务；不混入无关格式化、依赖升级或重构。不强制 fetch／pull。

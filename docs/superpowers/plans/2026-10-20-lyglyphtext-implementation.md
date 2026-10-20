@@ -62,14 +62,16 @@ Examples/LYGlyphTextDemo/
 
 ## 3. 接口契约
 
-下面定义完整首版的目标 API；**本轮实际 API 仅为** `LYGlyphTextDocument.init(attributedText:) throws`、`LYGlyphTextDocumentError`、`LYGlyphTextConfiguration.textContainerInset`、`LYGlyphTextLabel` 的 document／configuration／preferredMaxLayoutWidth 与标准尺寸接口、`LYGlyphTextView(document:configuration:)`。Document 保存独立文本值与支持的样式值，不持有输入的可变段落对象。附件属性及 U+FFFC 明确失败。后续 API 未以空壳声明方式提前公开。
+下面定义完整首版的目标 API。**当前实际 API** 包含 `LYGlyphTextDocument.init(attributedText:attachments:) throws`（attachments 默认空）、`LYGlyphTextDocumentError`、`@MainActor` 的 `LYGlyphTextAttachment`，以及 `LYGlyphTextAttachmentAlignment`、`LYGlyphTextConfiguration.textContainerInset`／`numberOfLines`、`LYGlyphTextLabel` 的 document／configuration／preferredMaxLayoutWidth 与标准尺寸接口，以及 `LYGlyphTextView(document:configuration:)`。图片描述包含只读 id、image、size、alignment（默认 bottom）和 alternativeText（默认 nil）。Document 保存独立文本值与支持的样式值，不持有输入的可变段落对象；已支持以 UTF-16 位置关联独立 U+FFFC 的 UIImage，仍拒绝标准 attachment 属性和未描述的 U+FFFC。UIView、分段、动作及其他样式仍未实现，不提前公开空壳 API。
 
 | 类型／入口 | 契约 |
 |---|---|
-| `LYGlyphTextDocument` | 不可变文档快照。公开初始化入口 `init(segments:) throws` 与 `init(attributedText:actions:attachments:) throws`；对 NSAttributedString 及其可变样式对象作隔离复制。包含文本、样式、动作与附件描述，不包含 UIView 或业务闭包。 |
+| `LYGlyphTextDocument` | 不可变文档快照。V1 在现有入口增加默认空的 viewAttachments；后续 M1 才提供 segments／actions 输入。图片与视图附件分开描述，共用 UTF-16 位置、独立 U+FFFC、唯一 ID 和尺寸校验；同位置冲突明确报错。文档不包含 UIView 或业务闭包。 |
 | `LYGlyphTextSegment` | 文本段使用 attributed text 与可选 actionID；附件段使用 attachment 描述与可选 actionID。分段构建器自动累计 UTF-16 范围，使业务无需手写 NSRange。 |
 | `LYGlyphTextAction` | 包含非空 actionID、非空 NSRange 和按下样式。一个范围对应一个动作；不同范围可使用同一 actionID，回调保留具体范围。动作范围不得相互重叠。 |
-| `LYGlyphTextAttachment` | 包含文档内唯一 attachmentID、内容类型（UIImage 或 view 标识）、明确 size、相对字体的 top／center／bottom 对齐、contentInsets、替代朗读文本、是否由附件自身交互。UIView 只由宿主提供。 |
+| `LYGlyphTextAttachment` | 已实现的 UIImage 描述：只读 id、image、size、alignment 与 alternativeText，保持现有初始化兼容；不改成 image／view 联合类型，不增加 UIView 或闭包。 |
+| `LYGlyphTextViewAttachment` | V1 计划：MainActor 不可变描述，包含只读 id、viewID、size、alignment（默认 bottom）、alternativeText（默认 nil）、isInteractive（默认 false）；不持有 UIView 或闭包。 |
+| `LYGlyphTextAttachmentViewProvider` | V1 计划：MainActor 引用类型，持有不可变 makeView 与可选 onUnmount；以 provider 对象身份判断失效。完整所有权、可见性、重入与释放契约见 [连续开发计划](2026-10-20-continuous-development.md)。 |
 | `LYGlyphTextConfiguration` | 包含 textContainerInset、numberOfLines、word／character wrapping 与 top／center／bottom 垂直对齐。默认 0 内边距、0 行限制、word wrapping、top 对齐；有行数限制时尾部省略。 |
 | `LYGlyphTextLabel: UIView` | `document`、`configuration`、`onAction`、`viewProvider`、`reloadAttachments()`、`intrinsicContentSize` 与 `sizeThatFits(_:)`，支持标准 `systemLayoutSizeFitting`。`document == nil` 清空文本、附件、交互及无障碍元素。`preferredMaxLayoutWidth` 默认 0，正值为包含内边距的固有尺寸测量宽度；实际绘制按 bounds。沿用标准 Hugging／Compression Resistance API。 |
 | `LYGlyphTextView: UIViewRepresentable` | 初始化输入与 Label 一致：document、configuration、onAction、viewProvider；实现 makeUIView、updateUIView、sizeThatFits、dismantleUIView。 |
@@ -81,7 +83,7 @@ Examples/LYGlyphTextDemo/
 - 文档构造及 UIKit 相关公开接口采用 `@MainActor` 隔离。不可变不等于 Sendable：文档包含 UIKit 属性对象，首版不声明它可跨 actor 传递。
 - `viewProvider` 的调用、UIView 创建／挂载／卸载、onAction 和 SwiftUI 更新均在 MainActor。
 - 工厂按 view 标识返回宿主独占的新 UIView。相同文档在两个 Label 展示时必须得到不同实例；检测到返回已有其他 superview 的实例时拒绝挂载并报告诊断，不抢走其他宿主的视图。
-- 工厂只在可见附件首次出现或 provider 明确失效后调用；普通测量不创建 UIView。Label 提供 `reloadAttachments()` 显式更新工厂结果。
+- 工厂仅在 window 非 nil 的展示布局、可见附件首次出现或 provider 明确失效后调用；所有测量和纯几何查询不创建 UIView。Label 提供 `reloadAttachments()` 显式更新工厂结果；连续可见同 ID 复用，完全不可见即卸载，重现时重新创建。
 - 文档与 Layout 不保留业务回调；替换文档清理旧布局、旧附件与交互，不擅自清空宿主配置的回调或工厂。View 销毁或 SwiftUI dismantle 时释放回调与工厂持有关系。
 - 不通过大范围 `@unchecked Sendable`、`nonisolated(unsafe)` 或降低并发检查强度来换取编译通过。
 
@@ -188,6 +190,22 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - UIKit／SwiftUI 两个示例必须消费同一组文档，避免分别实现两套行为。
 
 ## 5. 分阶段实施与验收
+
+### 5.0 连续执行队列
+
+以下队列是后续执行顺序，阶段清单仍用于追踪细项。选取第一个未完成且依赖已满足的任务；完成契约／失败测试、实现、验证、证据、提交、集成和普通推送后自动进入下一项。仅真实阻塞决策、冲突或反复验证失败暂停相关任务；不可用环境标记未验证并继续独立工作。详情见 [连续开发计划](2026-10-20-continuous-development.md)。
+
+| 顺序／任务 | 状态 | 依赖 | 验收范围 | 证据 |
+|---|---|---|---|---|
+| D0 规则与计划同步 | 进行中 | 现有基础显示／行数／UIImage | 规则一致、当前 API 准确、V1 契约明确；docs 通过后提交／集成／推送 | 本计划、AGENTS、CONTRIBUTING 与连续开发计划；`scripts/verify.sh docs` 通过，提交／集成／推送待完成 |
+| V1 UIView／provider／生命周期／按钮自身交互 | 待执行 | D0 | 测量零工厂调用、可见复用／隐藏卸载、所有权与重入、SwiftUI 清理、真实按钮与列表复用；保留 72 项基线 | 尚无 UIView 实现证据；按连续开发计划新增专项记录 |
+| M1 segments／actions／样式 | 待执行 | V1 | 分段安全构建、UTF-16／组合字符／动作重叠校验、样式绘制与两端一致 | 待专项测试及截图，不沿用基础显示结论 |
+| I1 文本点击／长按／高亮／取消 | 待执行 | M1 | 真实手势、空白／截断／RTL 命中、单次回调与取消零事件、附件优先级 | 待状态机、几何与 UI 证据 |
+| H1 宿主矩阵 | 待执行 | I1 | StackView、UITableView／UICollectionView、HStack／VStack／List／LazyVStack、宽度切换与复用收敛 | 现有基础尺寸记录仅覆盖子集；完整矩阵待验收 |
+| A1 显示环境／无障碍 | 待执行 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | 现有图片默认字体测试仅为子集；人工 VoiceOver 未验证 |
+| P1 回归／性能／发布准备 | 待执行 | A1；缺失环境不阻塞独立准备 | 完整回归、固定负载性能／释放、来源与 API／安装文档审查，列出发布阻塞项 | Swift 6.0／iOS 16／真机／性能仍未验证；PR／Tag／Release 未授权 |
+
+当前回归基线为图片专项记录中的 **72／72 Passed（68 宿主＋4 UI，0 failed／0 skipped）**，仅说明该记录的环境与提交，不代表本轮已重新执行。队列状态与各阶段勾选必须同步更新，不把未来工作标为完成。
 
 阶段内按“建立测试／复现 → 实现最小行为 → 验证 → 更新记录 → 提交”执行。低影响文档调整不添加镜像实现的测试；布局、Unicode、交互及所有权必须有有意义的验证。各阶段提交须可单独审阅，不以空壳声明代替完成。
 
