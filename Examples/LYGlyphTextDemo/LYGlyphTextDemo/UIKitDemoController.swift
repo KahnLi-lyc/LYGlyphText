@@ -8,12 +8,15 @@ final class UIKitDemoController: UIViewController {
     private let priorityLabel = LYGlyphTextLabel(frame: .zero)
     private let statusLabel = UILabel()
     private let sampleControl = UISegmentedControl(items: SampleKind.allCases.map(\.title))
-    private let imageControl = UISegmentedControl(items: ["文字", "图片混排"])
+    private let imageControl = UISegmentedControl(items: ["文字", "图片混排", "UIView"])
     private let alignmentControl = UISegmentedControl(items: ImageAlignment.allCases.map(\.title))
     private let widthControl = UISegmentedControl(items: ["160", "240", "320"])
     private let lineLimitControl = UISegmentedControl(items: LineLimit.allCases.map(\.title))
     private let priorityControl = UISegmentedControl(items: ["压缩文本", "压缩按钮"])
     private let actionButton = UIButton(type: .system)
+    private let attachmentState = DemoAttachmentState()
+    private let countLabel = UILabel()
+    private var isCleared = false
     private var textWidth: NSLayoutConstraint?
 
     init(samples: DemoSamples) {
@@ -78,6 +81,21 @@ final class UIKitDemoController: UIViewController {
         stack.addArrangedSubview(lineLimitControl)
         stack.addArrangedSubview(statusLabel)
         stack.addArrangedSubview(textLabel)
+        textLabel.viewProvider = attachmentState.provider
+        attachmentState.onCountChanged = { [weak self] in self?.updateCount() }
+        countLabel.accessibilityIdentifier = "attachmentCount"
+        countLabel.font = .preferredFont(forTextStyle: .caption1)
+        stack.addArrangedSubview(countLabel)
+        let clearButton = UIButton(type: .system)
+        clearButton.setTitle("清空", for: .normal)
+        clearButton.accessibilityIdentifier = "clearAttachments"
+        clearButton.addTarget(self, action: #selector(clearAttachments), for: .touchUpInside)
+        let reloadButton = UIButton(type: .system)
+        reloadButton.setTitle("重新加载", for: .normal)
+        reloadButton.accessibilityIdentifier = "reloadAttachments"
+        reloadButton.addTarget(self, action: #selector(reloadAttachments), for: .touchUpInside)
+        stack.addArrangedSubview(UIStackView(arrangedSubviews: [clearButton, reloadButton]))
+        updateCount()
         let imageExplanation = UILabel()
         imageExplanation.text = "图片：上向箭头橙标在左上，右向箭头橙标在右上；对齐参照当前字体区域。"
         imageExplanation.numberOfLines = 0
@@ -131,16 +149,35 @@ final class UIKitDemoController: UIViewController {
         let limit = LineLimit.allCases[lineLimitControl.selectedSegmentIndex]
         let includesImages = imageControl.selectedSegmentIndex == 1
         let alignment = ImageAlignment.allCases[alignmentControl.selectedSegmentIndex]
-        alignmentControl.isEnabled = includesImages
-        textLabel.document = samples.document(for: kind, includesImages: includesImages, alignment: alignment)
+        let includesViews = imageControl.selectedSegmentIndex == 2
+        alignmentControl.isEnabled = includesImages || includesViews
+        isCleared = false
+        textLabel.document = includesViews
+            ? samples.viewDocument(for: kind, alignment: alignment)
+            : samples.document(for: kind, includesImages: includesImages, alignment: alignment)
         textLabel.configuration = .init(
             textContainerInset: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
             numberOfLines: limit.rawValue
         )
         textWidth?.constant = width
-        let imageStatus = includesImages ? " · 图片混排 · \(alignment.title)" : ""
+        let imageStatus = includesViews ? " · UIView · \(alignment.title)" :
+            (includesImages ? " · 图片混排 · \(alignment.title)" : "")
         statusLabel.text = "\(kind.title) · 宽度 \(Int(width)) · \(limit.title)\(imageStatus)"
         statusLabel.numberOfLines = 0
+    }
+
+    private func updateCount() {
+        countLabel.text = "按钮点击：\(attachmentState.count)"
+    }
+
+    @objc private func clearAttachments() {
+        isCleared = true
+        textLabel.document = nil
+    }
+
+    @objc private func reloadAttachments() {
+        if isCleared { updateContent() }
+        textLabel.reloadAttachments()
     }
 
     @objc private func updatePriorities() {

@@ -7,7 +7,7 @@ final class AttachmentMetrics {
     let width: CGFloat
     let ascent: CGFloat
     let descent: CGFloat
-    /// 图片底边相对于 Core Text 基线的向上偏移。
+    /// 附件底边相对于 Core Text 基线的向上偏移。
     let bottom: CGFloat
 
     init(size: CGSize, ascender: CGFloat, descender: CGFloat, alignment: LYGlyphTextAttachmentAlignment) {
@@ -17,7 +17,7 @@ final class AttachmentMetrics {
         case .center: (ascender + descender - size.height) / 2
         case .bottom: descender
         }
-        // 即使一行只有小图片，也保留占位字体区域，避免字体底部度量消失。
+        // 即使一行只有小附件，也保留占位字体区域，避免字体底部度量消失。
         ascent = max(ascender, bottom + size.height, 0)
         descent = max(-descender, -bottom, 0)
     }

@@ -1,12 +1,12 @@
 import UIKit
 
-/// 图片相对于占位字符字体 ascender／descender 区域的垂直对齐。
+/// 附件相对于占位字符字体 ascender／descender 区域的垂直对齐。
 public enum LYGlyphTextAttachmentAlignment: Equatable {
-    /// 图片顶部对齐字体区域顶部。
+    /// 附件顶部对齐字体区域顶部。
     case top
-    /// 图片中心对齐字体区域中心。
+    /// 附件中心对齐字体区域中心。
     case center
-    /// 图片底部对齐字体区域底部。
+    /// 附件底部对齐字体区域底部。
     case bottom
 }
 

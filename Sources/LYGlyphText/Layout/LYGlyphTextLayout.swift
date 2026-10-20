@@ -22,11 +22,22 @@ struct LYGlyphTextLayout {
         let rect: CGRect
     }
 
+    struct ViewAttachment {
+        let attachment: LYGlyphTextViewAttachment
+        let sourceLocation: Int
+        /// 相对于文本容器原点的完整声明矩形。
+        let rect: CGRect
+    }
+
+    let viewAttachments: [ViewAttachment]
     let size: CGSize
     let lines: [Line]
     let attachments: [Attachment]
 
-    init(size: CGSize, lines: [Line], attachments: [Attachment] = []) {
+    init(
+        size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = []
+    ) {
+        self.viewAttachments = viewAttachments
         self.size = size
         self.lines = lines
         self.attachments = attachments
@@ -60,12 +71,14 @@ final class ResolvedText {
     private let isEmpty: Bool
     private let attributedText: NSAttributedString
     private let attachments: [Int: LYGlyphTextAttachment]
+    private let viewAttachments: [Int: LYGlyphTextViewAttachment]
 
     init(document: LYGlyphTextDocument?, traits: UITraitCollection) {
         let string = document?.string ?? ""
         sourceLength = (string as NSString).length
         isEmpty = sourceLength == 0
         attachments = document?.attachments ?? [:]
+        viewAttachments = document?.viewAttachments ?? [:]
         let text = NSMutableAttributedString(string: string)
         for run in document?.styleRuns ?? [] {
             let font = run.font ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
@@ -76,12 +89,15 @@ final class ResolvedText {
                 NSAttributedString.Key(kCTParagraphStyleAttributeName as String): Self.paragraphStyle(for: run)
             ], range: run.range)
         }
-        for (location, attachment) in attachments {
+        for location in Set(attachments.keys).union(viewAttachments.keys) {
+            guard let size = attachments[location]?.size ?? viewAttachments[location]?.size,
+                  let alignment = attachments[location]?.alignment ?? viewAttachments[location]?.alignment
+            else { continue }
             let font = text.attribute(.font, at: location, effectiveRange: nil) as? UIFont
                 ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
             let metrics = AttachmentMetrics(
-                size: attachment.size, ascender: font.ascender, descender: font.descender,
-                alignment: attachment.alignment
+                size: size, ascender: font.ascender, descender: font.descender,
+                alignment: alignment
             )
             text.addAttributes([
                 NSAttributedString.Key(kCTRunDelegateAttributeName as String): metrics.makeDelegate(),
@@ -189,7 +205,8 @@ final class ResolvedText {
                     width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
                     height: pixelCeil(visible.height + vertical)
                 ),
-                lines: visible.lines, attachments: visibleAttachments(in: visible.lines)
+                lines: visible.lines, attachments: visibleAttachments(in: visible.lines),
+                viewAttachments: visibleViewAttachments(in: visible.lines)
             )
         }
         return LYGlyphTextLayout(
@@ -197,16 +214,31 @@ final class ResolvedText {
                 width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
                 height: pixelCeil(frame.contentHeight + vertical)
             ),
-            lines: lines, attachments: visibleAttachments(in: lines)
+            lines: lines, attachments: visibleAttachments(in: lines),
+            viewAttachments: visibleViewAttachments(in: lines)
         )
     }
 
     private func visibleAttachments(in lines: [LYGlyphTextLayout.Line]) -> [LYGlyphTextLayout.Attachment] {
+        visibleAttachmentRects(in: lines).compactMap { location, rect in
+            attachments[location].map { .init(attachment: $0, sourceLocation: location, rect: rect) }
+        }
+    }
+
+    private func visibleViewAttachments(in lines: [LYGlyphTextLayout.Line]) -> [LYGlyphTextLayout.ViewAttachment] {
+        visibleAttachmentRects(in: lines).compactMap { location, rect in
+            viewAttachments[location].map { .init(attachment: $0, sourceLocation: location, rect: rect) }
+        }
+    }
+
+    /// 两种附件消费同一最终 run 几何，包含 RTL、截断映射和占位字符字体度量。
+    private func visibleAttachmentRects(in lines: [LYGlyphTextLayout.Line]) -> [(Int, CGRect)] {
         lines.flatMap { line in
             (CTLineGetGlyphRuns(line.text) as! [CTRun]).compactMap { run in
                 let attributes = CTRunGetAttributes(run) as NSDictionary
                 guard let location = attributes[AttachmentMetrics.locationKey] as? Int,
-                      let attachment = attachments[location], CTRunGetGlyphCount(run) > 0,
+                      let size = attachments[location]?.size ?? viewAttachments[location]?.size,
+                      CTRunGetGlyphCount(run) > 0,
                       line.visibleSourceRanges.contains(where: { NSLocationInRange(location, $0) })
                 else { return nil }
                 let runRange = CTRunGetStringRange(run)
@@ -219,14 +251,11 @@ final class ResolvedText {
                 let metrics = Unmanaged<AttachmentMetrics>.fromOpaque(
                     CTRunDelegateGetRefCon(delegate)
                 ).takeUnretainedValue()
-                return LYGlyphTextLayout.Attachment(
-                    attachment: attachment, sourceLocation: location,
-                    rect: CGRect(
-                        x: line.baseline.x + position.x,
-                        y: line.baseline.y - position.y - metrics.bottom - attachment.size.height,
-                        width: attachment.size.width, height: attachment.size.height
-                    )
-                )
+                return (location, CGRect(
+                    x: line.baseline.x + position.x,
+                    y: line.baseline.y - position.y - metrics.bottom - size.height,
+                    width: size.width, height: size.height
+                ))
             }
         }
     }

@@ -52,10 +52,20 @@ final class DemoSamples {
         case missingGeneratedImage
     }
 
+    let reuseDocuments: [LYGlyphTextDocument]
     let documents: [SampleKind: LYGlyphTextDocument]
+    private let viewDocuments: [SampleKind: [ImageAlignment: LYGlyphTextDocument]]
     private let imageDocuments: [SampleKind: [ImageAlignment: LYGlyphTextDocument]]
 
     init() throws {
+        reuseDocuments = try (0 ..< 80).map { row in
+            try LYGlyphTextDocument(attributedText: NSAttributedString(
+                string: "\u{FFFC} 第 \(row) 行：滚动离屏后由列表宿主清理，再绑定新文档。\n同一 Cell 的按钮与文字必须属于当前行。",
+                attributes: [.font: UIFont.systemFont(ofSize: 18)]
+            ), viewAttachments: [0: LYGlyphTextViewAttachment(
+                id: "row-\(row)", viewID: "button", size: CGSize(width: 100, height: 36), isInteractive: true
+            )])
+        }
         let short = NSAttributedString(string: "你好，GlyphText 👋")
         let multiline = NSAttributedString(
             string: "Core Text 负责统一排版和绘制。调整宽度，观察中英文换行与内容自动撑高。\n第二段保留显式换行：Swift 6 · UIKit · SwiftUI，家庭 👨‍👩‍👧‍👦，组合字符 e\u{301}。"
@@ -105,10 +115,42 @@ final class DemoSamples {
                 return try (alignment, LYGlyphTextDocument(attributedText: prefix, attachments: attachments))
             })
         }
+        viewDocuments = try texts.mapValues { text in
+            let prefix = NSMutableAttributedString(
+                string: "\u{FFFC} \u{FFFC} \u{FFFC} \u{FFFC}\n",
+                attributes: [.font: UIFont.systemFont(ofSize: 20)]
+            )
+            prefix.append(text)
+            return try Dictionary(uniqueKeysWithValues: ImageAlignment.allCases.map { alignment in
+                let attachments = [
+                    0: LYGlyphTextViewAttachment(
+                        id: "avatar", viewID: "image", size: CGSize(width: 28, height: 36),
+                        alignment: alignment.attachmentAlignment, alternativeText: "本地星星"
+                    ),
+                    2: LYGlyphTextViewAttachment(
+                        id: "button", viewID: "button", size: CGSize(width: 76, height: 36),
+                        alignment: alignment.attachmentAlignment, alternativeText: "计数按钮", isInteractive: true
+                    ),
+                    4: LYGlyphTextViewAttachment(
+                        id: "badge", viewID: "badge", size: CGSize(width: 52, height: 24),
+                        alignment: alignment.attachmentAlignment, alternativeText: "徽章"
+                    ),
+                    6: LYGlyphTextViewAttachment(
+                        id: "missing", viewID: "missing", size: CGSize(width: 20, height: 20),
+                        alignment: alignment.attachmentAlignment, alternativeText: "空工厂保留空间"
+                    )
+                ]
+                return try (alignment, LYGlyphTextDocument(attributedText: prefix, viewAttachments: attachments))
+            })
+        }
     }
 
     func document(for kind: SampleKind, includesImages: Bool, alignment: ImageAlignment) -> LYGlyphTextDocument? {
         includesImages ? imageDocuments[kind]?[alignment] : documents[kind]
+    }
+
+    func viewDocument(for kind: SampleKind, alignment: ImageAlignment) -> LYGlyphTextDocument? {
+        viewDocuments[kind]?[alignment]
     }
 
     /// 本地绘制的非对称图片；右向版本仅改变 UIImage 方向，便于检查方向和基线。

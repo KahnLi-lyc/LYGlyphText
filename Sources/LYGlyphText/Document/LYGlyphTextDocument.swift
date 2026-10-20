@@ -8,6 +8,8 @@ public enum LYGlyphTextDocumentError: Error, Equatable {
     case unsupportedObjectReplacementCharacter(location: Int)
     /// 附件位置越界，或未指向一个独立的 U+FFFC。
     case invalidAttachmentLocation(location: Int)
+    /// 图片与视图描述同时使用了同一个 UTF-16 位置。
+    case conflictingAttachmentLocation(location: Int)
     /// 同一文档使用了重复的附件 ID。
     case duplicateAttachmentID(id: String)
     /// 附件尺寸非有限，或任一边不大于 0。
@@ -16,7 +18,7 @@ public enum LYGlyphTextDocumentError: Error, Equatable {
 
 /// 在主线程构造的不可变富文本快照，不持有视图或业务回调。
 ///
-/// 当前解释 font、foregroundColor、段落对齐和基本书写方向，以及显式描述的图片附件。
+/// 当前解释 font、foregroundColor、段落对齐和基本书写方向，以及显式描述的图片／视图附件。
 /// 其他装饰属性不参与显示；显式字体保持固定，缺省字体使用动态 body。
 @MainActor
 public final class LYGlyphTextDocument {
@@ -31,11 +33,16 @@ public final class LYGlyphTextDocument {
     let string: String
     let styleRuns: [StyleRun]
     let attachments: [Int: LYGlyphTextAttachment]
+    let viewAttachments: [Int: LYGlyphTextViewAttachment]
 
     /// 复制文本与支持的样式，隔离调用方随后对可变字符串及段落样式的修改。
     /// - Parameter attachments: 以原文 UTF-16 位置关联单个 U+FFFC 的图片描述，默认无附件。
-    /// - Throws: 标准附件属性、未描述的 U+FFFC、非法位置／尺寸或重复 ID。
-    public init(attributedText: NSAttributedString, attachments: [Int: LYGlyphTextAttachment] = [:]) throws {
+    /// - Throws: 标准附件属性、未描述的 U+FFFC、位置冲突、非法位置／尺寸或重复 ID。
+    /// - Parameter viewAttachments: 以原文 UTF-16 位置关联单个 U+FFFC 的视图描述，默认无附件。
+    public init(
+        attributedText: NSAttributedString, attachments: [Int: LYGlyphTextAttachment] = [:],
+        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:]
+    ) throws {
         var attachmentRange: NSRange?
         let fullRange = NSRange(location: 0, length: attributedText.length)
         attributedText.enumerateAttribute(.attachment, in: fullRange) { value, range, stop in
@@ -49,24 +56,30 @@ public final class LYGlyphTextDocument {
         }
         let source = attributedText.string as NSString
         var ids: Set<String> = []
-        for location in attachments.keys.sorted() {
+        if let collision = Set(attachments.keys).intersection(viewAttachments.keys).sorted().first {
+            throw LYGlyphTextDocumentError.conflictingAttachmentLocation(location: collision)
+        }
+        for location in Set(attachments.keys).union(viewAttachments.keys).sorted() {
             guard location >= 0, location < source.length, source.character(at: location) == 0xFFFC,
                   source.rangeOfComposedCharacterSequence(at: location) == NSRange(location: location, length: 1)
             else { throw LYGlyphTextDocumentError.invalidAttachmentLocation(location: location) }
-            guard let attachment = attachments[location] else { continue }
-            guard ids.insert(attachment.id).inserted else {
-                throw LYGlyphTextDocumentError.duplicateAttachmentID(id: attachment.id)
+            guard let id = attachments[location]?.id ?? viewAttachments[location]?.id,
+                  let size = attachments[location]?.size ?? viewAttachments[location]?.size
+            else { continue }
+            guard ids.insert(id).inserted else {
+                throw LYGlyphTextDocumentError.duplicateAttachmentID(id: id)
             }
-            guard attachment.size.width.isFinite, attachment.size.height.isFinite,
-                  attachment.size.width > 0, attachment.size.height > 0
-            else { throw LYGlyphTextDocumentError.invalidAttachmentSize(id: attachment.id) }
+            guard size.width.isFinite, size.height.isFinite,
+                  size.width > 0, size.height > 0
+            else { throw LYGlyphTextDocumentError.invalidAttachmentSize(id: id) }
         }
         for location in 0 ..< source.length where source.character(at: location) == 0xFFFC {
-            guard attachments[location] != nil else {
+            guard attachments[location] != nil || viewAttachments[location] != nil else {
                 throw LYGlyphTextDocumentError.unsupportedObjectReplacementCharacter(location: location)
             }
         }
         self.attachments = attachments
+        self.viewAttachments = viewAttachments
 
         // 不保留 NSParagraphStyle 对象。属性字符串可能合并相等的属性对象，
         // 因而即使 copy 之后再存储，也不能依赖可变输入的对象身份隔离。

@@ -23,7 +23,7 @@
 
 ## V1：接口契约
 
-**状态：** 待执行。UIImage 与行数限制已有实现；以下新增接口仍是本任务目标。
+**状态：** V1 功能已验收，待本任务提交／集成／普通推送。D0 规则已以 `160c3c4` 合入并推送。以下接口已实现；[专项记录](../../verification/2026-10-20-view-attachments.md) 保存 102／102 完整回归、八张截图和失败修复证据。
 
 | 入口 | 约定 |
 |---|---|
@@ -39,7 +39,7 @@
 
 ## V1：可见性、所有权与清理
 
-- 工厂只允许在 `window != nil` 的展示布局中调用；纯几何计算、sizeThatFits、intrinsicContentSize、systemLayoutSizeFitting 和 SwiftUI proposal 测量调用数始终为 0。离屏布局同样不创建 UIView。
+- 工厂只允许在 `window != nil` 的展示布局中调用；纯几何计算、sizeThatFits、intrinsicContentSize、systemLayoutSizeFitting 和 SwiftUI proposal 测量调用数始终为 0。未进入 window 的离屏布局同样不创建 UIView；父列表的滚动视口由宿主复用生命周期管理，不扫描祖先裁切区域。
 - 用最终完整附件矩形与实际内容可见区的交集决定挂载。连续可见的同 ID 复用同一 UIView，只更新 frame；宽度往返不额外创建。完全离开可见集、被截断或高度完全裁切即卸载并释放，重新可见重新创建，不缓存隐藏视图。
 - 部分可见视图保留完整布局外框，由只覆盖内容可见区的容器裁切。容器空白处触摸穿透；裁切外不响应，isInteractive 为 false 时附件不截获触摸；true 时真实 UIControl／自有手势响应自身事件。
 - 工厂返回 nil 或被拒绝的实例时保留声明占位尺寸，在同一文档／provider／reload 版本的持续可见期间缓存失败，不在每次 layout 重试；完全不可见后重入、换文档／provider 或 reload 才可重试。
@@ -65,13 +65,14 @@ V1 只验收附件自己的按钮／手势，不实现文字 tap、longPress、�
 | `Examples/LYGlyphTextDemo/` | 两端真实附件／按钮、nil／清空／reload 控制和列表复用；宿主及 UI 测试 |
 | `docs/verification/2026-10-20-view-attachments.md` | 完成实现后新增真实命令、环境、计数、截图、限制 |
 
-- [ ] 写描述默认值、现有初始化兼容、两字典相同位置／ID、U+FFFC 与所有尺寸分量测试；先运行确认新增接口缺失导致失败，再实现模型与统一几何。
-- [ ] 写所有测量入口零 factory、离屏布局零 factory 测试；窗口内首挂载、连续可见复用、完全隐藏卸载／恢复重建、部分裁切的 frame 与触摸范围测试；再接入可见宿主。
-- [ ] 写 nil／拒绝缓存、两个宿主独立、带 superview／同实例／self／ancestor 拒绝、成功挂载精确清理次数测试；再实现所有权检查与失败缓存。
-- [ ] 写工厂／卸载回调同步替换文档、换 provider、reload、detach 的重入测试；验证旧结果不挂载、旧回调不清理新集合、重复清理安全，再实现版本核对。
-- [ ] 写 UIKit 文档清空／替换、provider 身份、reload、detach／reattach、SwiftUI 更新／dismantle 与 weak 释放测试；再补生命周期接入，保留既有尺寸和图片测试。
-- [ ] 两端共用同一输入，示例提供 UIImageView、按钮、自定义徽章、nil 工厂与清空／reload；真实 UI 测试操作按钮和控制项，滚动列表后验证复用无旧附件，导出并检查截图。仅直接调用按钮回调不能替代真实点击。
-- [ ] 运行 docs、固定版本 format、build、专用独占 Simulator 的完整宿主／UI 测试；更新证据和总计划后按连续流程提交、集成、普通推送，自动进入 M1。
+- [x] 写描述默认值、现有初始化兼容、两字典相同位置／ID、U+FFFC 与所有尺寸分量测试；先运行确认新增接口缺失导致失败，再实现模型与统一几何。
+- [x] 写所有测量入口零 factory、离屏布局零 factory 测试；窗口内首挂载、连续可见复用、完全隐藏卸载／恢复重建、部分裁切的 frame 与触摸范围测试；再接入可见宿主。
+- [x] 写 nil／拒绝缓存、两个宿主独立、带 superview／同实例／self／ancestor 拒绝、成功挂载精确清理次数测试；再实现所有权检查与失败缓存。
+- [x] 写工厂／卸载回调同步替换文档、换 provider、reload、detach 的重入测试；验证旧结果不挂载、旧回调不清理新集合、重复清理安全，再实现版本核对。
+- [x] 写 UIKit 文档清空／替换、provider 身份、reload、detach／reattach、SwiftUI 更新／dismantle 与 weak 释放测试；再补生命周期接入，保留既有尺寸和图片测试。
+- [x] 两端共用同一输入，示例提供 UIImageView、按钮、自定义徽章、nil 工厂与清空／reload；真实 UI 测试操作按钮和控制项，滚动列表后验证复用无旧附件，导出并检查截图。仅直接调用按钮回调不能替代真实点击。
+- [x] 运行 docs、固定版本 format、build、专用独占 Simulator 的完整宿主／UI 测试，更新证据与总计划。
+- [ ] 按连续流程提交、集成、普通推送，自动进入 M1；具体提交与远端状态由交付后的队列更新记录。
 
 ## V1：验证与证据边界
 

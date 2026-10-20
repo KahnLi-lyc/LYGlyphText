@@ -18,6 +18,76 @@ final class DemoUITests: XCTestCase {
         verifyImages("openSwiftUI", name: "SwiftUI")
     }
 
+    func testUIKitUIViewAttachmentsNativeActionsClearReloadAndGeometry() {
+        verifyViewAttachments("openUIKit", name: "UIKit")
+    }
+
+    func testSwiftUIUIViewAttachmentsNativeActionsClearReloadAndGeometry() {
+        verifyViewAttachments("openSwiftUI", name: "SwiftUI")
+    }
+
+    func testUIViewListScrollReusesWithoutStaleButtonContent() {
+        let app = XCUIApplication()
+        app.launch()
+        app.cells["openReuse"].tap()
+        let table = app.tables["attachmentList"]
+        XCTAssertTrue(table.waitForExistence(timeout: 5))
+        let first = app.buttons["reuseButton0"]
+        XCTAssertTrue(first.waitForExistence(timeout: 5))
+        first.tap()
+        XCTAssertEqual(first.label, "行 0 · 1")
+        for _ in 0 ..< 4 {
+            table.swipeUp()
+        }
+        var checkedRows = 0
+        for cell in table.cells.allElementsBoundByIndex where cell.isHittable {
+            guard cell.identifier.hasPrefix("reuseRow"),
+                  let row = Int(cell.identifier.dropFirst("reuseRow".count)) else { continue }
+            XCTAssertGreaterThan(row, 0)
+            let button = cell.buttons["reuseButton\(row)"]
+            XCTAssertTrue(button.exists)
+            XCTAssertEqual(button.label, "行 \(row) · 0")
+            checkedRows += 1
+        }
+        XCTAssertGreaterThan(checkedRows, 0)
+        capture(app, name: "UIView-list-scrolled-current-rows")
+        for _ in 0 ..< 5 {
+            table.swipeDown()
+        }
+        XCTAssertTrue(first.waitForExistence(timeout: 5))
+        XCTAssertEqual(first.label, "行 0 · 0")
+        first.tap()
+        XCTAssertEqual(first.label, "行 0 · 1")
+        capture(app, name: "UIView-list-return-rebound-row-zero")
+    }
+
+    private func verifyViewAttachments(_ identifier: String, name: String) {
+        let app = XCUIApplication()
+        app.launch()
+        app.cells[identifier].tap()
+        let modes = app.segmentedControls["imageControl"]
+        XCTAssertTrue(modes.waitForExistence(timeout: 5))
+        modes.buttons["UIView"].tap()
+        let button = app.buttons["attachmentButton"]
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        button.tap()
+        XCTAssertEqual(app.staticTexts["attachmentCount"].label, "按钮点击：1")
+        app.buttons["clearAttachments"].tap()
+        XCTAssertFalse(button.exists)
+        app.buttons["reloadAttachments"].tap()
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        button.tap()
+        XCTAssertEqual(app.staticTexts["attachmentCount"].label, "按钮点击：2")
+        for (alignment, width, limit) in [("顶部", "160", "1 行"), ("居中", "240", "2 行"), ("底部", "320", "无限行")] {
+            app.segmentedControls["alignmentControl"].buttons[alignment].tap()
+            app.segmentedControls["widthControl"].buttons[width].tap()
+            app.segmentedControls["lineLimitControl"].buttons[limit].tap()
+            assertStatus(app, expected: "短文 · 宽度 \(width) · \(limit) · UIView · \(alignment)")
+            capture(app, name: "\(name)-UIView-\(width)-\(alignment)-\(limit)")
+        }
+        XCTAssertTrue(button.exists)
+    }
+
     private func verifyImages(_ identifier: String, name: String) {
         let app = XCUIApplication()
         app.launch()

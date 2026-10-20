@@ -7,12 +7,23 @@ struct SwiftUIDemoView: View {
     @State private var selectedSample = SampleKind.short
     @State private var selectedWidth = 240
     @State private var selectedLineLimit = LineLimit.unlimited
-    @State private var includesImages = false
+    @State private var contentMode = 0
+    @State private var isCleared = false
+    @State private var replacementProvider: LYGlyphTextAttachmentViewProvider?
+    @StateObject private var attachmentState = DemoAttachmentState()
     @State private var imageAlignment = ImageAlignment.bottom
 
     private var status: String {
-        let imageStatus = includesImages ? " · 图片混排 · \(imageAlignment.title)" : ""
+        let imageStatus = contentMode == 2 ? " · UIView · \(imageAlignment.title)" :
+            (contentMode == 1 ? " · 图片混排 · \(imageAlignment.title)" : "")
         return "\(selectedSample.title) · 宽度 \(selectedWidth) · \(selectedLineLimit.title)\(imageStatus)"
+    }
+
+    private var activeDocument: LYGlyphTextDocument? {
+        guard !isCleared else { return nil }
+        return contentMode == 2
+            ? samples.viewDocument(for: selectedSample, alignment: imageAlignment)
+            : samples.document(for: selectedSample, includesImages: contentMode == 1, alignment: imageAlignment)
     }
 
     var body: some View {
@@ -25,9 +36,10 @@ struct SwiftUIDemoView: View {
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("sampleControl")
-                Picker("内容", selection: $includesImages) {
-                    Text("文字").tag(false)
-                    Text("图片混排").tag(true)
+                Picker("内容", selection: $contentMode) {
+                    Text("文字").tag(0)
+                    Text("图片混排").tag(1)
+                    Text("UIView").tag(2)
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("imageControl")
@@ -37,7 +49,7 @@ struct SwiftUIDemoView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(!includesImages)
+                .disabled(contentMode == 0)
                 .accessibilityIdentifier("alignmentControl")
                 Picker("宽度", selection: $selectedWidth) {
                     ForEach([160, 240, 320], id: \.self) { width in
@@ -57,18 +69,29 @@ struct SwiftUIDemoView: View {
                     .font(.caption)
                     .accessibilityIdentifier("sampleStatus")
                 LYGlyphTextView(
-                    document: samples.document(
-                        for: selectedSample, includesImages: includesImages, alignment: imageAlignment
-                    ),
+                    document: activeDocument,
                     configuration: .init(
                         textContainerInset: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
                         numberOfLines: selectedLineLimit.rawValue
-                    )
+                    ),
+                    viewProvider: replacementProvider ?? attachmentState.provider
                 )
                 .frame(width: CGFloat(selectedWidth), alignment: .leading)
                 .background(Color(uiColor: .secondarySystemBackground))
                 .overlay(Rectangle().stroke(Color.gray, lineWidth: 1))
                 .accessibilityIdentifier("richTextPreview")
+                Text("按钮点击：\(attachmentState.count)")
+                    .font(.caption)
+                    .accessibilityIdentifier("attachmentCount")
+                HStack {
+                    Button("清空") { isCleared = true }
+                        .accessibilityIdentifier("clearAttachments")
+                    Button("重新加载") {
+                        isCleared = false
+                        replacementProvider = attachmentState.makeProvider()
+                    }
+                    .accessibilityIdentifier("reloadAttachments")
+                }
                 Text("图片：上向箭头橙标在左上，右向箭头橙标在右上；对齐参照当前字体区域。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
