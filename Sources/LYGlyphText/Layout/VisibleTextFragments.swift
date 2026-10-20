@@ -6,6 +6,21 @@ import UIKit
 struct VisibleTextFragment {
     struct RunPiece {
         let sourceRange: NSRange
+        /// 最终行和 run 的稳定序号，不由局部字符索引推算。
+        let lineIndex: Int
+        let runIndex: Int
+        /// 原 run 中属于该 shaping group 的实际 glyph 序号，可以不连续。
+        let glyphIndices: [Int]
+        /// 整个 shaping group 的原文覆盖，不等同于当前 cell。
+        let groupSourceRange: NSRange
+        let groupSourceCells: [NSRange]
+
+        var glyphRange: Range<Int>? {
+            guard let first = glyphIndices.first, let last = glyphIndices.last, first <= last,
+                  glyphIndices == Array(first ... last) else { return nil }
+            return first ..< (last + 1)
+        }
+
         /// 最终 CTLine／CTRun 的局部 UTF-16 范围，尚未加 sourceOffset。
         let lineRange: NSRange
         let runRange: NSRange
@@ -24,30 +39,93 @@ struct VisibleTextFragment {
 
 extension LYGlyphTextLayout {
     func visibleTextFragments(in range: NSRange, source: String) -> [VisibleTextFragment] {
+        if let sourceGeometry, sourceGeometry.source == source { return sourceGeometry.fragments(in: range) }
+        // 手工构造的 synthetic Layout 没有文档输入，保留按查询源解释映射的兼容入口。
+        return SourceGeometry(source: source, lines: lines, attachments: attachments, viewAttachments: viewAttachments)
+            .fragments(in: range)
+    }
+}
+
+/// 在最终行、token 映射与附件 placement 确定后构造一次；后续查询只过滤已有 pieces。
+@MainActor
+struct SourceGeometry {
+    struct Cell {
+        let range: NSRange
+        let lineIndex: Int
+        let isWhitespace: Bool
+        let pieces: [VisibleTextFragment.RunPiece]
+    }
+
+    struct GlyphGroup {
+        enum Origin: Equatable {
+            case source(NSRange)
+            case generatedToken
+        }
+
+        let lineIndex: Int
+        let runIndex: Int
+        let localRange: NSRange
+        let glyphIndices: [Int]
+        let origin: Origin
+        let sourceCells: [NSRange]
+    }
+
+    let source: String
+    let glyphGroups: [GlyphGroup]
+    let cells: [Cell]
+    private let clusters: SourceClusterIndex
+
+    init(
+        source: String, lines: [LYGlyphTextLayout.Line], attachments: [LYGlyphTextLayout.Attachment],
+        viewAttachments: [LYGlyphTextLayout.ViewAttachment]
+    ) {
+        self.source = source
         let string = source as NSString
-        guard GeometryRange.end(range).map({ $0 <= string.length }) == true, range.length > 0 else { return [] }
         let clusters = SourceClusterIndex(source: string)
-        let selectedClusters = clusters.overlapping(range)
-        guard let first = selectedClusters.first, let last = selectedClusters.last else { return [] }
-        let selectedRange = NSRange(location: first.location, length: NSMaxRange(last) - first.location)
+        self.clusters = clusters
         let placements = Dictionary(
-            (attachments.map { ($0.sourceLocation, $0.rect) }
-                + viewAttachments.map { ($0.sourceLocation, $0.rect) }),
+            (attachments.map { ($0.sourceLocation, $0.rect) } + viewAttachments.map { ($0.sourceLocation, $0.rect) }),
             uniquingKeysWith: { first, _ in first }
         )
-        return lines.enumerated().flatMap { lineIndex, line in
-            guard line.baseline.x.isFinite, line.baseline.y.isFinite else { return [VisibleTextFragment]() }
-            let visible = Set(line.visibleSourceRanges.flatMap { sourceRange -> [NSRange] in
-                guard let intersection = GeometryRange.intersection(sourceRange, selectedRange) else { return [] }
-                return clusters.overlapping(intersection).filter { GeometryRange.contains(sourceRange, $0) }
+        var cells: [Cell] = []
+        var glyphGroups: [GlyphGroup] = []
+        for (lineIndex, line) in lines.enumerated() {
+            guard line.baseline.x.isFinite, line.baseline.y.isFinite else { continue }
+            let visible = Set(line.visibleSourceRanges.flatMap { range in
+                clusters.overlapping(range).filter { GeometryRange.contains(range, $0) }
             })
-            guard !visible.isEmpty else { return [] }
-            let pieces = (CTLineGetGlyphRuns(line.text) as! [CTRun]).flatMap { run in
+            let pieces = (CTLineGetGlyphRuns(line.text) as! [CTRun]).enumerated().flatMap { runIndex, run in
                 VisibleRunGeometry(
-                    run: run, line: line, sourceLength: string.length, clusters: clusters
-                ).pieces(selected: visible, selectedRange: selectedRange, placements: placements)
+                    run: run, line: line, lineIndex: lineIndex, runIndex: runIndex,
+                    sourceLength: string.length, clusters: clusters
+                ).pieces(
+                    selected: visible,
+                    selectedRange: NSRange(location: 0, length: string.length),
+                    placements: placements,
+                    glyphGroups: &glyphGroups
+                )
             }
-            return VisibleRunGeometry.merge(pieces, lineIndex: lineIndex)
+            let grouped = Dictionary(grouping: pieces, by: \.sourceRange)
+            for range in grouped.keys.sorted(by: { $0.location < $1.location }) {
+                guard let pieces = grouped[range], pieces.contains(where: { $0.rect.width > 0 }) else { continue }
+                cells.append(.init(
+                    range: range, lineIndex: lineIndex,
+                    isWhitespace: string.substring(with: range).unicodeScalars.allSatisfy {
+                        CharacterSet.whitespacesAndNewlines.contains($0)
+                    }, pieces: pieces
+                ))
+            }
+        }
+        self.cells = cells
+        self.glyphGroups = glyphGroups
+    }
+
+    func fragments(in range: NSRange) -> [VisibleTextFragment] {
+        guard GeometryRange.end(range).map({ $0 <= source.utf16.count }) == true, range.length > 0 else { return [] }
+        let selected = Set(clusters.overlapping(range))
+        let lines = Dictionary(grouping: cells.filter { selected.contains($0.range) }, by: \.lineIndex)
+        return lines.keys.sorted().flatMap { line in
+            VisibleRunGeometry.merge(lines[line, default: []].flatMap(\.pieces), lineIndex: line)
         }
     }
 }
@@ -87,11 +165,14 @@ private enum GeometryRange {
 private struct VisibleRunGeometry {
     let run: CTRun
     let line: LYGlyphTextLayout.Line
+    let lineIndex: Int
+    let runIndex: Int
     let sourceLength: Int
     let clusters: SourceClusterIndex
 
     func pieces(
-        selected: Set<NSRange>, selectedRange: NSRange, placements: [Int: CGRect]
+        selected: Set<NSRange>, selectedRange: NSRange, placements: [Int: CGRect],
+        glyphGroups: inout [SourceGeometry.GlyphGroup]
     ) -> [VisibleTextFragment.RunPiece] {
         let count = CTRunGetGlyphCount(run)
         let range = CTRunGetStringRange(run)
@@ -99,10 +180,7 @@ private struct VisibleRunGeometry {
               let runEnd = GeometryRange.end(NSRange(location: range.location, length: range.length)),
               let originalStart = GeometryRange.shifted(range.location, by: line.sourceOffset),
               let originalEnd = GeometryRange.shifted(runEnd, by: line.sourceOffset),
-              originalStart >= 0, originalEnd >= originalStart,
-              GeometryRange.intersects(
-                  NSRange(location: originalStart, length: originalEnd - originalStart), selectedRange
-              )
+              originalStart >= 0, originalEnd >= originalStart
         else { return [] }
         let attributes = CTRunGetAttributes(run) as NSDictionary
         guard let fontValue = attributes[kCTFontAttributeName] else { return [] }
@@ -119,30 +197,39 @@ private struct VisibleRunGeometry {
         CTRunGetAdvances(run, CFRange(location: 0, length: 0), &advances)
         CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
         // 字形数与字符数没有对应关系；重复索引属于同一 shaping group。
-        let starts = Set(indices.filter { $0 >= range.location && $0 < runEnd }).sorted()
-        let groups = Dictionary(grouping: indices.indices, by: { indices[$0] })
+        let glyphStarts = Set(indices.filter { $0 >= range.location && $0 < runEnd })
+        let starts = glyphStarts.sorted()
+        let groups = GlyphShapingGroups.members(indices: indices)
         let rtl = CTRunGetStatus(run).contains(.rightToLeft)
         let runRange = NSRange(location: range.location, length: range.length)
         let finalLineRange = CTLineGetStringRange(line.text)
         let lineRange = NSRange(location: finalLineRange.location, length: finalLineRange.length)
         var result: [VisibleTextFragment.RunPiece] = []
         for (offset, start) in starts.enumerated() {
-            guard !(line.truncationTokenRange
-                .map { GeometryRange.contains($0, NSRange(location: start, length: 1)) } ?? false),
-                let original = GeometryRange.shifted(start, by: line.sourceOffset),
-                let end = GeometryRange.shifted(
-                    offset + 1 < starts.count ? starts[offset + 1] : runEnd,
-                    by: line.sourceOffset
-                ),
-                original >= 0, original < sourceLength, end > original,
-                let members = groups[start]
-            else { continue }
+            guard let original = GeometryRange.shifted(start, by: line.sourceOffset),
+                  let end = GeometryRange.shifted(
+                      offset + 1 < starts.count ? starts[offset + 1] : runEnd, by: line.sourceOffset
+                  ), let members = groups[start] else { continue }
+            let localEnd = offset + 1 < starts.count ? starts[offset + 1] : runEnd
+            let localRange = NSRange(location: start, length: localEnd - start)
+            if line.truncationTokenRange.map({ GeometryRange.intersects($0, localRange) }) == true {
+                glyphGroups.append(.init(
+                    lineIndex: lineIndex, runIndex: runIndex, localRange: localRange,
+                    glyphIndices: members, origin: .generatedToken, sourceCells: []
+                ))
+                continue
+            }
+            guard original >= 0, original < sourceLength, end > original else { continue }
             let covered = NSRange(location: original, length: min(end, sourceLength) - original)
+            glyphGroups.append(.init(
+                lineIndex: lineIndex, runIndex: runIndex, localRange: localRange,
+                glyphIndices: members, origin: .source(covered), sourceCells: Array(clusters.overlapping(covered))
+            ))
             guard GeometryRange.intersects(covered, selectedRange) else { continue }
             let candidates = clusters.overlapping(covered)
             guard candidates.contains(where: { selected.contains($0) }) else { continue }
             // caret 分区仍使用 glyph 覆盖的全部 cluster，不能只保留此次选中的字符。
-            let groupClusters = candidates.filter { !isZeroAdvanceControl($0) }
+            let groupClusters = candidates.filter { !isZeroAdvanceControl($0, glyphStarts: glyphStarts) }
             guard !groupClusters.isEmpty else { continue }
             let valid = members.filter {
                 positions[$0].x.isFinite && positions[$0].y.isFinite && advances[$0].width.isFinite
@@ -175,7 +262,9 @@ private struct VisibleRunGeometry {
                 }
                 guard glyphBaselines.allSatisfy({ $0.x.isFinite && $0.y.isFinite }) else { continue }
                 result.append(.init(
-                    sourceRange: cluster, lineRange: lineRange, runRange: runRange, font: font,
+                    sourceRange: cluster, lineIndex: lineIndex, runIndex: runIndex,
+                    glyphIndices: valid, groupSourceRange: covered, groupSourceCells: Array(candidates),
+                    lineRange: lineRange, runRange: runRange, font: font,
                     baseline: baseline, glyphBaselines: glyphBaselines, rect: rect
                 ))
             }
@@ -183,18 +272,20 @@ private struct VisibleRunGeometry {
         return result
     }
 
-    private func isZeroAdvanceControl(_ cluster: NSRange) -> Bool {
+    private func isZeroAdvanceControl(_ cluster: NSRange, glyphStarts: Set<CFIndex>) -> Bool {
         if clusters.isSeparator(cluster) { return true }
         guard clusters.isDefaultIgnorable(cluster) else { return false }
         let start = cluster.location.subtractingReportingOverflow(line.sourceOffset)
         let end = NSMaxRange(cluster).subtractingReportingOverflow(line.sourceOffset)
         guard !start.overflow, !end.overflow else { return true }
+        // Core Text 可把忽略字符吞入前一个 glyph 的 coverage；缺失索引的 caret 可能返回整个 glyph。
+        guard glyphStarts.contains(start.partialValue) else { return true }
         var secondaryStart: CGFloat = 0
         var secondaryEnd: CGFloat = 0
         let primaryStart = CTLineGetOffsetForStringIndex(line.text, start.partialValue, &secondaryStart)
         let primaryEnd = CTLineGetOffsetForStringIndex(line.text, end.partialValue, &secondaryEnd)
-        // shaping 可能完全省去控制字符的 glyph；不能把它误认为连字中的一个可见 grapheme。
-        return primaryStart == primaryEnd && secondaryStart == secondaryEnd
+        // 双向边界的两个 caret 通道可能只有其中一个表示这个零 advance 字符。
+        return primaryStart == primaryEnd || secondaryStart == secondaryEnd
     }
 
     private func caretBoundaries(
@@ -371,5 +462,12 @@ struct SourceClusterIndex {
 
     func isObjectReplacement(_ range: NSRange) -> Bool {
         objectReplacements.contains(range)
+    }
+}
+
+/// 保留原 glyph 序号；字符串索引允许 RTL 非单调以及分散的重复值。
+enum GlyphShapingGroups {
+    static func members(indices: [CFIndex]) -> [CFIndex: [Int]] {
+        Dictionary(grouping: indices.indices, by: { indices[$0] })
     }
 }

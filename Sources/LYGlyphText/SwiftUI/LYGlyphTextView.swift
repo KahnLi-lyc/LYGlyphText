@@ -15,17 +15,22 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 默认 nil 使用自然高度；有限非负值（包含 0）直接作为展示高度，其他值回退自然高度。
     public var displayHeight: CGFloat?
 
+    /// 动作完成回调；每次更新都使用最新闭包。
+    public var onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)?
+
     /// 创建富文本展示。SwiftUI 的 layoutPriority 由宿主管理。
     public init(
         document: LYGlyphTextDocument?,
         configuration: LYGlyphTextConfiguration = .init(),
         viewProvider: LYGlyphTextAttachmentViewProvider? = nil,
-        displayHeight: CGFloat? = nil
+        displayHeight: CGFloat? = nil,
+        onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil
     ) {
         self.document = document
         self.configuration = configuration
         self.viewProvider = viewProvider
         self.displayHeight = displayHeight
+        self.onAction = onAction
     }
 
     /// 创建底层 UIKit 视图。
@@ -55,6 +60,7 @@ public struct LYGlyphTextView: UIViewRepresentable {
     }
 
     private func apply(to label: LYGlyphTextLabel) {
+        label.onAction = onAction
         label.configuration = configuration
         label.document = document
         label.viewProvider = viewProvider

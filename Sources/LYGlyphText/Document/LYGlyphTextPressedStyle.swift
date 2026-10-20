@@ -1,6 +1,6 @@
 import UIKit
 
-/// MainActor 上的不可变动作按下样式；当前仅保存数据，尚不触发高亮绘制。
+/// MainActor 上的不可变动作按下样式；I1 绘制阶段消费颜色，高亮不改变排版度量。
 @MainActor
 public struct LYGlyphTextPressedStyle {
     /// 按下时的前景色；默认 nil，表示沿用原样式。

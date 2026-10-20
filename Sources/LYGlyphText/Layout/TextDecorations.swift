@@ -5,6 +5,18 @@ import UIKit
 @MainActor
 struct TextDecorations {
     enum PreparationEvent: Hashable {
+        case drawCachedContent
+        case drawingPlan
+        case glyphPaintRecord
+        case glyphImageBoundsQuery
+        case glyphDrawCall
+        case selectionPreparation
+        case paintMemberQuery
+        case paintRegion
+        case barrierMemberVisit
+        case activeRectCheck
+        case strokeIntervalDraw
+        case sourceSnapshot
         case geometryQuery
         case visiblePiece
         case styleComparison
@@ -18,6 +30,8 @@ struct TextDecorations {
         let underlineColor: CGColor
         let strikethroughStyle: Int
         let strikethroughColor: CGColor
+        var underlineColorIsInherited = false
+        var strikethroughColorIsInherited = false
     }
 
     let source: String
@@ -25,24 +39,34 @@ struct TextDecorations {
     let scale: CGFloat
 
     /// 原生像素探针确认 byWord 被忽略，pattern 长度也不遵循字体 underline thickness 单位。
-    /// 普通 solid single/thick/double 仍由原始 CTLine 绘制。
+    /// shaping 属性保留原生 solid 值；最终普通和按压下划线统一消费缓存路径。
     static func needsUnderlineFallback(_ style: Int) -> Bool {
         style & NSUnderlineStyle.byWord.rawValue != 0 || style & 0xF00 != 0
     }
 
-    /// 一次 draw 仅查询最终可见几何一次；观察参数不逃逸、不存储，仅供确定性工作量测试。
+    /// 兼容独立装饰测试的准备入口；生产 Layout 在构造时直接传入已缓存的片段。
     func prepare(
         in layout: LYGlyphTextLayout, observe: (PreparationEvent) -> Void = { _ in }
     ) -> Prepared {
+        prepare(fragments: layout.visibleTextFragments(
+            in: NSRange(location: 0, length: source.utf16.count), source: source
+        ), observe: observe)
+    }
+
+    func prepare(
+        fragments: [VisibleTextFragment], observe: (PreparationEvent) -> Void = { _ in }
+    ) -> Prepared {
         guard styles.contains(where: {
-            $0.background != nil || $0.strikethroughStyle & 0xF != 0
-                || Self.needsUnderlineFallback($0.underlineStyle) && $0.underlineStyle & 0xF != 0
-        }) else { return Prepared(fills: [], groups: [], scale: scale) }
+            $0.background != nil || $0.strikethroughStyle & 0xF != 0 || $0.underlineStyle & 0xF != 0
+        }) else { return Prepared(
+            fills: [],
+            groups: [],
+            nativeUnderlineGroups: [],
+            strokes: [],
+            allGroups: [],
+            scale: scale
+        ) }
         observe(.geometryQuery)
-        let fragments = layout.visibleTextFragments(
-            in: NSRange(location: 0, length: source.utf16.count),
-            source: source
-        )
         var selected: [Int: [LocatedPiece]] = [:]
         for fragment in fragments {
             for piece in fragment.runs {
@@ -66,51 +90,89 @@ struct TextDecorations {
         }
         let string = source as NSString
         var fills: [Fill] = []
+        var primitives: [Stroke] = []
         var underlines: [Int: LineGroups] = [:]
         var strikes: [Int: LineGroups] = [:]
+        var nativeUnderlines: [Int: LineGroups] = [:]
+        var allUnderlines: [Int: LineGroups] = [:]
         for index in selected.keys.sorted() {
             guard let pieces = selected[index] else { continue }
             let style = styles[index]
             if let color = style.background {
                 let rects = pieces.map(\.piece.rect)
-                if let last = fills.last, last.color == color { fills[fills.count - 1].rects.append(contentsOf: rects) }
-                else { fills.append(.init(color: color, rects: rects)) }
+                let members = pieces.map { Member(styleIndex: index, piece: $0.piece) }
+                if let last = fills.last, last.color == color {
+                    fills[fills.count - 1].rects.append(contentsOf: rects)
+                    fills[fills.count - 1].members.append(contentsOf: members)
+                } else { fills.append(.init(color: color, rects: rects, members: members)) }
             }
             let underline = Self.needsUnderlineFallback(style.underlineStyle) && style.underlineStyle & 0xF != 0
-            guard underline || style.strikethroughStyle & 0xF != 0 else { continue }
+            guard style.underlineStyle & 0xF != 0 || style.strikethroughStyle & 0xF != 0 else { continue }
             for located in pieces {
                 let piece = located.piece
                 let whitespace = string.substring(with: piece.sourceRange).unicodeScalars.allSatisfy {
                     CharacterSet.whitespacesAndNewlines.contains($0)
                 }
                 let unit = max(CTFontGetUnderlineThickness(piece.font), 1 / scale)
-                if underline, style.underlineStyle & NSUnderlineStyle.byWord.rawValue == 0 || !whitespace {
-                    underlines[located.line, default: LineGroups()].append(Stroke(
+                if style.underlineStyle & 0xF != 0,
+                   style.underlineStyle & NSUnderlineStyle.byWord.rawValue == 0 || !whitespace
+                {
+                    let stroke = Stroke(
                         line: located.line, rect: piece.rect,
                         center: piece.baseline.y - CTFontGetUnderlinePosition(piece.font), unit: unit,
-                        style: style.underlineStyle, color: style.underlineColor
-                    ), scale: scale, observe: observe)
+                        style: style.underlineStyle, color: style.underlineColor,
+                        kind: .underline, colorIsInherited: style.underlineColorIsInherited,
+                        member: .init(styleIndex: index, piece: piece)
+                    )
+                    primitives.append(stroke)
+                    allUnderlines[located.line, default: LineGroups()].append(stroke, scale: scale, observe: observe)
+                    if underline {
+                        underlines[located.line, default: LineGroups()].append(stroke, scale: scale, observe: observe)
+                    } else {
+                        nativeUnderlines[located.line, default: LineGroups()].append(
+                            stroke,
+                            scale: scale,
+                            observe: observe
+                        )
+                    }
                 }
                 if style.strikethroughStyle & 0xF != 0,
                    style.strikethroughStyle & NSUnderlineStyle.byWord.rawValue == 0 || !whitespace
                 {
-                    strikes[located.line, default: LineGroups()].append(Stroke(
+                    let stroke = Stroke(
                         line: located.line, rect: piece.rect,
                         center: piece.baseline.y - CTFontGetXHeight(piece.font) / 2, unit: unit,
-                        style: style.strikethroughStyle, color: style.strikethroughColor
-                    ), scale: scale, observe: observe)
+                        style: style.strikethroughStyle, color: style.strikethroughColor,
+                        kind: .strikethrough, colorIsInherited: style.strikethroughColorIsInherited,
+                        member: .init(styleIndex: index, piece: piece)
+                    )
+                    primitives.append(stroke)
+                    strikes[located.line, default: LineGroups()].append(stroke, scale: scale, observe: observe)
                 }
             }
         }
         // 两类线分别准备，避免 underline/strike 交织使连续样式的 dash 在每字重置。
         let groups = underlines.keys.sorted().flatMap { underlines[$0]?.groups ?? [] }
             + strikes.keys.sorted().flatMap { strikes[$0]?.groups ?? [] }
-        return Prepared(fills: fills, groups: groups, scale: scale)
+        let nativeGroups = nativeUnderlines.keys.sorted().flatMap { nativeUnderlines[$0]?.groups ?? [] }
+        return Prepared(
+            fills: fills,
+            groups: groups.map { $0.finalized(scale: scale) },
+            nativeUnderlineGroups: nativeGroups.map { $0.finalized(scale: scale) },
+            strokes: primitives,
+            allGroups: (allUnderlines.keys.sorted().flatMap { allUnderlines[$0]?.groups ?? [] }
+                + strikes.keys.sorted().flatMap { strikes[$0]?.groups ?? [] }).map { $0.finalized(scale: scale) },
+            scale: scale
+        )
     }
 
     struct Prepared {
-        fileprivate let fills: [Fill]
-        fileprivate let groups: [StrokeGroup]
+        let fills: [Fill]
+        let groups: [StrokeGroup]
+        /// 原生 solid underline 的独立归属快照；最终绘制消费包含它们的 allGroups。
+        let nativeUnderlineGroups: [StrokeGroup]
+        let strokes: [Stroke]
+        let allGroups: [StrokeGroup]
         fileprivate let scale: CGFloat
 
         func drawBackgrounds(in context: CGContext) {
@@ -139,9 +201,15 @@ struct TextDecorations {
         let piece: VisibleTextFragment.RunPiece
     }
 
-    fileprivate struct Fill {
+    struct Member {
+        let styleIndex: Int
+        let piece: VisibleTextFragment.RunPiece
+    }
+
+    struct Fill {
         let color: CGColor
         var rects: [CGRect]
+        var members: [Member]
     }
 
     private struct StrokeKey: Hashable {
@@ -183,6 +251,7 @@ struct TextDecorations {
             let index: Int
             if let existing = active[key], existing >= barrier {
                 groups[existing].intervals.append(stroke.interval)
+                groups[existing].members.append(stroke)
                 index = existing
             } else {
                 index = groups.count
@@ -299,7 +368,11 @@ struct TextDecorations {
         }
     }
 
-    fileprivate struct Stroke {
+    struct Stroke {
+        enum Kind { case underline, strikethrough }
+        let kind: Kind
+        let colorIsInherited: Bool
+        let member: Member
         let line: Int
         let interval: ClosedRange<CGFloat>
         let center: CGFloat
@@ -307,7 +380,13 @@ struct TextDecorations {
         let style: Int
         let color: CGColor
 
-        init(line: Int, rect: CGRect, center: CGFloat, unit: CGFloat, style: Int, color: CGColor) {
+        init(
+            line: Int, rect: CGRect, center: CGFloat, unit: CGFloat, style: Int, color: CGColor,
+            kind: Kind, colorIsInherited: Bool, member: Member
+        ) {
+            self.kind = kind
+            self.colorIsInherited = colorIsInherited
+            self.member = member
             self.line = line
             interval = rect.minX ... rect.maxX
             self.center = center
@@ -329,16 +408,21 @@ struct TextDecorations {
         }
     }
 
-    fileprivate struct StrokeGroup {
+    struct StrokeGroup {
         let stroke: Stroke
         var intervals: [ClosedRange<CGFloat>]
+        var members: [Stroke]
+        private(set) var mergedIntervals: [ClosedRange<CGFloat>] = []
+        private var centers: [CGFloat] = []
+        private var dashLengths: [CGFloat] = []
 
         init(_ stroke: Stroke) {
             self.stroke = stroke
             intervals = [stroke.interval]
+            members = [stroke]
         }
 
-        func draw(in context: CGContext, scale: CGFloat) {
+        func finalized(scale: CGFloat) -> Self {
             var merged: [ClosedRange<CGFloat>] = []
             for interval in intervals.sorted(by: { $0.lowerBound < $1.lowerBound }) {
                 if let last = merged.last, interval.lowerBound <= last.upperBound + 0.000001 {
@@ -347,8 +431,9 @@ struct TextDecorations {
                     merged.append(interval)
                 }
             }
+            var result = self
+            result.mergedIntervals = merged
             let unit = stroke.unit
-            let width = stroke.width
             let centers = stroke.verticalIntervals(scale: scale).map { ($0.lowerBound + $0.upperBound) / 2 }
             let pattern: [CGFloat] = switch stroke.style & 0xF00 {
             case NSUnderlineStyle.patternDot.rawValue: [1, 2]
@@ -357,17 +442,29 @@ struct TextDecorations {
             case NSUnderlineStyle.patternDashDotDot.rawValue: [4, 2, 1, 2, 1, 2]
             default: []
             }
-            context.setStrokeColor(stroke.color)
-            context.setLineWidth(width)
+            result.centers = centers
+            result.dashLengths = pattern.map { $0 * unit }
+            return result
+        }
+
+        func draw(
+            in context: CGContext,
+            scale _: CGFloat,
+            color: CGColor? = nil,
+            observe: (PreparationEvent) -> Void = { _ in }
+        ) {
+            context.setStrokeColor(color ?? stroke.color)
+            context.setLineWidth(stroke.width)
             context.setLineCap(.butt)
-            context.setLineDash(phase: 0, lengths: pattern.map { $0 * unit })
-            for interval in merged {
+            context.setLineDash(phase: 0, lengths: dashLengths)
+            for interval in mergedIntervals {
                 for center in centers {
                     // 仅对绘制边缘做像素对齐，源矩形和 CTLine 均不改写。
                     let y = center
                     context.beginPath()
                     context.move(to: CGPoint(x: interval.lowerBound, y: y))
                     context.addLine(to: CGPoint(x: interval.upperBound, y: y))
+                    observe(.strokeIntervalDraw)
                     context.strokePath()
                 }
             }

@@ -2,12 +2,12 @@
 
 面向 UIKit 与 SwiftUI 的只读富文本 Swift Package，使用纯 Swift 和 Core Text，零第三方运行依赖。最低部署目标 iOS 16，Swift tools 6.0／Swift 6 language mode。
 
-当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制／尾部省略、行内图片及 UIView 附件**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。文字点击／长按尚待实现。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
+当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制／尾部省略、行内图片及 UIView 附件，以及文字点击／长按／按下反馈**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
 
 ## 已实现
 
 - MainActor 不可变 `LYGlyphTextDocument`：隔离复制输入字符串及段落样式。
-- `init(segments:)` 自动累计 UTF-16 附件和动作范围；`actions` 输入校验非空 ID、完整字符边界及范围重叠。当前动作仅为描述数据。
+- `init(segments:)` 自动累计 UTF-16 附件和动作范围；`actions` 输入校验非空 ID、完整字符边界及范围重叠。
 - 字体、前景／背景色、字距、基线偏移、连字、下划线／删除线及段落度量；缺省动态 body 字体和 label 颜色。显式字号保持固定。
 - 多行单词／字符换行、显式换行、中英文与 emoji、内边距及三种垂直对齐；证据见 [M1b 记录](docs/verification/2026-10-20-m1b-styles.md)。
 - `configuration.numberOfLines`：0 或负值为无限行，正值限制显示行数；溢出时末行尾部显示 `…`。
@@ -16,7 +16,8 @@
 - Core Text 统一测量、截断和绘制，内部保留可见原文 UTF-16 区间并单独标记生成的省略号；每个 Label 最多缓存两份布局。
 - `intrinsicContentSize`、`sizeThatFits`、`preferredMaxLayoutWidth`、required 横向宽度的 `systemLayoutSizeFitting`。
 - 标准 Content Hugging／Compression Resistance，内容更新不会重置宿主设置；外部限制高度时裁切。
-- `LYGlyphTextView` 通过 UIViewRepresentable 复用 UIKit；直接使用 SwiftUI 宽度提议。
+- `LYGlyphTextLabel.onAction` 和 SwiftUI `onAction` 返回 tap／longPress、动作 ID、完整原文 UTF-16 范围及最终可见矩形；取消不发送事件。
+- `LYGlyphTextView` 通过 UIViewRepresentable 复用 UIKit；直接使用 SwiftUI 宽度提议并在更新时使用最新动作回调。
 - UIKit／SwiftUI 可操作示例、组件行为测试、宿主测试和 UI 测试。
 
 ## 本地接入
@@ -36,7 +37,18 @@ func installText(in container: UIView) throws {
         attributes: [.font: UIFont.systemFont(ofSize: 20), .foregroundColor: UIColor.label]
     )
     let label = LYGlyphTextLabel(frame: .zero)
-    label.document = try LYGlyphTextDocument(attributedText: input)
+    label.onAction = { event in
+        print(event.kind, event.actionID, event.range, event.visibleRects)
+    }
+    label.document = try LYGlyphTextDocument(
+        attributedText: input,
+        actions: [
+            LYGlyphTextAction(
+                actionID: "glyphtext",
+                range: (input.string as NSString).range(of: "GlyphText")
+            )
+        ]
+    )
     label.configuration = .init(
         textContainerInset: .init(top: 8, left: 12, bottom: 8, right: 12),
         numberOfLines: 3
@@ -63,7 +75,11 @@ struct Example: View {
     let document: LYGlyphTextDocument
 
     var body: some View {
-        LYGlyphTextView(document: document, configuration: .init(numberOfLines: 2))
+        LYGlyphTextView(
+            document: document,
+            configuration: .init(numberOfLines: 2),
+            onAction: { event in print(event.kind, event.actionID) }
+        )
             .frame(width: 240, alignment: .leading)
     }
 }
@@ -108,7 +124,7 @@ LYGlyphTextView(
 
 背景、删除线及必要的下划线回退消费最终可见源片段，生成省略号不继承装饰。当前系统的原生 byWord 和 pattern 间隔未满足契约，因此由内部绘制；普通实线下划线保留 Core Text 路径。图片与 UIView 绘制在装饰上方。
 
-内部片段保留实际 shaping。连字内部优先使用系统 caret；没有可用边界时按完整字符簇等分 advance，RTL 反向。此规则仅用于几何，不拆字形或禁用连字。文字手势及按下反馈仍待 I1。
+内部片段保留实际 shaping。连字内部优先使用系统 caret；没有可用边界时按完整字符簇等分 advance，RTL 反向。此规则用于统一动作几何，不拆字形或禁用连字。按下绘制复用同一最终 CTLine 和预计算几何，图片与 UIView 附件不染色。
 
 ## 行内图片
 
@@ -149,7 +165,9 @@ func segmentedDocument(image: UIImage) throws -> LYGlyphTextDocument {
 
 每个带 actionID 的片段产生独立动作，相邻同 ID 不合并；需要跨片段的单个动作时，使用 `init(attributedText:attachments:viewAttachments:actions:)` 并显式传入 `LYGlyphTextAction`。范围使用原文 UTF-16；从 Swift 范围转换应使用 `NSRange(swiftRange, in: originalText)`，文档仍会统一校验。
 
-拒绝空 ID、空／负／越界／溢出范围、切开的组合字符（含 emoji、重音和 CRLF）及重叠动作；相邻范围和重复 ID 允许，ID 不裁剪或改变大小写。按下样式只保存可选前景／背景色，默认背景为 tertiarySystemFill，不改变字体或附件尺寸。**M1a 只提供输入描述与校验，文字点击、长按和高亮尚未实现。**
+拒绝空 ID、空／负／越界／溢出范围、切开的组合字符（含 emoji、重音和 CRLF）及重叠动作；相邻范围和重复 ID 允许，ID 不裁剪或改变大小写。按下样式只保存可选前景／背景色，默认背景为 tertiarySystemFill，不改变字体或附件尺寸。
+
+Label 仅在最终可见动作矩形内开始手势：抬起发送一次 tap，持续 0.5 秒发送一次 longPress；移动超过 10pt、滚动接管、第二触点、输入或显示几何变化、层级移除及 SwiftUI 拆卸都会取消并立即恢复普通绘制。事件范围始终是完整原文范围，`visibleRects` 只包含当前真实可见部分，不包含生成的省略号。交互 UIView 子树优先处理自身触摸；普通文字、行尾／行间空白和内边距仍交给宿主选择与滚动。
 
 ## 行内 UIView
 
@@ -184,7 +202,7 @@ func installButtonAttachment(on label: LYGlyphTextLabel) throws {
 
 相同 provider 对象重赋值不重建；替换 provider 或调用 `reloadAttachments()` 显式刷新。nil／被拒绝的工厂结果在本次持续可见期间不重试。每次成功挂载对应一次原 provider 的 onUnmount，未挂载的失败结果没有卸载回调。文档清空保留 provider，移出 window 卸载，SwiftUI dismantle 同时清空文档和 provider。
 
-SwiftUI 使用 `LYGlyphTextView(document: document, viewProvider: provider)`，将 provider 保存在稳定的宿主状态中，避免在 body 每次求值时创建新工厂对象。两个 Label 使用同一文档时，工厂必须分别返回独立视图。默认 isInteractive 为 false；true 仅允许附件自身控件／手势响应，文字动作仍待后续实现。
+SwiftUI 使用 `LYGlyphTextView(document: document, viewProvider: provider)`，将 provider 保存在稳定的宿主状态中，避免在 body 每次求值时创建新工厂对象。两个 Label 使用同一文档时，工厂必须分别返回独立视图。默认 isInteractive 为 false；true 允许附件自身控件／手势优先响应，父文字动作不重复发送。
 
 ## 运行 Demo 和检查
 
@@ -198,13 +216,13 @@ scripts/verify.sh test <可用的独立模拟器UDID>
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
-build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；首页另有 UITableView 复用示例。两端共用本地生成的方向箭头图片与文档，无网络依赖；UIKit 另含富文本与按钮并排场景。工程生成物、构建日志和 xcresult 留在忽略目录内。
+build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；动作示例覆盖 tap、长按、滚动取消、回调替换、截断与短高度裁切；首页另有可选择的 UITableView 动作夹具和附件复用示例。两端共用本地生成的方向箭头图片与文档，无网络依赖。工程生成物、构建日志和 xcresult 留在忽略目录内。
 
 test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测试视为失败。Package 单测源码也由 Demo 宿主执行，避免用 macOS `swift test` 代替 UIKit 验证。
 
 ## 后续能力
 
-尚未实现：文字局部点击、长按、高亮和装饰属性。编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。
+尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。完整宿主矩阵与动作 VoiceOver 元素分别留待 H1／A1。
 
 当前已处理默认字体和语义颜色的 trait 更新；完整 Dynamic Type、RTL、VoiceOver、列表复用和最低系统验收继续按阶段推进。原生约束与 SwiftUI 基础尺寸适配已实现，不等于所有宿主组合均已验证。
 
@@ -213,6 +231,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 - [总实施计划与阶段验收](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md)
 - [连续开发规则与执行契约](docs/superpowers/plans/2026-10-20-continuous-development.md)
 - [分段与动作描述验证记录](docs/verification/2026-10-20-m1a-document.md)
+- [文字交互验证记录](docs/verification/2026-10-20-interaction.md)
 - [UIView 附件与生命周期验证记录](docs/verification/2026-10-20-view-attachments.md)
 - [行内图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)
 - [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)

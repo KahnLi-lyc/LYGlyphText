@@ -4,11 +4,24 @@ import UIKit
 /// 只读富文本视图，使用 Core Text 排版与绘制，支持宽度驱动的 Auto Layout 高度。
 @MainActor
 public final class LYGlyphTextLabel: UIView {
+    /// 动作完成回调；置 nil 会立即取消当前按压，替换非空回调不会中断同一序列。
+    public var onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? {
+        didSet {
+            if isTearingDown, onAction != nil {
+                onAction = nil
+                return
+            }
+            if onAction == nil { cancelActionInteraction() }
+        }
+    }
+
     /// 当前不可变文档。设为 nil 时清空显示并重新计算尺寸。
     public var document: LYGlyphTextDocument? {
         didSet {
             guard !isTearingDown else { return }
             if oldValue !== document {
+                documentRevision &+= 1
+                cancelActionInteraction()
                 invalidateText()
                 resetAttachments()
             }
@@ -32,7 +45,11 @@ public final class LYGlyphTextLabel: UIView {
     /// 当前显示配置。更新后清除布局缓存并重新计算固有尺寸。
     public var configuration = LYGlyphTextConfiguration() {
         didSet {
-            if oldValue != configuration { invalidateText() }
+            if oldValue != configuration {
+                geometryRevision &+= 1
+                cancelActionInteraction()
+                invalidateText()
+            }
         }
     }
 
@@ -60,12 +77,47 @@ public final class LYGlyphTextLabel: UIView {
     private var isReconcilingAttachments = false
     private var isTearingDown = false
     private var attachmentCleanupDepth = 0
+    private struct PressSession {
+        let actionIndex: Int
+        let documentRevision: UInt64
+        let geometryRevision: UInt64
+        let ancestorScrollPanIDs: Set<ObjectIdentifier>
+        let origin: CGPoint
+        var latestPoint: CGPoint
+        let sequenceID: UInt64
+        let usesRecognizer: Bool
+    }
+
+    private var pressSession: PressSession?
+    private var actionTimer: ActionGestureTimer?
+    private var nextSequenceID: UInt64 = 0
+    private var documentRevision: UInt64 = 0
+    private var geometryRevision: UInt64 = 0
+    private var actionRecognizer: ActionGestureRecognizer?
+    private lazy var scrollObserver = ActionScrollObserver(owner: self)
+    private var observedScrollViews: [ObservedScrollView] = []
+    var actionClock: ActionGestureClock = SystemActionGestureClock.shared {
+        didSet {
+            if oldValue !== actionClock { cancelActionInteraction() }
+        }
+    }
+
     private static let attachmentLogger = Logger(subsystem: "LYGlyphText", category: "Attachments")
+
+    var pressedActionIndex: Int? {
+        pressSession?.actionIndex
+    }
+
+    var observedScrollViewCount: Int {
+        observedScrollViews.count
+    }
 
     /// bounds 原点也参与附件裁切；几何变化不重建持续可见的视图。
     override public var bounds: CGRect {
         didSet {
             if oldValue != bounds {
+                geometryRevision &+= 1
+                cancelActionInteraction()
                 attachmentRevision &+= 1
                 setNeedsLayout()
                 setNeedsDisplay()
@@ -83,6 +135,9 @@ public final class LYGlyphTextLabel: UIView {
             setContentHuggingPriority(.defaultLow, for: axis)
             setContentCompressionResistancePriority(.defaultHigh, for: axis)
         }
+        let recognizer = ActionGestureRecognizer(owner: self)
+        actionRecognizer = recognizer
+        addGestureRecognizer(recognizer)
     }
 
     /// 当前仅支持代码创建，不支持 Storyboard 和归档恢复。
@@ -144,7 +199,14 @@ public final class LYGlyphTextLabel: UIView {
     /// 离开 window 即卸载，重新进入后在展示布局重建。
     override public func didMoveToWindow() {
         super.didMoveToWindow()
+        cancelActionInteraction()
         if window == nil { resetAttachments() } else { setNeedsLayout() }
+    }
+
+    /// 层级变化会使祖先滚动观察和触摸归属失效。
+    override public func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        cancelActionInteraction()
     }
 
     /// 绘制与测量共用布局结果，高度不足时裁切，不自动缩小字体。
@@ -157,13 +219,15 @@ public final class LYGlyphTextLabel: UIView {
         context.clip(to: bounds)
         context.clip(to: geometry.contentClip)
         context.translateBy(x: geometry.translation.x, y: geometry.translation.y)
-        layout.draw(in: context)
+        layout.draw(in: context, pressedActionIndex: pressedActionIndex)
         context.restoreGState()
     }
 
     /// 更新默认 body 字体、动态颜色及显示比例后重新排版。
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
+        geometryRevision &+= 1
+        cancelActionInteraction()
         invalidateText()
     }
 
@@ -193,9 +257,12 @@ public final class LYGlyphTextLabel: UIView {
         guard !isTearingDown else { return }
         isTearingDown = true
         defer { isTearingDown = false }
+        cancelActionInteraction()
+        onAction = nil
         document = nil
         viewProvider = nil
         resetAttachments()
+        onAction = nil
         document = nil
         viewProvider = nil
         invalidateText()
@@ -220,6 +287,7 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     private func resetAttachments() {
+        cancelActionInteraction()
         attachmentRevision &+= 1
         failedAttachmentIDs.removeAll()
         let removed = Array(mountedAttachments.values)
@@ -246,6 +314,7 @@ public final class LYGlyphTextLabel: UIView {
         let visibleIDs = Set(placements.map(\.0.attachment.id))
         failedAttachmentIDs.formIntersection(visibleIDs)
         let hiddenIDs = Set(mountedAttachments.keys).subtracting(visibleIDs)
+        if !hiddenIDs.isEmpty { cancelActionInteraction() }
         let removed = hiddenIDs.compactMap { mountedAttachments.removeValue(forKey: $0) }
         unmount(removed)
         guard revision == attachmentRevision, window != nil, let provider = viewProvider else { return }
@@ -285,6 +354,7 @@ public final class LYGlyphTextLabel: UIView {
             candidate.isUserInteractionEnabled = descriptor.isInteractive
             candidate.frame = rect
             guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
+            cancelActionInteraction()
             mountedAttachments[descriptor.id] = MountedAttachment(
                 descriptor: descriptor, view: candidate, provider: provider
             )
@@ -308,6 +378,177 @@ public final class LYGlyphTextLabel: UIView {
         cachedLayouts.insert((width, layout), at: 0)
         if cachedLayouts.count > 2 { cachedLayouts.removeLast() }
         return layout
+    }
+
+    func shouldReceiveActionTouch(at point: CGPoint, touchedView: UIView?) -> Bool {
+        if pressSession != nil {
+            cancelActionInteraction()
+            return false
+        }
+        return actionEntry(at: point, touchedView: touchedView) != nil
+    }
+
+    @discardableResult
+    func beginActionInteraction(at point: CGPoint, touchedView: UIView?, fromRecognizer: Bool = false) -> Bool {
+        guard pressSession == nil else {
+            cancelActionInteraction()
+            return false
+        }
+        guard let entry = actionEntry(at: point, touchedView: touchedView) else { return false }
+        let scrollViews = ancestorScrollViews()
+        guard !scrollViews.contains(where: isScrollViewActive) else { return false }
+        nextSequenceID &+= 1
+        let sequenceID = nextSequenceID
+        pressSession = PressSession(
+            actionIndex: entry.actionIndex,
+            documentRevision: documentRevision,
+            geometryRevision: geometryRevision,
+            ancestorScrollPanIDs: scrollPanIDs(for: scrollViews),
+            origin: point,
+            latestPoint: point,
+            sequenceID: sequenceID,
+            usesRecognizer: fromRecognizer
+        )
+        bindScrollObservers(scrollViews)
+        actionTimer = actionClock.schedule(after: 0.5, sequenceID: sequenceID) { [weak self] value in
+            self?.longPressTimerFired(sequenceID: value)
+        }
+        setNeedsDisplay()
+        return true
+    }
+
+    func moveActionInteraction(to point: CGPoint) {
+        guard var session = pressSession else { return }
+        session.latestPoint = point
+        pressSession = session
+        let distance = hypot(point.x - session.origin.x, point.y - session.origin.y)
+        guard distance <= 10, validatedEntry(for: session, at: point) != nil else {
+            cancelActionInteraction()
+            return
+        }
+    }
+
+    func endActionInteraction(at point: CGPoint) {
+        guard var session = pressSession else { return }
+        session.latestPoint = point
+        pressSession = session
+        guard let entry = validatedEntry(for: session, at: point), let callback = onAction else {
+            cancelActionInteraction()
+            return
+        }
+        let event = entry.event(kind: .tap)
+        finishActionInteraction(succeeded: true)
+        callback(event)
+    }
+
+    func cancelActionInteraction(transitionRecognizer: Bool = true) {
+        guard pressSession != nil || actionTimer != nil || !observedScrollViews.isEmpty else { return }
+        finishActionInteraction(succeeded: false, transitionRecognizer: transitionRecognizer)
+    }
+
+    func ancestorScrollDidChange(_ recognizer: UIPanGestureRecognizer) {
+        guard let observed = observedScrollViews.first(where: { $0.panGestureRecognizer === recognizer }),
+              recognizer.state == .began || recognizer.state == .changed
+              || observed.scrollView.map(isScrollViewActive) == true
+        else { return }
+        cancelActionInteraction()
+    }
+
+    func isAncestorScrollPan(_ recognizer: UIGestureRecognizer) -> Bool {
+        ancestorScrollViews().contains { $0.panGestureRecognizer === recognizer }
+    }
+
+    private func longPressTimerFired(sequenceID: UInt64) {
+        guard let session = pressSession, session.sequenceID == sequenceID else { return }
+        guard let entry = validatedEntry(for: session, at: session.latestPoint), let callback = onAction else {
+            cancelActionInteraction()
+            return
+        }
+        let event = entry.event(kind: .longPress)
+        finishActionInteraction(succeeded: true)
+        callback(event)
+    }
+
+    private func finishActionInteraction(succeeded: Bool, transitionRecognizer: Bool = true) {
+        guard let session = pressSession else {
+            actionTimer?.cancel()
+            actionTimer = nil
+            unbindScrollObservers()
+            return
+        }
+        pressSession = nil
+        actionTimer?.cancel()
+        actionTimer = nil
+        unbindScrollObservers()
+        setNeedsDisplay()
+        if transitionRecognizer, session.usesRecognizer {
+            actionRecognizer?.finishRecognition(succeeded: succeeded)
+        }
+    }
+
+    private func actionEntry(at point: CGPoint, touchedView: UIView?) -> ActionGeometry.Entry? {
+        guard !isTearingDown, window != nil, document != nil, onAction != nil,
+              bounds.width.isFinite, bounds.height.isFinite, bounds.width > 0, bounds.height > 0,
+              !isInteractiveAttachmentTarget(touchedView)
+        else { return nil }
+        let layout = measuredLayout(width: max(0, bounds.width))
+        return ActionGeometry(layout: layout, bounds: bounds, configuration: configuration).hit(at: point)
+    }
+
+    private func validatedEntry(for session: PressSession, at point: CGPoint) -> ActionGeometry.Entry? {
+        let scrollViews = ancestorScrollViews()
+        guard session.documentRevision == documentRevision, session.geometryRevision == geometryRevision,
+              session.ancestorScrollPanIDs == scrollPanIDs(for: scrollViews),
+              !scrollViews.contains(where: isScrollViewActive),
+              let entry = actionEntry(at: point, touchedView: nil), entry.actionIndex == session.actionIndex
+        else { return nil }
+        return entry
+    }
+
+    private func isInteractiveAttachmentTarget(_ view: UIView?) -> Bool {
+        guard let view else { return false }
+        return mountedAttachments.values.contains { mounted in
+            mounted.descriptor.isInteractive && (view === mounted.view || view.isDescendant(of: mounted.view))
+        }
+    }
+
+    private func ancestorScrollViews() -> [UIScrollView] {
+        var result: [UIScrollView] = []
+        var ancestor = superview
+        while let current = ancestor {
+            if let scrollView = current as? UIScrollView { result.append(scrollView) }
+            ancestor = current.superview
+        }
+        return result
+    }
+
+    private func isScrollViewActive(_ scrollView: UIScrollView) -> Bool {
+        scrollView.isDragging || scrollView.isDecelerating
+            || scrollView.panGestureRecognizer.state == .began
+            || scrollView.panGestureRecognizer.state == .changed
+    }
+
+    private func scrollPanIDs(for scrollViews: [UIScrollView]) -> Set<ObjectIdentifier> {
+        Set(scrollViews.map { ObjectIdentifier($0.panGestureRecognizer) })
+    }
+
+    private func bindScrollObservers(_ scrollViews: [UIScrollView]) {
+        unbindScrollObservers()
+        for scrollView in scrollViews {
+            let pan = scrollView.panGestureRecognizer
+            pan.addTarget(scrollObserver, action: #selector(ActionScrollObserver.scrollPanChanged(_:)))
+            observedScrollViews.append(.init(scrollView: scrollView, panGestureRecognizer: pan))
+        }
+    }
+
+    private func unbindScrollObservers() {
+        for observed in observedScrollViews {
+            observed.panGestureRecognizer?.removeTarget(
+                scrollObserver,
+                action: #selector(ActionScrollObserver.scrollPanChanged(_:))
+            )
+        }
+        observedScrollViews.removeAll()
     }
 }
 

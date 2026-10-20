@@ -53,6 +53,8 @@ final class DemoSamples {
     }
 
     let reuseDocuments: [LYGlyphTextDocument]
+    let actionDocument: LYGlyphTextDocument
+    let actionListDocuments: [LYGlyphTextDocument]
     let documents: [SampleKind: LYGlyphTextDocument]
     let styles: StyleDemoSamples
     private let viewDocuments: [SampleKind: [ImageAlignment: LYGlyphTextDocument]]
@@ -60,6 +62,9 @@ final class DemoSamples {
 
     init() throws {
         styles = try StyleDemoSamples()
+        let sharedActionDocument = try Self.makeActionDocument()
+        actionDocument = sharedActionDocument
+        actionListDocuments = try [sharedActionDocument] + (1 ..< 40).map(Self.makeActionListDocument)
         reuseDocuments = try (0 ..< 80).map { row in
             try LYGlyphTextDocument(attributedText: NSAttributedString(
                 string: "\u{FFFC} 第 \(row) 行：滚动离屏后由列表宿主清理，再绑定新文档。\n同一 Cell 的按钮与文字必须属于当前行。",
@@ -158,7 +163,7 @@ final class DemoSamples {
     }
 
     /// 本地绘制的非对称图片；右向版本仅改变 UIImage 方向，便于检查方向和基线。
-    private static func makeDirectionImage() -> UIImage {
+    static func makeDirectionImage() -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 2
         return UIGraphicsImageRenderer(size: CGSize(width: 32, height: 44), format: format).image { context in
@@ -178,5 +183,99 @@ final class DemoSamples {
             UIColor.black.setFill()
             arrow.fill()
         }
+    }
+
+    private static func makeActionDocument() throws -> LYGlyphTextDocument {
+        let body: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 19),
+            .foregroundColor: UIColor.label
+        ]
+        let actionAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 19, weight: .semibold),
+            .foregroundColor: UIColor.systemIndigo,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
+        let source = NSMutableAttributedString(string: "")
+        var actions: [LYGlyphTextAction] = []
+        var images: [Int: LYGlyphTextAttachment] = [:]
+        var views: [Int: LYGlyphTextViewAttachment] = [:]
+
+        func append(_ value: String, attributes: [NSAttributedString.Key: Any] = body) {
+            source.append(NSAttributedString(string: value, attributes: attributes))
+        }
+        func appendAction(_ value: String, id: String) {
+            let location = source.length
+            source.append(NSAttributedString(string: value, attributes: actionAttributes))
+            actions.append(.init(
+                actionID: id,
+                range: NSRange(location: location, length: source.length - location),
+                pressedStyle: .init(foregroundColor: .white, backgroundColor: .systemIndigo)
+            ))
+        }
+
+        append("普通文字与空白区域  ")
+        appendAction("点按", id: "single")
+        append(" · 跨行：")
+        appendAction("第一段动作\n第二段动作", id: "cross")
+        append("\n相邻同 ID：")
+        appendAction("甲", id: "duplicate")
+        appendAction("乙", id: "duplicate")
+        append(" · RTL ")
+        appendAction("مرحبا", id: "rtl")
+        append("\nEmoji ")
+        appendAction("👨‍👩‍👧‍👦", id: "emoji")
+        append(" · 连字 ")
+        appendAction("office", id: "fi")
+        append("\n装饰附件 ")
+
+        var location = source.length
+        append("\u{FFFC}", attributes: body)
+        images[location] = .init(
+            id: "action-image", image: makeDirectionImage(), size: CGSize(width: 28, height: 34),
+            alignment: .center, alternativeText: "方向图片"
+        )
+        actions.append(.init(actionID: "decorative-image", range: NSRange(location: location, length: 1)))
+        append(" 视图 ")
+        location = source.length
+        append("\u{FFFC}", attributes: body)
+        views[location] = .init(
+            id: "action-badge", viewID: "action-badge", size: CGSize(width: 54, height: 26),
+            alignment: .center, alternativeText: "装饰徽章"
+        )
+        actions.append(.init(actionID: "decorative-view", range: NSRange(location: location, length: 1)))
+        append(" 按钮 ")
+        location = source.length
+        append("\u{FFFC}", attributes: body)
+        views[location] = .init(
+            id: "action-button", viewID: "action-button", size: CGSize(width: 84, height: 34),
+            alignment: .center, alternativeText: "原生按钮", isInteractive: true
+        )
+        actions.append(.init(actionID: "interactive-button", range: NSRange(location: location, length: 1)))
+        append("\n截断：")
+        appendAction("这段很长的动作会在有限行数下贴近生成的省略号并隐藏后半部分。", id: "truncated")
+
+        return try LYGlyphTextDocument(
+            attributedText: source,
+            attachments: images,
+            viewAttachments: views,
+            actions: actions
+        )
+    }
+
+    private static func makeActionListDocument(row: Int) throws -> LYGlyphTextDocument {
+        let font = UIFont.systemFont(ofSize: 18)
+        let source = NSMutableAttributedString(
+            string: "普通文字与行尾空白    ",
+            attributes: [.font: font, .foregroundColor: UIColor.label]
+        )
+        let location = source.length
+        source.append(NSAttributedString(
+            string: "动作 \(row)",
+            attributes: [.font: font, .foregroundColor: UIColor.systemIndigo]
+        ))
+        return try LYGlyphTextDocument(
+            attributedText: source,
+            actions: [.init(actionID: "single", range: NSRange(location: location, length: source.length - location))]
+        )
     }
 }

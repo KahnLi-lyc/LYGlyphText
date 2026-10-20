@@ -33,32 +33,95 @@ struct LYGlyphTextLayout {
     let size: CGSize
     let lines: [Line]
     let attachments: [Attachment]
-    private let decorations: TextDecorations?
+    let sourceGeometry: SourceGeometry?
+    let actionIndex: [ActionSourceEntry]
+    let preparedDecorations: TextDecorations.Prepared?
+    let preparedDrawing: PressedTextDrawing
+
+    struct ActionSourceEntry {
+        let actionIndex: Int
+        let action: LYGlyphTextAction
+        let rects: [CGRect]
+    }
 
     init(
         size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = [],
-        decorations: TextDecorations? = nil
+        decorations: TextDecorations? = nil, traits: UITraitCollection = .current, source: String? = nil,
+        actions: [LYGlyphTextAction] = [],
+        observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) {
-        self.decorations = decorations
         self.viewAttachments = viewAttachments
         self.size = size
         self.lines = lines
         self.attachments = attachments
+        let geometry = (source ?? decorations?.source).map {
+            observe(.sourceSnapshot)
+            return SourceGeometry(source: $0, lines: lines, attachments: attachments, viewAttachments: viewAttachments)
+        }
+        sourceGeometry = geometry
+        preparedDecorations = decorations.map {
+            $0.prepare(
+                fragments: geometry?.fragments(in: NSRange(location: 0, length: $0.source.utf16.count)) ?? [],
+                observe: observe
+            )
+        }
+        actionIndex = Self.index(actions: actions, geometry: geometry)
+        preparedDrawing = PressedTextDrawing(
+            lines: lines,
+            geometry: geometry,
+            actions: actionIndex,
+            decorations: decorations,
+            prepared: preparedDecorations,
+            traits: traits,
+            observe: observe
+        )
     }
 
-    func draw(in context: CGContext) {
-        let preparedDecorations = decorations?.prepare(in: self)
-        preparedDecorations?.drawBackgrounds(in: context)
-        context.saveGState()
-        context.textMatrix = .identity
-        // Core Text 的字形坐标向上，布局基线向下；统一在绘制边界翻转。
-        context.scaleBy(x: 1, y: -1)
-        for line in lines {
-            context.textPosition = CGPoint(x: line.baseline.x, y: -line.baseline.y)
-            CTLineDraw(line.text, context)
+    private static func index(actions: [LYGlyphTextAction], geometry: SourceGeometry?) -> [ActionSourceEntry] {
+        guard let geometry, !actions.isEmpty else { return [] }
+        let sorted = actions.enumerated().sorted { $0.element.range.location < $1.element.range.location }
+        var rects: [Int: [CGRect]] = [:]
+        // 最终源行的逻辑尾部空白始终剔除；生成 token 不成为源 cell，也不改变此判定。
+        let lines = Dictionary(grouping: geometry.cells, by: \.lineIndex)
+        var trailing = Set<NSRange>()
+        for cells in lines.values {
+            for cell in cells.reversed() {
+                guard cell.isWhitespace else { break }
+                trailing.insert(cell.range)
+            }
         }
+        for cell in geometry.cells where !trailing.contains(cell.range) {
+            var lower = 0
+            var upper = sorted.count
+            while lower < upper {
+                let middle = lower + (upper - lower) / 2
+                if NSMaxRange(sorted[middle].element.range) <= cell.range.location { lower = middle + 1 }
+                else { upper = middle }
+            }
+            guard lower < sorted.count else { continue }
+            let entry = sorted[lower]
+            guard NSIntersectionRange(entry.element.range, cell.range).length > 0 else { continue }
+            // 一个组合字符跨 run 时保留真实矩形，不以 union 填补视觉间隙。
+            rects[entry.offset, default: []].append(contentsOf: cell.pieces.map(\.rect).filter { $0.width > 0 })
+        }
+        return actions.enumerated().map { .init(
+            actionIndex: $0.offset,
+            action: $0.element,
+            rects: rects[$0.offset] ?? []
+        ) }
+    }
+
+    /// 观察入口不保存闭包；普通 draw 只消费缓存，因此不产生准备工作事件。
+    func draw(
+        in context: CGContext, pressedActionIndex: Int? = nil,
+        observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
+    ) {
+        observe(.drawCachedContent)
+        context.saveGState()
+        preparedDrawing.drawBackgrounds(in: context, pressed: pressedActionIndex)
+        preparedDrawing.drawGlyphs(in: context, pressed: pressedActionIndex)
+        preparedDrawing.drawStrokes(in: context, pressed: pressedActionIndex, observe: observe)
         context.restoreGState()
-        preparedDecorations?.drawLines(in: context)
         // UIImage 的 UIKit 绘制路径负责方向与 scale；不直接翻转其 CGImage。
         UIGraphicsPushContext(context)
         for placement in attachments {
@@ -111,12 +174,15 @@ final class ResolvedText {
                 underlineStyle: run.underlineStyle,
                 underlineColor: (run.underlineColor?.resolvedColor(with: traits) ?? color).cgColor,
                 strikethroughStyle: run.strikethroughStyle,
-                strikethroughColor: (run.strikethroughColor?.resolvedColor(with: traits) ?? color).cgColor
+                strikethroughColor: (run.strikethroughColor?.resolvedColor(with: traits) ?? color).cgColor,
+                underlineColorIsInherited: run.underlineColor == nil,
+                strikethroughColorIsInherited: run.strikethroughColor == nil
             ))
             let factor = max(CGFloat(sourceLength + 1), font.lineHeight, 2)
             var attributes: [NSAttributedString.Key: Any] = [
                 NSAttributedString.Key(kCTFontAttributeName as String): font,
                 NSAttributedString.Key(kCTForegroundColorAttributeName as String): color.cgColor,
+                NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String): true,
                 NSAttributedString.Key(kCTParagraphStyleAttributeName as String): ResolvedParagraphStyle.create(
                     run.paragraph, wrapping: wrapping, length: sourceLength, naturalHeight: font.lineHeight,
                     discardMetrics: discardMetrics
@@ -214,7 +280,8 @@ final class ResolvedText {
     }
 
     func layout(
-        width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0
+        width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0,
+        observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) -> LYGlyphTextLayout {
         func inset(_ value: CGFloat) -> CGFloat {
             value >= 0 && LayoutNumber.isSafe(value, times: 4) ? value : 0
@@ -287,7 +354,8 @@ final class ResolvedText {
                 ),
                 lines: visible.lines, attachments: visibleAttachments(in: visible.lines),
                 viewAttachments: visibleViewAttachments(in: visible.lines),
-                decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale)
+                decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
+                traits: traits, source: document?.string ?? "", actions: document?.actions ?? [], observe: observe
             )
         }
         return LYGlyphTextLayout(
@@ -297,7 +365,8 @@ final class ResolvedText {
             ),
             lines: lines, attachments: visibleAttachments(in: lines),
             viewAttachments: visibleViewAttachments(in: lines),
-            decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale)
+            decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
+            traits: traits, source: document?.string ?? "", actions: document?.actions ?? [], observe: observe
         )
     }
 

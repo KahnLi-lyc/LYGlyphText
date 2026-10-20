@@ -236,7 +236,7 @@ func testActionCannotSplitComposedCharacter() {
 
 ## 4. M1b 样式快照与段落规范化
 
-**执行状态：** M1a `b74a0cb` 已交付并推送；M1b 在 `codex/text-styles` 按 B1 → B2／B3 → B4a／B4b → B5 串行实施，各块有真实红／绿与独立规格、质量审查。最终跨层审查批准，正式 docs／format／build／215 项完整回归通过；证据见 [M1b 记录](../../verification/2026-10-20-m1b-styles.md)。B6 只剩锁内集成、一次普通推送及实际 SHA 补记，尚不宣称远端已交付。根代理维护文档与最终集成，每个实施者独占本任务 Simulator，避免并行构建或改写同一源码。
+**执行状态：** M1a `b74a0cb`、M1b `6dbeaee` 均已交付并推送，远端 SHA 已核对、临时分支已清理。M1b 按 B1 → B2／B3 → B4a／B4b → B5 串行实施，各块有真实红／绿与独立规格、质量审查；最终跨层审查及正式 docs／format／build／215 项完整回归通过，证据见 [M1b 记录](../../verification/2026-10-20-m1b-styles.md)。已自动进入 [I1](2026-10-20-text-interaction.md)；根代理维护文档与集成，每个实施者独占任务 Simulator，避免并行构建或改写同一源码。
 
 ### 4.1 支持白名单与缺省值
 
@@ -442,7 +442,7 @@ public struct LYGlyphTextConfiguration: Equatable {
 
 - [x] 将实际支持白名单、paragraph 首字符规则、换行优先级、垂直对齐和 ligature caret fallback 写入 README／DocC，未知属性不写成“保留全部富文本属性”。
 - [x] 更新总计划：M1a／M1b 按真实证据完成，I1 开始前尚无文字 tap／longPress／取消／动作无障碍结论。记录仍未验证的 iOS 16、Swift 6.0 编译器、真机、人工 VoiceOver，不阻塞独立本地实现。
-- [ ] 运行第 9 节 M1b 检查，按 CONTRIBUTING 独占集成与普通推送；通过后自动进入 I1，使用本计划的动作和片段契约。检查已通过，集成／推送以真实 SHA 补记。
+- [x] 运行第 9 节 M1b 检查，按 CONTRIBUTING 独占集成与普通推送；`6dbeaee` 已合入并推送 main，远端 SHA 已核对，临时分支已删除。自动进入 [I1](2026-10-20-text-interaction.md)，使用本计划的动作和片段契约。
 
 ## 9. 验证、提交和真实证据
 
