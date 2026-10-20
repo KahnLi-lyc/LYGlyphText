@@ -1,0 +1,70 @@
+# 参与 LYGlyphText 开发
+
+先阅读 [开发规则](AGENTS.md)、[编码规范](CODING_STYLE.md)、[实施计划](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md) 和 [参考资料](docs/REFERENCES.md)。
+
+当前已交付文档与工程检查工具；Package、组件、Demo、组件测试尚未实现。以下工具检查不代表组件构建或运行通过。
+
+## 本地工具与检查
+
+需要 Git、Bash、Python 3.9+；格式工具固定为 SwiftFormat **0.59.1**，上游提交 `22a472ced4c621a0e41b982a6f32dec868d09392`。普通检查不联网、不修改源码或安装工具。
+
+```sh
+scripts/verify.sh docs
+scripts/verify.sh format
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
+```
+
+- docs：检查本仓跟踪及未忽略的新文本文件的 UTF-8／LF／末尾换行、Markdown 围栏和本地链接文件存在性、Shell 语法，以及暂存／未暂存 diff。只检查文件路径，不验证链接锚点、远端网页或扫描全部敏感信息；提交前仍需人工审查公开内容。
+- format：只 lint 本仓未被忽略、且不在生成目录内的 Swift 文件，使用根目录配置。不重写源码；零 Swift 文件明确输出“不适用”，不是代码格式通过。
+- 工具回归测试：在临时 Git 仓库验证链接、检查范围、零文件及工具错误等行为，不包含组件测试，也不需要 Simulator。
+- build／test 模式尚未提供，待 Package 和测试宿主建立后新增；未知模式返回非零结果。
+
+首次需要格式工具时，显式安装到本仓忽略的 `.build` 目录；该操作会从公开上游取源码并使用本机 Swift 编译，因此还需要 Xcode／Swift 工具链：
+
+```sh
+scripts/swiftformat.sh --bootstrap
+```
+
+`LYGLYPHTEXT_BUILD_ROOT` 可指定独立工具缓存目录；`LYGLYPHTEXT_SWIFTFORMAT` 可指定已有二进制的完整路径。每次使用都核对版本，不回退到 PATH 中的任意版本。Bootstrap 核对源码提交号；拒绝覆盖来源不明的已有源码目录。
+
+显式格式化仅用于本任务文件，例如未来创建 Package.swift 后：
+
+```sh
+scripts/swiftformat.sh Package.swift
+```
+
+不要对上级工作区或第三方参考目录运行格式化。不得因工具无法下载而擅自升级版本、修改全局 Git／代理配置或把检查写成通过。
+
+## 风险验证
+
+| 改动 | 最低验证 |
+|---|---|
+| 文档与非构建配置 | docs、规范一致性及公开内容审查；格式配置变化另用临时 Swift 样例核对 |
+| 工具脚本 | docs、对应工具回归测试、真实工具样例；不启动 Simulator |
+| 模型和范围转换 | format、目标单元测试，覆盖 UTF-16／组合字符及失败输入 |
+| 布局／绘制／截断 | 几何测试、目标示例和 Simulator 验证 |
+| 交互／附件／SwiftUI | 取消／生命周期测试、实际手势及宿主布局验证 |
+| 公开接口／并发／依赖 | 扩大到 UIKit／SwiftUI 直接消费者 |
+| 发布 | 完整回归、最低 iOS 16 运行及性能记录；发布另行授权 |
+
+用实际可用 Simulator UDID，不接管其它任务在用的设备；记录 Xcode、Swift、runtime、设备、命令及结果。不默认 clean，不为局部变更反复跑全套；同一已验证 SHA 不重复执行相同检查。零测试匹配不能算通过。
+
+Swift 6 模式编译、Swift 6.0 工具链兼容、iOS 16 运行分别验证；新 SDK、部署目标、静态阅读及 fake 测试不能代替最低系统或真实操作结果。
+
+## 开发与本地集成
+
+1. 检查工作区和活动 worktree，明确改动与验收范围。默认目标分支 `main`；使用 `codex/<task>`，需要隔离或并行时使用独立 worktree。
+2. 每次提交一个可说明、可验证的任务；不混入无关格式化、依赖升级或重构。不强制 fetch／pull。
+3. 验证通过后仅暂存本任务文件并自动提交。标题使用 feat:／fix:／test:／docs:／refactor:／chore: 前缀和简体中文。
+4. 本地合入串行执行：在 Git common directory 下用原子 mkdir 获取 `lyglyphtext-integration.lock`，写明任务、进程和目标 SHA；使用 trap 只释放自己持有的锁。已有锁时停止并报告，不自动删除他人锁。
+5. 锁内重新核对 feature tip、目标 tip、目标 checkout 的干净状态及 worktree 占用。目标为 feature 祖先时，feature 是快进候选；否则创建本任务候选分支／worktree进行普通合并。只验证最终候选 SHA；目标变化后重新评估，不覆盖或 force-update main。
+6. 候选验证通过后，在目标 checkout 以 `git merge --ff-only <candidate>` 更新本地 main。快进后确认 SHA 一致；同 SHA 不再重复检查。冲突、未知文件、锁异常或验证失败时停止并保留现场。
+7. 确认当前 feature tip 已是 main 的祖先，且临时 worktree 干净、没有未知未跟踪／忽略文件后，只清理本任务创建的 worktree 和本地分支；使用 git worktree remove 与 git branch -d，不强制删除。
+
+上述是人工／代理执行约定，当前检查脚本不代替 Git 集成流程。推送、PR、远端删除、Tag 和 Release 需明确任务授权；默认只合入本地 main，不自动 push、pull、rebase 或改写历史。
+
+## 交付说明
+
+记录问题与最终行为、公开 API／依赖变化、目标分支与提交、真实检查及限制。README 只说明实际状态；安装说明与版本号在真实 Package 可用后补充。
+
+构建产物、工具缓存、签名凭据、个人路径及内部项目源码不进入提交。生成文件先修改事实源；不要把普通源码文件误判为生成物。第三方复用按 REFERENCES 保留许可与来源。

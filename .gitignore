@@ -16,6 +16,9 @@ xcuserdata/
 *.xccheckout
 *.xcscmblueprint
 *.xcresult/
+__pycache__/
+*.pyc
+.worktrees/
 
 # Local research material must remain outside this repository
 /References/

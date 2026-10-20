@@ -1,14 +1,14 @@
-# LYGlyphText Implementation Plan
+# LYGlyphText Implementation Plan：Auto Layout 与尺寸适配
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. 如执行环境不提供该技能，按本文阶段顺序和验收清单执行；阶段失败时先修正，不跳过验收。
 
 **Goal:** 实现支持局部文本交互、行内图片与自定义 UIView 附件的独立只读富文本 Swift Package，同时服务 UIKit 与 SwiftUI。
 
-**Architecture:** 使用 Core Text 生成统一布局结果，供测量、绘制、截断、附件定位与命中检测共同使用。UIKit 自定义 UIView 为展示内核，SwiftUI 通过 UIViewRepresentable 包装。首版在 MainActor 同步排版，按明确失效条件复用有界缓存。
+**Architecture:** 使用 Core Text 生成统一布局结果，供测量、绘制、截断、附件定位与命中检测共同使用；首版不使用 TextKit 2。UIKit 自定义 UIView 通过固有尺寸和标准测量流程对接 Auto Layout，SwiftUI 通过 UIViewRepresentable 复用内核。首版在 MainActor 同步排版，按明确失效条件复用有界缓存。
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-20；本文是待实施规范。当前仓库仅包含文档、许可证与忽略规则；以下组件、示例、测试和发布阶段均未完成。
+**状态与日期：** 2026-10-20；阶段 0 为本轮交付的规范与工具；阶段 1—7 是待实施规范。当前没有 Package、组件源码、Demo 或组件测试。工程工具检查不能替代组件编译／运行证据。
 
 ---
 
@@ -21,7 +21,8 @@
 - 分段文本与基于 NSAttributedString 的输入，动作使用稳定 ID，点击／长按统一向宿主回调。
 - UIImage 图片附件，以及通过工厂创建的 UIImageView、UIButton、自定义 UIView 附件。
 - 按下高亮、取消清理、滚动容器协作、附件交互优先级和列表复用。
-- UIKit 尺寸适配、SwiftUI 宽度驱动测量、深色模式、Dynamic Type 与基础 VoiceOver。
+- UIKit Auto Layout、固有尺寸、多行宽度驱动高度、布局优先级、横向／纵向 UIStackView、列表自适应，以及 SwiftUI 宽度提议测量。
+- 深色模式、Dynamic Type、RTL 与基础 VoiceOver；SwiftUI 与 UIKit 共用内核。
 
 ### 1.2 首版不包含
 
@@ -29,7 +30,7 @@
 
 ### 1.3 发布完成定义
 
-七个实施阶段均有对应代码、自动检查和验收记录；最低系统真实运行结果与最新可用系统结果分别记录。所有未实际运行的环境标记为“未验证”，不能由新 SDK 编译、静态阅读或模拟回调推导通过。
+阶段 0 的规范／工具与阶段 1—7 的组件实现分别验收；后七阶段均须有对应代码、自动检查和验收记录。最低系统真实运行结果与最新可用系统结果分别记录。所有未实际运行的环境标记为“未验证”，不能由新 SDK 编译、静态阅读或模拟回调推导通过。
 
 ## 2. 项目与代码边界
 
@@ -56,7 +57,8 @@ Examples/LYGlyphTextDemo/
 - 单一 library product 与单一业务 target，零第三方运行依赖；Apple 系统框架不属于第三方源码。
 - 示例工程包含名为 LYGlyphTextDemo 的 shared scheme，通过本地 package 引用组件；示例不进入 library target。
 - Core Text 与 UIKit/Core Foundation 类型可在 Swift 中调用；纯 Swift 不意味着不能调用 Apple 的 C／Objective-C 系统 API。
-- 未来功能改动使用 `codex/` 前缀分支；初始化文档按已授权计划提交到 main。
+- 开发使用 `codex/` 前缀分支，验证后自动提交并安全合入本地 main；默认不 push，PR／Tag／Release 需明确授权。流程见 [参与开发](../../../CONTRIBUTING.md)。
+- 中文 DocC、命名、最小公开接口、MainActor、幂等清理及格式配置遵守 [编码规范](../../../CODING_STYLE.md)；不照搬业务 App 的固定字号、TCA 或 SnapKit 依赖。
 
 ## 3. 接口契约
 
@@ -69,7 +71,7 @@ Examples/LYGlyphTextDemo/
 | `LYGlyphTextAction` | 包含非空 actionID、非空 NSRange 和按下样式。一个范围对应一个动作；不同范围可使用同一 actionID，回调保留具体范围。动作范围不得相互重叠。 |
 | `LYGlyphTextAttachment` | 包含文档内唯一 attachmentID、内容类型（UIImage 或 view 标识）、明确 size、相对字体的 top／center／bottom 对齐、contentInsets、替代朗读文本、是否由附件自身交互。UIView 只由宿主提供。 |
 | `LYGlyphTextConfiguration` | 包含 textContainerInset、numberOfLines、word／character wrapping 与 top／center／bottom 垂直对齐。默认 0 内边距、0 行限制、word wrapping、top 对齐；有行数限制时尾部省略。 |
-| `LYGlyphTextLabel: UIView` | `document`、`configuration`、`onAction`、`viewProvider` 和 UIKit 尺寸接口。`document == nil` 清空文本、附件、交互及无障碍元素。`preferredMaxLayoutWidth` 为 UIKit 多行固有尺寸提供显式宽度。 |
+| `LYGlyphTextLabel: UIView` | `document`、`configuration`、`onAction`、`viewProvider`、`reloadAttachments()`、`intrinsicContentSize` 与 `sizeThatFits(_:)`，支持标准 `systemLayoutSizeFitting`。`document == nil` 清空文本、附件、交互及无障碍元素。`preferredMaxLayoutWidth` 默认 0，正值为包含内边距的固有尺寸测量宽度；实际绘制按 bounds。沿用标准 Hugging／Compression Resistance API。 |
 | `LYGlyphTextView: UIViewRepresentable` | 初始化输入与 Label 一致：document、configuration、onAction、viewProvider；实现 makeUIView、updateUIView、sizeThatFits、dismantleUIView。 |
 | `LYGlyphTextActionEvent` | 输出 actionID、原文 UTF-16 range、可见片段矩形数组，以及 tap／longPress 类型。矩形坐标属于展示视图本地坐标，不向业务暴露 CTLine／CTRun。 |
 | `LYGlyphTextLayout` | internal；保存容器约束、排版行、基线、可见原文区间、附件矩形、动作片段矩形与截断映射，不能成为公开 ABI。 |
@@ -80,7 +82,7 @@ Examples/LYGlyphTextDemo/
 - `viewProvider` 的调用、UIView 创建／挂载／卸载、onAction 和 SwiftUI 更新均在 MainActor。
 - 工厂按 view 标识返回宿主独占的新 UIView。相同文档在两个 Label 展示时必须得到不同实例；检测到返回已有其他 superview 的实例时拒绝挂载并报告诊断，不抢走其他宿主的视图。
 - 工厂只在可见附件首次出现或 provider 明确失效后调用；普通测量不创建 UIView。Label 提供 `reloadAttachments()` 显式更新工厂结果。
-- 文档与 Layout 不保留业务回调；View 销毁、替换文档或 SwiftUI dismantle 时释放回调与工厂持有关系。
+- 文档与 Layout 不保留业务回调；替换文档清理旧布局、旧附件与交互，不擅自清空宿主配置的回调或工厂。View 销毁或 SwiftUI dismantle 时释放回调与工厂持有关系。
 - 不通过大范围 `@unchecked Sendable`、`nonisolated(unsafe)` 或降低并发检查强度来换取编译通过。
 
 ### 3.2 范围与输入失败
@@ -100,10 +102,56 @@ Examples/LYGlyphTextDemo/
 - 将 Core Text 坐标转换为统一的 UIKit 左上原点坐标；内边距和垂直偏移只应用一次，绘制、附件、命中、无障碍共享该变换。
 - 缓存存于单个 Label，最多保留最近两个宽度对应的布局，不使用无界全局缓存。键包含文档身份／修订、精确可用宽高约束、配置、显示缩放、字体内容大小与显示环境。
 - 文档、有效尺寸、字体大小类别、界面样式或配置变化会失效布局；纯回调变化不会失效几何。颜色变化至少失效绘制。
-- UIKit sizeThatFits、intrinsicContentSize 和实际展示使用同一个布局入口。无明确测量宽度时返回单行理想尺寸；多行 Auto Layout 使用 preferredMaxLayoutWidth 或实际 bounds 宽度，不在 layoutSubviews 中反复更改自身约束。
+- UIKit sizeThatFits、intrinsicContentSize 和实际展示使用同一个布局入口；SwiftUI 在相同宽度下复用该入口。无宽度约束时不强制软换行，保留原文显式换行；详细固有尺寸契约见第 4.2 节。
 - 宽度为 0 时返回可用的零宽测量结果，不创建超大缓存；空文档内容尺寸为 0，加上明确配置的内边距。输出尺寸按 display scale 向上对齐像素。
 
-### 4.2 截断与命中映射
+### 4.2 Auto Layout 与尺寸适配
+
+#### 4.2.1 UIKit 接口与优先级
+
+- Label 继承 UIView，实现 intrinsicContentSize 与 sizeThatFits(_:)，支持 systemLayoutSizeFitting 的离屏测量流程。使用标准布局优先级，不新增自定义优先级体系。
+- 默认两个方向 Hugging 为 .defaultLow，Compression Resistance 为 .defaultHigh；只在初始化设置。文档更新、configure、附件刷新和复用不能覆盖宿主修改的值。
+- 固有宽度为不强制软换行时的内容理想宽度，保留显式换行；固有高度按有效宽度重新排版，并遵守 numberOfLines。图片与 View 附件的声明尺寸共同参与测量。
+- 多行固有高度的宽度来源依次为：正值 preferredMaxLayoutWidth、正值 bounds.width、内容理想宽度。preferredMaxLayoutWidth 默认 0 表示自动模式。
+- preferredMaxLayoutWidth 是包含 textContainerInset 的视图测量宽度，仅用于固有尺寸估算；实际展示始终按 bounds。宿主已有精确宽度时，可显式指定该值用于首次离屏估算；宽度变化时宿主同步更新显式值。
+- sizeThatFits(_:) 使用传入的宽高约束，不读取旧 frame 代替测量宽度，不修改自身 frame／约束，不创建或安装附件视图。宽度约束为无限时使用内容理想宽度；0 宽度安全返回零宽结果。
+- systemLayoutSizeFitting 在横向 fitting priority 为 required、宽度明确时，必须按该宽度得到正确高度，不能仅用旧 bounds 的固有高度返回结果；实现以测试验证此契约。
+- 固有高度测量不受旧 bounds.height 限制。实际可见布局仍按最终 bounds 和行数限制处理；相同输入和相同约束共享同一个布局入口，不要求不同约束复用同一对象。
+- 内边距只计入一次，尺寸按 display scale 向上对齐像素。空内容尺寸仅保留明确内边距；不返回 NaN 或无限尺寸。
+- Required 外部宽高约束决定最终外框；压窄后按配置换行／尾部省略，高度不足时裁切，不自动缩小字体或附件，也不暗中增加行数限制。
+- 绘制、高亮、附件和命中均受内容可见区域裁切；完全不可见附件不挂载，部分可见附件只在可见部分绘制／响应，裁切外不触发业务动作。
+
+```swift
+// 未来组件 API 用法示意；当前无组件实现，不能作为编译证据。
+label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+```
+
+#### 4.2.2 失效与布局收敛
+
+- 文档、附件尺寸、字体、行数、内边距、测量宽度变化时使布局缓存失效，并通知 invalidateIntrinsicContentSize／setNeedsLayout／setNeedsDisplay；仅颜色变化不必重算几何。
+- 自动模式在 layoutSubviews 检测有效宽度变化后更新固有高度；相同输入、宽度和配置不重复失效。初始 0 宽度转正后必须恢复正常测量。
+- 不在测量方法中调用 layoutIfNeeded，不在布局回调中反复添加／修改自身宽高约束；不以旧高度反向限制新固有高度。
+- 普通测量不安装附件，不发送业务动作。布局替换清理旧高亮与命中映射；缓存仍限定每 Label 最多两个布局结果。
+
+#### 4.2.3 宿主布局
+
+- 支持原生 Auto Layout；宿主用 SnapKit 为组件设约束也可接入，组件本身不依赖 SnapKit。
+- 支持左右约束／固定宽度驱动内容自动撑高，以及宽度上限；高度不固定时由固有尺寸决定，优先级仍服从宿主约束关系。
+- 支持横向／纵向 UIStackView，通过 Hugging 和 Compression Resistance 决定拉伸／压缩。验收使用轴向合法的 fill、top、center、bottom，以及纵向对应的 leading／trailing 对齐。
+- 首版不承诺 viewForFirstBaselineLayout／viewForLastBaselineLayout 与 UILabel 文字基线完全等价；暂不将 firstBaseline／lastBaseline 列为验收能力。
+- 支持 UITableView 自动行高与 UICollectionView 自适应尺寸；宿主提供明确测量宽度、完整约束链及正常的列表尺寸失效通知，不由组件接管列表 delegate 或布局对象。
+- 旋转、分屏和窗口缩放均根据容器宽度重排，不读取固定屏幕宽度；正文、附件、高亮及点击区域同步更新。
+
+#### 4.2.4 SwiftUI 测量
+
+- UIViewRepresentable.sizeThatFits 直接消费 proposal.width，不依赖旧 UIKit bounds；nil／无限宽度使用内容理想宽度，有限宽度据此排版，0 宽度安全返回零宽结果。
+- 多行自适应高度按提议宽度测量，实际受限高度由展示层裁切；不将旧 frame 高度带入新固有高度计算。
+- 测量期间不修改 Binding、SwiftUI 状态、宿主约束或附件；UIKit 与 SwiftUI 相同宽度、内容和配置下高度差不超过 1 个物理像素。
+- layoutPriority 由 SwiftUI 宿主使用，不映射为 UIKit Hugging／Compression Resistance；不承诺两套布局系统具有相同优先级数值语义。
+- 示例覆盖 .frame、HStack／VStack、List／LazyVStack 和宽度反复变化；同文档更新回调不失效布局。
+
+### 4.3 截断与命中映射
 
 - 首版只提供尾部省略，省略号继承可见末行的字体与颜色，不继承业务动作或附件属性。
 - 用 CTLineCreateTruncatedLine 等 Core Text 排版结果建立最后一行的可见 run／glyph 片段与原文映射；不能只按整个 visibleRange 判断可点击性。
@@ -112,7 +160,7 @@ Examples/LYGlyphTextDemo/
 - 默认不额外扩大点击范围，避免相邻动作串点。跨行动作保存多个矩形，不用一个覆盖行间空白的大外接矩形。
 - 命中需处理 emoji、组合字符、ligature 和双向 run；多 glyph 形成的同一组合字符应映射到同一原文动作。
 
-### 4.3 附件与显示
+### 4.4 附件与显示
 
 - UIImage 直接绘制；UIView 附件使用 U+FFFC 与 CTRunDelegate 预留空间，基线度量数据不持有 UIView。
 - CTRunDelegate 回调上下文采用明确 retain／release 配对的不可变度量对象，不捕获 Label 或工厂。
@@ -121,7 +169,7 @@ Examples/LYGlyphTextDemo/
 - 工厂返回 nil 时保留声明的占位尺寸与替代朗读文本，不触发无限重试。实际 View 变大不自动改变字行；通过更新文档尺寸重新排版。
 - 允许附件内部 Auto Layout，但其外框由文本布局管理。UIImageView 作为真实 View 附件时，图片加载与动画由宿主负责。
 
-### 4.4 触摸与取消
+### 4.5 触摸与取消
 
 - 使用状态 idle → pressed(action + documentRevision + origin) → ended／cancelled；在按下与抬起时核对同一可见动作范围及文档版本。
 - 手指移出动作范围、移动超过 10pt、父滚动手势接管、系统取消、文档／布局替换或视图移出 window 时清理按下状态，不触发 tap。
@@ -130,9 +178,9 @@ Examples/LYGlyphTextDemo/
 - `isInteractive` 的附件由子视图优先接收触摸，父容器不重复发送动作。装饰附件自身不响应；其 U+FFFC 可属于文字动作范围。
 - 不使用整个 Label 的手势将任意空白位置转换成最近链接；UI 测试同时检查普通文字、行尾空白和行间空白。
 
-### 4.5 SwiftUI 与无障碍
+### 4.6 SwiftUI 与无障碍
 
-- UIViewRepresentable.sizeThatFits 使用 proposal.width 调用同一测量入口；nil 宽度使用理想尺寸，有限非负宽度按提议值测量；测量不得修改 Binding 或 SwiftUI 状态。
+- UIViewRepresentable 的宽度与高度契约遵守第 4.2.4 节，不另建布局引擎或依赖旧 bounds 测量。
 - updateUIView 总是刷新回调与 provider，即使文档未改变；文档为 nil 时清空旧内容。dismantleUIView 清理交互及附件。
 - UIFontMetrics／文本样式元数据驱动 Dynamic Type；显式固定字号默认保持固定。动态字体发生变化时同时重新测量附件对齐。
 - 将动态颜色在绘制时按当前 trait 解析；深色模式切换不修改业务文档。缓存更新不能残留旧颜色。
@@ -143,12 +191,24 @@ Examples/LYGlyphTextDemo/
 
 阶段内按“建立测试／复现 → 实现最小行为 → 验证 → 更新记录 → 提交”执行。低影响文档调整不添加镜像实现的测试；布局、Unicode、交互及所有权必须有有意义的验证。各阶段提交须可单独审阅，不以空壳声明代替完成。
 
+### 阶段 0：工程规范与工具
+
+**输入：** 已归档资料、用户确定的技术路线、开发约定与布局契约。**输出：** 规范文档、固定格式配置及可运行的文档／格式检查入口；不创建组件空壳。
+
+- [x] 建立 AGENTS、CODING_STYLE、CONTRIBUTING，更新 README 与本计划，明确自动本地合入 main、不默认推送。
+- [x] 建立 EditorConfig 与 SwiftFormat 0.59.1 配置，保留版权头；工具安装必须显式，普通检查不联网或自动下载。
+- [x] 建立 docs／format 检查入口和工具回归测试，覆盖失效链接、检查范围、零 Swift 文件、工具缺失及版本不符。
+- [x] 用真实固定版本工具验证临时 Swift 样例的失败→格式化→通过及幂等性，记录结果，组件编译／运行保持未验证。
+
+**完成标准：** 文档与检查工具可用，Auto Layout 契约和验收完整；工具测试不冒充组件测试。执行记录保存于 docs/verification。
+
 ### 阶段 1：Package 与演示／测试宿主
 
-**输入：** 本计划和空的文档仓库。**输出：** 可在 iOS Simulator 编译的 package、本地 package 示例、shared scheme、测试宿主。
+**输入：** 本计划与阶段 0 的工程规范。**输出：** 可在 iOS Simulator 编译的 package、本地 package 示例、shared scheme、测试宿主。
 
 - [ ] 建立第 2 节的目录与 Swift 6／iOS 16 配置，设置零第三方依赖；建立最小公开文档与视图入口作为后续垂直实现起点。
 - [ ] 示例首页提供 UIKit、SwiftUI 两个入口；建立单一测试 fixture 数据文件供两端复用。
+- [ ] 为后续布局验收预留单行、多行、并排按钮、StackView、列表与 SwiftUI 宽度切换示例入口，不用空壳演示宣称已适配。
 - [ ] 配置 package scheme `LYGlyphText`、demo shared scheme `LYGlyphTextDemo`，测试使用 XCTest 并在 MainActor 调用 UIKit 代码。
 - [ ] 运行第 6 节的清单／构建／测试命令，记录实际 scheme 与目的地；只记录已运行结果。
 
@@ -160,21 +220,26 @@ Examples/LYGlyphTextDemo/
 
 - [ ] 完成第 3 节的两类文档入口、安全范围转换、错误类型与复制隔离；测试 caller 修改原 NSMutableAttributedString／NSMutableParagraphStyle 不影响已创建文档。
 - [ ] 建立 Core Text 行布局及统一坐标；测试空文本、有限宽度、长单词、中英文、段落方向、行距和不同字号。
+- [ ] 测量显式换行、内边距、0／有限／无限宽度和明确尺寸附件；固有高度计算不受旧展示高度限制。
 - [ ] 实现有界布局缓存与失效；比较测量前后 factory 调用次数，确保测量不安装 View。
 - [ ] 测试 NSString 的 UTF-16 长度与 Swift Character 数量不同的字符串，覆盖家庭 emoji、肤色修饰、组合重音、旗帜。
 
 **完成标准：** 有限尺寸、不越界；在相同约束下测量与展示使用同一布局；重复内容不会被错误地认为同一动作实例。
 
-### 阶段 3：文字绘制、行数与截断
+### 阶段 3：文字绘制、截断与 Auto Layout
 
-**输入：** 文档与布局。**输出：** UIKit 富文本显示、像素对齐尺寸及可见原文映射。
+**输入：** 文档、布局与外部尺寸约束。**输出：** UIKit 富文本显示、固有尺寸、多行自动撑高及可见原文映射。
 
 - [ ] 在 UIView 绘制支持的文字属性、背景与装饰；对比 fixture 的预期行数、基线和尺寸。
 - [ ] 增加行数限制与尾部省略，构造最后一行的映射；测试刚好容纳、只容纳省略号和混合方向文本。
 - [ ] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；验证坐标偏移没有重复应用。
+- [ ] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
+- [ ] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
+- [ ] 实现有效宽度变化的固有尺寸失效，测试 0→正值、窄→宽→窄、旧高度不影响新高度及布局收敛；测量不调用 layoutIfNeeded 或安装附件。
+- [ ] 显式压缩高度后裁切绘制／高亮／命中，不自动缩字；测量自身不修改 frame、约束或调用业务回调。
 - [ ] 在演示中提供可见布局边界开关，用于人工检查，开关只属于示例／调试入口。
 
-**完成标准：** 测量与显示高度差不超过 1 个物理像素；截断映射不包含隐藏内容；几何测试使用稳定系统字体和明确尺寸，视觉记录注明系统版本。
+**完成标准：** 相同约束下测量与显示高度差不超过 1 个物理像素；Auto Layout 自动撑高、优先级及离屏测量通过，无新增约束冲突或反复布局；截断映射不包含隐藏内容。几何测试使用稳定系统字体和明确尺寸，视觉记录注明系统版本。
 
 ### 阶段 4：图片与真实 UIView 附件
 
@@ -184,6 +249,7 @@ Examples/LYGlyphTextDemo/
 - [ ] 实现按 ID 管理的宿主视图集合及 reloadAttachments；记录 factory 调用与释放次数。
 - [ ] 同时用两个 Label 展示相同文档，核对 View 实例独立；测试 nil 工厂结果、跨宿主错误返回和切换文档的卸载。
 - [ ] 示例包含静态 UIImage、UIImageView、按钮与自定义徽章；复用测试滚动／替换内容后不得残留旧附件。
+- [ ] 附件尺寸变化更新固有高度；受限外框裁切附件及命中区域，测量阶段 factory 调用数始终为 0。
 
 **完成标准：** 真实子视图在主线程安装；隐藏附件不挂载；无跨宿主抢占与明显 retain cycle；附件尺寸与 baseline 不受工厂实际 frame 反向影响。
 
@@ -191,23 +257,25 @@ Examples/LYGlyphTextDemo/
 
 **输入：** 可见动作片段及触摸序列。**输出：** 高亮与一次 tap／longPress 事件，或无事件的取消。
 
-- [ ] 实现第 4.4 节状态机；状态转换单测覆盖长按后抬起、文档中途更新、移出 window 和系统取消。
+- [ ] 实现第 4.5 节状态机；状态转换单测覆盖长按后抬起、文档中途更新、移出 window 和系统取消。
 - [ ] 使用实际几何命中测试覆盖跨行范围、相邻动作、重复 actionID、RTL／ligature、emoji 及部分截断范围。
 - [ ] 用 UI 测试验证点击、长按、滑动滚动和移出范围，不仅调用内部回调；检查行尾／行间空白不触发业务。
 - [ ] 验证交互附件只响应自身，装饰附件可交由所属文字动作；普通区域不阻断父列表的选择／滚动。
 
 **完成标准：** 取消场景回调数为 0；长按成功回调数为 1 且无 tap；跨行高亮不覆盖行间空白；点击事件范围和 actionID 与原文一致。
 
-### 阶段 6：SwiftUI、显示环境与 VoiceOver
+### 阶段 6：宿主布局、SwiftUI、显示环境与 VoiceOver
 
 **输入：** SwiftUI 宽度提议、环境和回调更新。**输出：** 两端行为一致的自适应组件。
 
-- [ ] 完成 make／update／sizeThatFits／dismantle，测试 nil／0／有限宽度、窄宽反复切换，以及同文档下替换回调。
+- [ ] 完成 make／update／sizeThatFits／dismantle，测试 nil／0／有限／无限宽度、.frame、HStack／VStack、窄宽反复切换，以及同文档下替换回调。
+- [ ] 横向／纵向 UIStackView 验证合法对齐方式、并排按钮和不同优先级；不以 UIView 默认基线代替 UILabel 文字基线适配。
+- [ ] UITableView 自动行高、UICollectionView 自适应及离屏测量覆盖长短文本替换、附件变化、0→正宽、旋转／分屏／窗口缩放；宿主提供确定宽度和完整约束链。
 - [ ] 在 List／LazyVStack 及 UIKit 列表中复用组件；测试附件和高亮状态不串行，更新过程不形成测量循环。
 - [ ] 验证 body／大字体／辅助功能字号，动态颜色明暗切换；更新字体后重新测量和对齐附件。
 - [ ] 检查无障碍元素顺序、动作激活与附件替代文本；实际启用 VoiceOver 人工验证无重复朗读。
 
-**完成标准：** UIKit 与 SwiftUI 相同宽度的测量一致；SwiftUI 不残留旧回调；VoiceOver、Dynamic Type、深色模式均有独立证据。
+**完成标准：** UIKit 与 SwiftUI 相同宽度的高度差不超过 1 个物理像素；StackView／列表复用无旧状态和布局循环；SwiftUI 不残留旧回调；VoiceOver、Dynamic Type、深色模式均有独立证据。
 
 ### 阶段 7：回归、性能与发布
 
@@ -222,6 +290,18 @@ Examples/LYGlyphTextDemo/
 **完成标准：** 无未说明的功能缺口；本地构建、设备运行、无障碍和性能证据分别列出；发布操作只在届时获得发布授权后执行，本文不代表立即发布组件。
 
 ## 6. 验证命令与场景
+
+### 6.1 当前工程工具
+
+```sh
+scripts/verify.sh docs
+scripts/verify.sh format
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
+```
+
+docs 检查本地链接文件存在性、文本约定、Shell 语法及 diff，不验证远端网页或锚点。format 零 Swift 文件时必须报告“不适用”；有 Swift 文件但缺少固定工具时失败，不自动安装。具体安装／覆盖变量见 CONTRIBUTING。工具测试只证明检查行为，不是组件测试。
+
+### 6.2 后续组件构建与测试
 
 以下命令仅适用于对应代码与工程已经创建之后，当前文档仓库不能运行组件构建。所有测试命令从仓库根目录执行；使用实际存在的 iOS Simulator UDID，不填入不存在的设备名称。
 
@@ -249,11 +329,18 @@ git diff --check
 |---|---|---|
 | Unicode | 家庭 emoji、肤色、组合重音、旗帜、中文、阿拉伯语与英文混排 | 范围与布局单测 + 实际点击 |
 | 样式与几何 | 混合字体、kern、baseline、段落／行距、内边距、垂直对齐 | 几何断言 + 固定环境截图 |
+| 固有尺寸 | 单行自然尺寸、多行自动撑高、显式换行、内边距、preferredMaxLayoutWidth | 几何单测 + Auto Layout 宿主 |
+| 约束与优先级 | 左右／固定／上限宽度，并排按钮，两个方向 Hugging／Compression Resistance，更新不重置 | 约束布局测试 + 示例 |
+| 离屏测量 | systemLayoutSizeFitting 横向 required 宽度、旧 bounds 不影响结果 | XCTest 测量断言 |
+| StackView | 横／纵向、合法 fill／top／center／bottom／leading／trailing，对比拉伸压缩 | 宿主布局测试 + Simulator |
+| 列表自适应 | UITableView／UICollectionView，长短文本替换、附件尺寸变化、复用 | 宿主／UI 测试 |
+| 宽度与收敛 | 0→正值、窄→宽→窄、旋转、分屏、窗口缩放，无反复失效 | 失效计数 + 宿主布局验证 |
+| 高度裁切 | 显式压缩高度、附件部分可见、隐藏区域无动作、不自动缩字 | 绘制／命中测试 + 实际点击 |
 | 截断 | 0／1／多行限制、跨行链接、隐藏附件、省略号附近 | 映射单测 + UI 点击 |
 | 空白 | 普通文字、行尾、行间、Label 内边距 | UI 测试，回调数为 0 |
 | 取消 | 移出、超过 10pt、滚动接管、系统 cancel、文档替换、移出 window | 状态机测试 + UI 手势 |
 | 附件 | 三种对齐、超过字体高度、两个宿主、nil 工厂、重复 ID、复用 | 所有权／生命周期测试 + 人工检查 |
-| SwiftUI | nil／0／有限 proposal、宽度变化、List 复用、替换闭包、清空内容 | 测量测试 + 演示 UI 测试 |
+| SwiftUI | nil／0／有限／无限 proposal、.frame、HStack／VStack、List／LazyVStack、替换闭包、清空内容 | 测量／UI 测试，与 UIKit 高度差≤1物理像素 |
 | 环境 | 明暗模式、内容大小类别、VoiceOver、display scale | trait 测试 + 实际人工操作 |
 | 兼容性 | Swift 6 mode、新工具链、最低 iOS 16、最新可用系统 | 编译与系统运行分开留证 |
 | 性能 | 固定负载、冷／热缓存、附件数量、持续滚动、释放 | XCTest 性能数据 + Instruments |
@@ -275,6 +362,9 @@ Apple 原始资料：
 - [NSTextAttachmentViewProvider](https://developer.apple.com/documentation/uikit/nstextattachmentviewprovider)
 - [UIViewRepresentable.sizeThatFits](https://developer.apple.com/documentation/swiftui/uiviewrepresentable/sizethatfits(_:uiview:context:))
 - [UIFontMetrics](https://developer.apple.com/documentation/uikit/uifontmetrics)
+- [UIView.intrinsicContentSize](https://developer.apple.com/documentation/uikit/uiview/intrinsiccontentsize)
+- [UIView.sizeThatFits](https://developer.apple.com/documentation/uikit/uiview/sizethatfits(_:))
+- [UIView.systemLayoutSizeFitting](https://developer.apple.com/documentation/uikit/uiview/systemlayoutsizefitting(_:withhorizontalfittingpriority:verticalfittingpriority:))
 
 ## 8. 当前证据与后续更新
 
@@ -282,10 +372,12 @@ Apple 原始资料：
 |---|---|
 | 产品命名、公开可见性、工作区位置 | 已由用户确定 |
 | 本地参考库来源与校验 | 见 REFERENCES.md，本阶段归档交付 |
-| 文档与仓库初始化 | 本阶段交付范围 |
+| 文档与仓库初始化 | 已完成；本轮更新工程规范和布局契约 |
+| 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
 | Package、组件源码、Demo | 未实现 |
 | Swift 6 组件编译与测试 | 未执行：无组件代码 |
+| Auto Layout／布局优先级／StackView／列表／SwiftUI 尺寸行为 | 待阶段 2—6 实施与验收 |
 | iOS 16／最新系统运行 | 未验证 |
 | VoiceOver、性能、真实设备行为 | 未验证 |
 
