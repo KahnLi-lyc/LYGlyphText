@@ -42,6 +42,45 @@ final class DemoHostTests: XCTestCase {
         XCTAssertEqual(preview.configuration.numberOfLines, 0)
         XCTAssertEqual(preview.sizeThatFits(width).height, unlimitedHeight)
     }
+
+    func testUIKitImageControlsUseSharedDocumentsAndPreserveTextSelection() throws {
+        let samples = try DemoSamples()
+        let controller = UIKitDemoController(samples: samples)
+        controller.loadViewIfNeeded()
+        let preview = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("richTextPreview") as? LYGlyphTextLabel
+        )
+        let imageControl = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("imageControl") as? UISegmentedControl
+        )
+        let alignmentControl = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("alignmentControl") as? UISegmentedControl
+        )
+        let sampleControl = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("sampleControl") as? UISegmentedControl
+        )
+        XCTAssertFalse(alignmentControl.isEnabled)
+        sampleControl.selectedSegmentIndex = SampleKind.mixed.rawValue
+        sampleControl.sendActions(for: .valueChanged)
+        imageControl.selectedSegmentIndex = 1
+        imageControl.sendActions(for: .valueChanged)
+        XCTAssertTrue(alignmentControl.isEnabled)
+        for alignment in ImageAlignment.allCases {
+            alignmentControl.selectedSegmentIndex = alignment.rawValue
+            alignmentControl.sendActions(for: .valueChanged)
+            XCTAssertTrue(preview.document === samples.document(
+                for: .mixed,
+                includesImages: true,
+                alignment: alignment
+            ))
+            XCTAssertGreaterThan(preview.sizeThatFits(CGSize(width: 160, height: CGFloat.infinity)).height, 0)
+        }
+        imageControl.selectedSegmentIndex = 0
+        imageControl.sendActions(for: .valueChanged)
+        XCTAssertFalse(alignmentControl.isEnabled)
+        XCTAssertEqual(sampleControl.selectedSegmentIndex, SampleKind.mixed.rawValue)
+        XCTAssertTrue(preview.document === samples.documents[.mixed])
+    }
 }
 
 private extension UIView {

@@ -101,6 +101,13 @@ public final class LYGlyphTextLabel: UIView {
         guard let context = UIGraphicsGetCurrentContext() else { return }
         context.saveGState()
         context.clip(to: bounds)
+        let insets = configuration.insets
+        context.clip(to: CGRect(
+            x: bounds.minX + insets.left, y: bounds.minY + insets.top,
+            width: max(0, bounds.width - insets.left - insets.right),
+            height: max(0, bounds.height - insets.top - insets.bottom)
+        ))
+        context.translateBy(x: bounds.minX, y: bounds.minY)
         measuredLayout(width: max(0, bounds.width)).draw(in: context)
         context.restoreGState()
     }

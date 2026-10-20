@@ -15,8 +15,22 @@ struct LYGlyphTextLayout {
         let truncationTokenRange: NSRange?
     }
 
+    struct Attachment {
+        let attachment: LYGlyphTextAttachment
+        let sourceLocation: Int
+        /// 相对于文本容器左上原点的完整图片矩形，裁切由展示层统一完成。
+        let rect: CGRect
+    }
+
     let size: CGSize
     let lines: [Line]
+    let attachments: [Attachment]
+
+    init(size: CGSize, lines: [Line], attachments: [Attachment] = []) {
+        self.size = size
+        self.lines = lines
+        self.attachments = attachments
+    }
 
     func draw(in context: CGContext) {
         context.saveGState()
@@ -28,6 +42,12 @@ struct LYGlyphTextLayout {
             CTLineDraw(line.text, context)
         }
         context.restoreGState()
+        // UIImage 的 UIKit 绘制路径负责方向与 scale；不直接翻转其 CGImage。
+        UIGraphicsPushContext(context)
+        for placement in attachments {
+            placement.attachment.image.draw(in: placement.rect)
+        }
+        UIGraphicsPopContext()
     }
 }
 
@@ -39,11 +59,13 @@ final class ResolvedText {
     let idealWidth: CGFloat
     private let isEmpty: Bool
     private let attributedText: NSAttributedString
+    private let attachments: [Int: LYGlyphTextAttachment]
 
     init(document: LYGlyphTextDocument?, traits: UITraitCollection) {
         let string = document?.string ?? ""
         sourceLength = (string as NSString).length
         isEmpty = sourceLength == 0
+        attachments = document?.attachments ?? [:]
         let text = NSMutableAttributedString(string: string)
         for run in document?.styleRuns ?? [] {
             let font = run.font ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
@@ -53,6 +75,18 @@ final class ResolvedText {
                 NSAttributedString.Key(kCTForegroundColorAttributeName as String): color.cgColor,
                 NSAttributedString.Key(kCTParagraphStyleAttributeName as String): Self.paragraphStyle(for: run)
             ], range: run.range)
+        }
+        for (location, attachment) in attachments {
+            let font = text.attribute(.font, at: location, effectiveRange: nil) as? UIFont
+                ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
+            let metrics = AttachmentMetrics(
+                size: attachment.size, ascender: font.ascender, descender: font.descender,
+                alignment: attachment.alignment
+            )
+            text.addAttributes([
+                NSAttributedString.Key(kCTRunDelegateAttributeName as String): metrics.makeDelegate(),
+                AttachmentMetrics.locationKey: location
+            ], range: NSRange(location: location, length: 1))
         }
         // Core Text 默认不为末尾分隔符生成最后一个空行，添加零宽字符保留该行。
         if let last = string.unicodeScalars.last, CharacterSet.newlines.contains(last) {
@@ -155,7 +189,7 @@ final class ResolvedText {
                     width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
                     height: pixelCeil(visible.height + vertical)
                 ),
-                lines: visible.lines
+                lines: visible.lines, attachments: visibleAttachments(in: visible.lines)
             )
         }
         return LYGlyphTextLayout(
@@ -163,8 +197,38 @@ final class ResolvedText {
                 width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
                 height: pixelCeil(frame.contentHeight + vertical)
             ),
-            lines: lines
+            lines: lines, attachments: visibleAttachments(in: lines)
         )
+    }
+
+    private func visibleAttachments(in lines: [LYGlyphTextLayout.Line]) -> [LYGlyphTextLayout.Attachment] {
+        lines.flatMap { line in
+            (CTLineGetGlyphRuns(line.text) as! [CTRun]).compactMap { run in
+                let attributes = CTRunGetAttributes(run) as NSDictionary
+                guard let location = attributes[AttachmentMetrics.locationKey] as? Int,
+                      let attachment = attachments[location], CTRunGetGlyphCount(run) > 0,
+                      line.visibleSourceRanges.contains(where: { NSLocationInRange(location, $0) })
+                else { return nil }
+                let runRange = CTRunGetStringRange(run)
+                guard runRange.location + line.sourceOffset == location,
+                      line.truncationTokenRange.map({ !NSLocationInRange(runRange.location, $0) }) ?? true
+                else { return nil }
+                var position = CGPoint.zero
+                CTRunGetPositions(run, CFRange(location: 0, length: 1), &position)
+                let delegate = attributes[kCTRunDelegateAttributeName] as! CTRunDelegate
+                let metrics = Unmanaged<AttachmentMetrics>.fromOpaque(
+                    CTRunDelegateGetRefCon(delegate)
+                ).takeUnretainedValue()
+                return LYGlyphTextLayout.Attachment(
+                    attachment: attachment, sourceLocation: location,
+                    rect: CGRect(
+                        x: line.baseline.x + position.x,
+                        y: line.baseline.y - position.y - metrics.bottom - attachment.size.height,
+                        width: attachment.size.width, height: attachment.size.height
+                    )
+                )
+            }
+        }
     }
 
     private func truncatedLines(
@@ -187,9 +251,10 @@ final class ResolvedText {
                 length: range.length
             )))
             if let last = metricsText.string.unicodeScalars.last, !CharacterSet.newlines.contains(last) {
-                metricsText.append(NSAttributedString(string: "\n", attributes: attributedText.attributes(
-                    at: range.location + range.length - 1, effectiveRange: nil
-                )))
+                var attributes = attributedText.attributes(at: range.location + range.length - 1, effectiveRange: nil)
+                attributes.removeValue(forKey: NSAttributedString.Key(kCTRunDelegateAttributeName as String))
+                attributes.removeValue(forKey: AttachmentMetrics.locationKey)
+                metricsText.append(NSAttributedString(string: "\n", attributes: attributes))
             }
         }
         metricsText.append(finalText)

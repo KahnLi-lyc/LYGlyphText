@@ -12,7 +12,11 @@ struct TailTruncation {
     let drawsToken: Bool
 
     init(text: NSAttributedString, range: NSRange, width: CGFloat) {
-        var attributes = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
+        let original = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
+        // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
+        var attributes = original.filter {
+            $0.key == .font || $0.key == NSAttributedString.Key(kCTForegroundColorAttributeName as String)
+        }
         let paragraph = ResolvedParagraph(text: text, at: range.location)
         attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
         let token = NSAttributedString(string: "…", attributes: attributes)

@@ -8,7 +8,7 @@
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-20；已完成基础显示及行数限制／尾部省略。当前公开 attributedText 文档、内边距／行数配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；证据见 [基础显示记录](../../verification/2026-10-20-basic-display.md) 与 [行数限制记录](../../verification/2026-10-20-line-limits.md)。
+**状态与日期：** 2026-10-20；已完成基础显示、行数限制／尾部省略及行内 UIImage。当前公开 attributedText 与图片描述文档、内边距／行数配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；证据见 [基础显示记录](../../verification/2026-10-20-basic-display.md)、[行数限制记录](../../verification/2026-10-20-line-limits.md) 与 [图片附件记录](../../verification/2026-10-20-image-attachments.md)。
 
 ---
 
@@ -209,7 +209,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [x] 建立第 2 节的目录与 Swift 6／iOS 16 配置，设置零第三方依赖；建立最小公开文档与视图入口作为后续垂直实现起点。
 - [x] 示例首页提供 UIKit、SwiftUI 两个入口；建立单一测试 fixture 数据文件供两端复用。
 - [x] 提供短文、多行、混合样式、并排按钮和 UIKit／SwiftUI 宽度切换的真实示例；不添加尚未实现的列表或附件入口。
-- [ ] 后续提供列表、附件和完整 StackView 矩阵的真实示例。
+- [ ] 后续提供列表、UIView 附件和完整 StackView 矩阵的真实示例。
+- [x] UIKit／SwiftUI 共用静态图片混排文档，可操作三种对齐、内容、宽度及行数；UIView 附件和列表仍未提供。
 - [x] 配置 package scheme `LYGlyphText`、demo shared scheme `LYGlyphTextDemo`，测试使用 XCTest 并在 MainActor 调用 UIKit 代码。
 - [x] 运行第 6 节的清单／构建／测试命令，记录实际 scheme 与目的地；只记录已运行结果。
 
@@ -223,8 +224,9 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [x] 建立 Core Text 行布局、基线和 UTF-16 原文范围；验证空文本、中英文、家庭 emoji、组合重音、不同字号和基本方向。
 - [x] 测量显式换行（包括纯换行）、空白、内边距、0／有限／无限宽度；高度不受旧展示高度限制。
 - [x] 每 Label 最多两份布局缓存，内容／配置／trait 变化后失效；测量不创建 View。
-- [ ] 后续完成 segments、actions、attachments 输入、范围校验和安全转换接口。
-- [ ] 后续扩展行距、其他装饰样式、明确尺寸附件与 factory 次数验证。
+- [x] 完成图片 attachments 字典输入，以 UTF-16 位置关联独立 U+FFFC；校验描述完整性、位置、唯一 ID 和有限正尺寸，继续拒绝标准 NSTextAttachment。
+- [ ] 后续完成 segments、actions 输入、动作范围校验和安全转换接口。
+- [ ] 后续扩展行距、其他装饰样式与 UIView factory 次数验证。
 - [x] 显示／截断范围补充家庭 emoji、肤色、旗帜、组合重音、混合方向及字符内属性分段测试。
 - [ ] 后续补齐 Unicode／双向文本的动作范围与真实点击矩阵。
 
@@ -238,6 +240,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [ ] 后续实现背景与装饰属性，扩展基线与视觉对照。
 - [x] 增加 `configuration.numberOfLines`（0／负值为无限行）与尾部省略；末行可见 UTF-16 区间不包含隐藏内容／生成省略号，组合字符内 run 片段合并；测试刚好容纳、只容纳／无法容纳省略号、混合方向及隐藏首 strong 的自然 RTL。
 - [ ] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；验证坐标偏移没有重复应用。
+- [x] 图片附件覆盖内边距、宽度往返、非零 bounds 原点及高度压缩裁切；全部 UIImage 方向与声明尺寸有像素／几何测试。整组显示环境与垂直对齐功能仍待后续。
 - [x] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
 - [x] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
 - [x] 实现有效宽度变化的固有尺寸失效，测试 0→正值、窄→宽→窄、旧高度不影响新高度及布局收敛；测量不调用 layoutIfNeeded 或安装附件。
@@ -251,11 +254,12 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** 附件描述和 MainActor 工厂。**输出：** 与文字共同换行的图片及真实子视图。
 
-- [ ] 实现度量 delegate 与图片绘制，验证三种对齐、超高附件、连续附件、行尾附件和截断附件。
+- [x] 实现度量 delegate 与图片绘制，验证三种对齐、超高／超宽附件、连续附件、行首／行尾附件和截断附件；隐藏高附件不撑高，省略号不继承附件属性。
+- [x] 相同图片文档在两个 Label 独立显示／清空；声明尺寸更新使固有高度失效，UIKit／SwiftUI 同输入宽度／行数下高度差不超过一个物理像素。测量不创建子视图、不改变宿主优先级。
 - [ ] 实现按 ID 管理的宿主视图集合及 reloadAttachments；记录 factory 调用与释放次数。
 - [ ] 同时用两个 Label 展示相同文档，核对 View 实例独立；测试 nil 工厂结果、跨宿主错误返回和切换文档的卸载。
 - [ ] 示例包含静态 UIImage、UIImageView、按钮与自定义徽章；复用测试滚动／替换内容后不得残留旧附件。
-- [ ] 附件尺寸变化更新固有高度；受限外框裁切附件及命中区域，测量阶段 factory 调用数始终为 0。
+- [ ] UIView 附件尺寸变化更新固有高度；受限外框裁切附件及命中区域，测量阶段 factory 调用数始终为 0。
 
 **完成标准：** 真实子视图在主线程安装；隐藏附件不挂载；无跨宿主抢占与明显 retain cycle；附件尺寸与 baseline 不受工厂实际 frame 反向影响。
 
@@ -376,12 +380,12 @@ Apple 原始资料：
 | 文档与仓库初始化 | 已完成；本轮更新工程规范和布局契约 |
 | 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
-| Package、组件源码、Demo | 基础显示与行数限制／尾部省略已实现；完整首版能力未完成 |
+| Package、组件源码、Demo | 基础显示、行数限制／尾部省略及 UIImage 附件已实现；完整首版能力未完成 |
 | Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和宿主／UI 测试，见基础显示验证记录；Swift 6.0 编译器仍未验证 |
 | Auto Layout／布局优先级／SwiftUI 基础尺寸 | 本轮提供基础实现和行为测试；完整 StackView／列表矩阵待阶段 6 |
 | iOS 16／当前系统运行 | iOS 16 未验证；本轮 iOS 27.0 专用 Simulator 运行，见基础显示验证记录 |
 | VoiceOver、性能、真实设备行为 | 未验证 |
 
-行数限制专项与截图见 [行数限制验证记录](../../verification/2026-10-20-line-limits.md)。阶段 2／3 的附件、装饰和动作几何任务仍为待办。
+行数限制专项与截图见 [行数限制验证记录](../../verification/2026-10-20-line-limits.md)，图片专项见 [图片附件验证记录](../../verification/2026-10-20-image-attachments.md)。装饰、动作几何、UIView 附件工厂与生命周期任务仍为待办；完整 VoiceOver 行内语义未验收。
 
 后续完成一个阶段时，只勾选有证据的任务，并在提交说明中写明行为变化、测试与限制。首版发布前不得把本文的预期行为写成既成事实。

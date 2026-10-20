@@ -8,6 +8,8 @@ final class UIKitDemoController: UIViewController {
     private let priorityLabel = LYGlyphTextLabel(frame: .zero)
     private let statusLabel = UILabel()
     private let sampleControl = UISegmentedControl(items: SampleKind.allCases.map(\.title))
+    private let imageControl = UISegmentedControl(items: ["文字", "图片混排"])
+    private let alignmentControl = UISegmentedControl(items: ImageAlignment.allCases.map(\.title))
     private let widthControl = UISegmentedControl(items: ["160", "240", "320"])
     private let lineLimitControl = UISegmentedControl(items: LineLimit.allCases.map(\.title))
     private let priorityControl = UISegmentedControl(items: ["压缩文本", "压缩按钮"])
@@ -51,6 +53,12 @@ final class UIKitDemoController: UIViewController {
         sampleControl.selectedSegmentIndex = 0
         sampleControl.accessibilityIdentifier = "sampleControl"
         sampleControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
+        imageControl.selectedSegmentIndex = 0
+        imageControl.accessibilityIdentifier = "imageControl"
+        imageControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
+        alignmentControl.selectedSegmentIndex = ImageAlignment.bottom.rawValue
+        alignmentControl.accessibilityIdentifier = "alignmentControl"
+        alignmentControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
         widthControl.selectedSegmentIndex = 1
         widthControl.accessibilityIdentifier = "widthControl"
         widthControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
@@ -64,10 +72,19 @@ final class UIKitDemoController: UIViewController {
         textLabel.layer.borderColor = UIColor.systemGray.cgColor
         textLabel.accessibilityIdentifier = "richTextPreview"
         stack.addArrangedSubview(sampleControl)
+        stack.addArrangedSubview(imageControl)
+        stack.addArrangedSubview(alignmentControl)
         stack.addArrangedSubview(widthControl)
         stack.addArrangedSubview(lineLimitControl)
         stack.addArrangedSubview(statusLabel)
         stack.addArrangedSubview(textLabel)
+        let imageExplanation = UILabel()
+        imageExplanation.text = "图片：上向箭头橙标在左上，右向箭头橙标在右上；对齐参照当前字体区域。"
+        imageExplanation.numberOfLines = 0
+        imageExplanation.font = .preferredFont(forTextStyle: .caption1)
+        imageExplanation.textColor = .secondaryLabel
+        stack.addArrangedSubview(imageExplanation)
+        imageExplanation.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         let width = textLabel.widthAnchor.constraint(equalToConstant: 240)
         width.priority = UILayoutPriority(999)
         width.isActive = true
@@ -92,7 +109,14 @@ final class UIKitDemoController: UIViewController {
         actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
         stack.addArrangedSubview(row)
         row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        for control in [sampleControl, widthControl, lineLimitControl, priorityControl] {
+        for control in [
+            sampleControl,
+            imageControl,
+            alignmentControl,
+            widthControl,
+            lineLimitControl,
+            priorityControl
+        ] {
             control.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
         explanation.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -105,13 +129,18 @@ final class UIKitDemoController: UIViewController {
         let widths: [CGFloat] = [160, 240, 320]
         let width = widths[widthControl.selectedSegmentIndex]
         let limit = LineLimit.allCases[lineLimitControl.selectedSegmentIndex]
-        textLabel.document = samples.documents[kind]
+        let includesImages = imageControl.selectedSegmentIndex == 1
+        let alignment = ImageAlignment.allCases[alignmentControl.selectedSegmentIndex]
+        alignmentControl.isEnabled = includesImages
+        textLabel.document = samples.document(for: kind, includesImages: includesImages, alignment: alignment)
         textLabel.configuration = .init(
             textContainerInset: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
             numberOfLines: limit.rawValue
         )
         textWidth?.constant = width
-        statusLabel.text = "\(kind.title) · 宽度 \(Int(width)) · \(limit.title)"
+        let imageStatus = includesImages ? " · 图片混排 · \(alignment.title)" : ""
+        statusLabel.text = "\(kind.title) · 宽度 \(Int(width)) · \(limit.title)\(imageStatus)"
+        statusLabel.numberOfLines = 0
     }
 
     @objc private func updatePriorities() {
