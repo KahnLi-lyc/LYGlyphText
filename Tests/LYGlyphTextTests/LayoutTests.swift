@@ -58,12 +58,17 @@ final class LayoutTests: XCTestCase {
         let view = try label(text)
         let layout = view.measuredLayout(width: 85)
         XCTAssertGreaterThan(layout.lines.count, 1)
-        XCTAssertEqual(layout.lines.map(\.sourceRange.length).reduce(0, +), (text as NSString).length)
+        XCTAssertEqual(
+            layout.lines.flatMap(\.visibleSourceRanges).map(\.length).reduce(0, +),
+            (text as NSString).length
+        )
         var cursor = 0
         for line in layout.lines {
-            XCTAssertEqual(line.sourceRange.location, cursor)
-            XCTAssertNotNil(Range(line.sourceRange, in: text))
-            cursor = NSMaxRange(line.sourceRange)
+            for range in line.visibleSourceRanges {
+                XCTAssertEqual(range.location, cursor)
+                XCTAssertNotNil(Range(range, in: text))
+                cursor = NSMaxRange(range)
+            }
         }
     }
 

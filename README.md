@@ -2,14 +2,15 @@
 
 面向 UIKit 与 SwiftUI 的只读富文本 Swift Package，使用纯 Swift 和 Core Text，零第三方运行依赖。最低部署目标 iOS 16，Swift tools 6.0／Swift 6 language mode。
 
-当前提供基础显示闭环：**富文本文档 → Core Text 排版与绘制 → UIKit 自动撑高 → SwiftUI 展示**。尚未发布版本；本地构建与运行环境见 [验证记录](docs/verification/2026-10-20-basic-display.md)。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
+当前提供富文本显示、自动撑高及**行数限制／尾部省略**：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；本地构建与运行环境见 [基础显示记录](docs/verification/2026-10-20-basic-display.md) 与 [行数限制记录](docs/verification/2026-10-20-line-limits.md)。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
 
 ## 已实现
 
 - MainActor 不可变 `LYGlyphTextDocument`：隔离复制输入字符串及段落样式。
 - 字体、前景色、段落对齐和基本书写方向；缺省动态 body 字体和 label 颜色。显式字号保持固定。
 - 多行单词换行、显式换行、中英文与 emoji、顶部对齐、内边距。
-- Core Text 统一测量和绘制，每个 Label 最多缓存两份布局。
+- `configuration.numberOfLines`：0 或负值为无限行，正值限制显示行数；溢出时末行尾部显示 `…`。
+- Core Text 统一测量、截断和绘制，内部保留可见原文 UTF-16 区间并单独标记生成的省略号；每个 Label 最多缓存两份布局。
 - `intrinsicContentSize`、`sizeThatFits`、`preferredMaxLayoutWidth`、required 横向宽度的 `systemLayoutSizeFitting`。
 - 标准 Content Hugging／Compression Resistance，内容更新不会重置宿主设置；外部限制高度时裁切。
 - `LYGlyphTextView` 通过 UIViewRepresentable 复用 UIKit；直接使用 SwiftUI 宽度提议。
@@ -33,7 +34,10 @@ func installText(in container: UIView) throws {
     )
     let label = LYGlyphTextLabel(frame: .zero)
     label.document = try LYGlyphTextDocument(attributedText: input)
-    label.configuration = .init(textContainerInset: .init(top: 8, left: 12, bottom: 8, right: 12))
+    label.configuration = .init(
+        textContainerInset: .init(top: 8, left: 12, bottom: 8, right: 12),
+        numberOfLines: 3
+    )
     label.translatesAutoresizingMaskIntoConstraints = false
     container.addSubview(label)
     NSLayoutConstraint.activate([
@@ -56,13 +60,15 @@ struct Example: View {
     let document: LYGlyphTextDocument
 
     var body: some View {
-        LYGlyphTextView(document: document)
-            .frame(width: 240)
+        LYGlyphTextView(document: document, configuration: .init(numberOfLines: 2))
+            .frame(width: 240, alignment: .leading)
     }
 }
 ```
 
-`preferredMaxLayoutWidth` 包含内边距，仅影响固有高度估算；正值优先，其次正 bounds 宽度，最后使用保留显式换行的内容理想宽度。实际绘制总按 bounds。首次离屏测量应传入 required 横向宽度，避免依赖尚未确定的 frame。`sizeThatFits` 的高度参数不裁减完整内容的测量结果。
+`preferredMaxLayoutWidth` 包含内边距，仅影响固有高度估算；正值优先，其次正 bounds 宽度，最后使用保留显式换行的内容理想宽度。实际绘制总按 bounds。首次离屏测量应传入 required 横向宽度，避免依赖尚未确定的 frame。`sizeThatFits` 的高度遵守行数限制，忽略传入的高度上限。固有宽度仍来自完整内容的理想宽度。
+
+显式换行（含末尾空行）计入行数；刚好容纳时不省略。生成的省略号继承最后可见行起点的字体和前景色。正宽度仅够省略号时只显示省略号，连省略号也放不下时保留该行高度但不绘制文字。外部高度裁切不触发额外省略号。
 
 SwiftUI nil／无限宽度使用理想尺寸，有限宽度用于排版，0 返回安全的零宽结果。SwiftUI `layoutPriority` 由宿主管理，不映射为 UIKit 优先级。当前不保证与 UILabel 首／末文字基线对齐等价。
 
@@ -78,20 +84,21 @@ scripts/verify.sh test <可用的独立模拟器UDID>
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
-build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式和展示宽度。UIKit 另含富文本与按钮并排场景。工程生成物、构建日志和 xcresult 留在忽略目录内。
+build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、展示宽度及无限行／1 行／2 行／3 行。UIKit 另含富文本与按钮并排场景。工程生成物、构建日志和 xcresult 留在忽略目录内。
 
 test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测试视为失败。Package 单测源码也由 Demo 宿主执行，避免用 macOS `swift test` 代替 UIKit 验证。
 
 ## 后续能力
 
-尚未实现：图片／UIView 附件、局部点击、长按、高亮、行数限制和尾部省略、装饰属性、编辑、选择复制、HTML／Markdown 解析、异步渲染。标准 `.attachment` 和 U+FFFC 输入明确抛错；其他未支持的装饰属性不参与绘制。
+尚未实现：图片／UIView 附件、局部点击、长按、高亮、装饰属性、编辑、选择复制、HTML／Markdown 解析、异步渲染。标准 `.attachment` 和 U+FFFC 输入明确抛错；其他未支持的装饰属性不参与绘制。
 
 当前已处理默认字体和语义颜色的 trait 更新；完整 Dynamic Type、RTL、VoiceOver、列表复用和最低系统验收继续按阶段推进。原生约束与 SwiftUI 基础尺寸适配已实现，不等于所有宿主组合均已验证。
 
 ## 文档与许可
 
 - [总实施计划与阶段验收](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md)
-- [本轮显示闭环与验证记录](docs/verification/2026-10-20-basic-display.md)
+- [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)
+- [基础显示闭环与验证记录](docs/verification/2026-10-20-basic-display.md)
 - [开发规则](AGENTS.md)、[编码规范](CODING_STYLE.md)、[贡献指南](CONTRIBUTING.md)
 - [参考库来源、校验与借鉴边界](docs/REFERENCES.md)
 

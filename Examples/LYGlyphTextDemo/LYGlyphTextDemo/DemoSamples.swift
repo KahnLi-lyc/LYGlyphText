@@ -3,14 +3,24 @@ import UIKit
 
 @MainActor
 enum SampleKind: Int, CaseIterable {
-    case short, multiline, mixed
+    case short, multiline, mixed, newlines
 
     var title: String {
         switch self {
         case .short: "短文"
         case .multiline: "多行"
         case .mixed: "混合样式"
+        case .newlines: "显式换行"
         }
+    }
+}
+
+@MainActor
+enum LineLimit: Int, CaseIterable {
+    case unlimited = 0, one, two, three
+
+    var title: String {
+        self == .unlimited ? "无限行" : "\(rawValue) 行"
     }
 }
 
@@ -39,10 +49,14 @@ final class DemoSamples {
                 .foregroundColor: UIColor.systemOrange
             ]
         ))
+        let newlines = NSAttributedString(
+            string: "第一行保留显式换行。\n\n第三行之前是空行。\n第四行：中英文 English 👨‍👩‍👧‍👦。\n"
+        )
         documents = try [
             .short: LYGlyphTextDocument(attributedText: short),
             .multiline: LYGlyphTextDocument(attributedText: multiline),
-            .mixed: LYGlyphTextDocument(attributedText: mixed)
+            .mixed: LYGlyphTextDocument(attributedText: mixed),
+            .newlines: LYGlyphTextDocument(attributedText: newlines)
         ]
     }
 }

@@ -8,7 +8,7 @@
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-20；已从资料阶段进入基础显示闭环。当前仅公开 attributedText 文档、内边距配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；本轮证据见 [基础显示验证记录](../../verification/2026-10-20-basic-display.md)。
+**状态与日期：** 2026-10-20；已完成基础显示及行数限制／尾部省略。当前公开 attributedText 文档、内边距／行数配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；证据见 [基础显示记录](../../verification/2026-10-20-basic-display.md) 与 [行数限制记录](../../verification/2026-10-20-line-limits.md)。
 
 ---
 
@@ -122,7 +122,7 @@ Examples/LYGlyphTextDemo/
 - 绘制、高亮、附件和命中均受内容可见区域裁切；完全不可见附件不挂载，部分可见附件只在可见部分绘制／响应，裁切外不触发业务动作。
 
 ```swift
-// 未来组件 API 用法示意；当前无组件实现，不能作为编译证据。
+// 标准 UIView 优先级 API；实际约束场景见 AutoLayoutTests。
 label.setContentHuggingPriority(.defaultLow, for: .horizontal)
 label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 ```
@@ -225,7 +225,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [x] 每 Label 最多两份布局缓存，内容／配置／trait 变化后失效；测量不创建 View。
 - [ ] 后续完成 segments、actions、attachments 输入、范围校验和安全转换接口。
 - [ ] 后续扩展行距、其他装饰样式、明确尺寸附件与 factory 次数验证。
-- [ ] 补齐更完整 Unicode／双向文本矩阵（包括肤色、旗帜及动作范围）。
+- [x] 显示／截断范围补充家庭 emoji、肤色、旗帜、组合重音、混合方向及字符内属性分段测试。
+- [ ] 后续补齐 Unicode／双向文本的动作范围与真实点击矩阵。
 
 **完成标准：** 有限尺寸、不越界；在相同约束下测量与展示使用同一布局；重复内容不会被错误地认为同一动作实例。
 
@@ -235,7 +236,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 - [x] 在 UIView 绘制字体和前景色，像素测试确认实际彩色文字与高度裁切；示例核对换行。
 - [ ] 后续实现背景与装饰属性，扩展基线与视觉对照。
-- [ ] 增加行数限制与尾部省略，构造最后一行的映射；测试刚好容纳、只容纳省略号和混合方向文本。
+- [x] 增加 `configuration.numberOfLines`（0／负值为无限行）与尾部省略；末行可见 UTF-16 区间不包含隐藏内容／生成省略号，组合字符内 run 片段合并；测试刚好容纳、只容纳／无法容纳省略号、混合方向及隐藏首 strong 的自然 RTL。
 - [ ] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；验证坐标偏移没有重复应用。
 - [x] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
 - [x] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
@@ -375,10 +376,12 @@ Apple 原始资料：
 | 文档与仓库初始化 | 已完成；本轮更新工程规范和布局契约 |
 | 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
-| Package、组件源码、Demo | 基础显示闭环已实现；完整首版能力未完成 |
+| Package、组件源码、Demo | 基础显示与行数限制／尾部省略已实现；完整首版能力未完成 |
 | Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和宿主／UI 测试，见基础显示验证记录；Swift 6.0 编译器仍未验证 |
 | Auto Layout／布局优先级／SwiftUI 基础尺寸 | 本轮提供基础实现和行为测试；完整 StackView／列表矩阵待阶段 6 |
 | iOS 16／当前系统运行 | iOS 16 未验证；本轮 iOS 27.0 专用 Simulator 运行，见基础显示验证记录 |
 | VoiceOver、性能、真实设备行为 | 未验证 |
+
+行数限制专项与截图见 [行数限制验证记录](../../verification/2026-10-20-line-limits.md)。阶段 2／3 的附件、装饰和动作几何任务仍为待办。
 
 后续完成一个阶段时，只勾选有证据的任务，并在提交说明中写明行为变化、测试与限制。首版发布前不得把本文的预期行为写成既成事实。

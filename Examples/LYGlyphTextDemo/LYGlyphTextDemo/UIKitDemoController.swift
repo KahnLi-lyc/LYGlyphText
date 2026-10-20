@@ -9,6 +9,7 @@ final class UIKitDemoController: UIViewController {
     private let statusLabel = UILabel()
     private let sampleControl = UISegmentedControl(items: SampleKind.allCases.map(\.title))
     private let widthControl = UISegmentedControl(items: ["160", "240", "320"])
+    private let lineLimitControl = UISegmentedControl(items: LineLimit.allCases.map(\.title))
     private let priorityControl = UISegmentedControl(items: ["压缩文本", "压缩按钮"])
     private let actionButton = UIButton(type: .system)
     private var textWidth: NSLayoutConstraint?
@@ -53,15 +54,18 @@ final class UIKitDemoController: UIViewController {
         widthControl.selectedSegmentIndex = 1
         widthControl.accessibilityIdentifier = "widthControl"
         widthControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
+        lineLimitControl.selectedSegmentIndex = 0
+        lineLimitControl.accessibilityIdentifier = "lineLimitControl"
+        lineLimitControl.addTarget(self, action: #selector(updateContent), for: .valueChanged)
         statusLabel.accessibilityIdentifier = "sampleStatus"
         statusLabel.font = .preferredFont(forTextStyle: .caption1)
-        textLabel.configuration = .init(textContainerInset: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10))
         textLabel.backgroundColor = .secondarySystemBackground
         textLabel.layer.borderWidth = 1
         textLabel.layer.borderColor = UIColor.systemGray.cgColor
         textLabel.accessibilityIdentifier = "richTextPreview"
         stack.addArrangedSubview(sampleControl)
         stack.addArrangedSubview(widthControl)
+        stack.addArrangedSubview(lineLimitControl)
         stack.addArrangedSubview(statusLabel)
         stack.addArrangedSubview(textLabel)
         let width = textLabel.widthAnchor.constraint(equalToConstant: 240)
@@ -88,7 +92,7 @@ final class UIKitDemoController: UIViewController {
         actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
         stack.addArrangedSubview(row)
         row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        for control in [sampleControl, widthControl, priorityControl] {
+        for control in [sampleControl, widthControl, lineLimitControl, priorityControl] {
             control.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
         explanation.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -100,9 +104,14 @@ final class UIKitDemoController: UIViewController {
         guard let kind = SampleKind(rawValue: sampleControl.selectedSegmentIndex) else { return }
         let widths: [CGFloat] = [160, 240, 320]
         let width = widths[widthControl.selectedSegmentIndex]
+        let limit = LineLimit.allCases[lineLimitControl.selectedSegmentIndex]
         textLabel.document = samples.documents[kind]
+        textLabel.configuration = .init(
+            textContainerInset: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
+            numberOfLines: limit.rawValue
+        )
         textWidth?.constant = width
-        statusLabel.text = "\(kind.title) · 宽度 \(Int(width))"
+        statusLabel.text = "\(kind.title) · 宽度 \(Int(width)) · \(limit.title)"
     }
 
     @objc private func updatePriorities() {

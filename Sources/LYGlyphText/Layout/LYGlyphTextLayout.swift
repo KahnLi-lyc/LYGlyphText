@@ -7,7 +7,12 @@ struct LYGlyphTextLayout {
     struct Line {
         let text: CTLine
         let baseline: CGPoint
-        let sourceRange: NSRange
+        /// 原文 UTF-16 区间；生成的省略号没有原文索引。
+        let visibleSourceRanges: [NSRange]
+        /// CTLine 索引到原文索引的偏移；截断行重建后使用局部索引。
+        let sourceOffset: Int
+        /// 生成的省略号在 CTLine 内的索引，与原文中的省略号字符区分。
+        let truncationTokenRange: NSRange?
     }
 
     let size: CGSize
@@ -33,6 +38,7 @@ final class ResolvedText {
     let sourceLength: Int
     let idealWidth: CGFloat
     private let isEmpty: Bool
+    private let attributedText: NSAttributedString
 
     init(document: LYGlyphTextDocument?, traits: UITraitCollection) {
         let string = document?.string ?? ""
@@ -53,6 +59,7 @@ final class ResolvedText {
             let attributes = text.attributes(at: sourceLength - 1, effectiveRange: nil)
             text.append(NSAttributedString(string: "\u{200B}", attributes: attributes))
         }
+        attributedText = text.copy() as! NSAttributedString
         framesetter = CTFramesetterCreateWithAttributedString(text)
         // 按显式行测量 advance；framesetter 的建议宽度会省略行尾空白。
         let stringValue = text.string as NSString
@@ -109,7 +116,9 @@ final class ResolvedText {
         }
     }
 
-    func layout(width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat) -> LYGlyphTextLayout {
+    func layout(
+        width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0
+    ) -> LYGlyphTextLayout {
         let horizontal = insets.left + insets.right
         let vertical = insets.top + insets.bottom
         let outerWidth = width ?? (idealWidth + horizontal)
@@ -124,32 +133,111 @@ final class ResolvedText {
         }
         // 理想宽度向上对齐像素，避免浮点误差换行；纯换行仍需正宽路径保留行高。
         let contentWidth = width == nil ? max(1 / scale, pixelCeil(available)) : available
-        let suggested = CTFramesetterSuggestFrameSizeWithConstraints(
-            framesetter, CFRange(location: 0, length: 0), nil,
-            CGSize(width: contentWidth, height: CGFloat.greatestFiniteMagnitude), nil
-        )
-        let frameHeight = pixelCeil(suggested.height) + 1 / scale
-        let path = CGPath(rect: CGRect(x: 0, y: 0, width: contentWidth, height: frameHeight), transform: nil)
-        let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
-        let textLines = CTFrameGetLines(frame) as! [CTLine]
-        var origins = [CGPoint](repeating: .zero, count: textLines.count)
-        CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
-        let lines = zip(textLines, origins).map { line, origin in
+        let frame = TextFrame(framesetter: framesetter, width: contentWidth, scale: scale)
+        let lines = zip(frame.lines, frame.origins).map { line, origin in
             let range = CTLineGetStringRange(line)
             let start = min(sourceLength, max(0, range.location))
             let end = min(sourceLength, max(start, range.location + range.length))
             return LYGlyphTextLayout.Line(
                 text: line,
-                baseline: CGPoint(x: insets.left + origin.x, y: insets.top + frameHeight - origin.y),
-                sourceRange: NSRange(location: start, length: end - start)
+                baseline: CGPoint(x: insets.left + origin.x, y: insets.top + frame.height - origin.y),
+                visibleSourceRanges: end > start ? [NSRange(location: start, length: end - start)] : [],
+                sourceOffset: 0,
+                truncationTokenRange: nil
+            )
+        }
+        if numberOfLines > 0, lines.count > numberOfLines {
+            let visible = truncatedLines(
+                Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale
+            )
+            return LYGlyphTextLayout(
+                size: CGSize(
+                    width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
+                    height: pixelCeil(visible.height + vertical)
+                ),
+                lines: visible.lines
             )
         }
         return LYGlyphTextLayout(
             size: CGSize(
                 width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
-                height: pixelCeil(suggested.height + vertical)
+                height: pixelCeil(frame.contentHeight + vertical)
             ),
             lines: lines
         )
+    }
+
+    private func truncatedLines(
+        _ original: [LYGlyphTextLayout.Line], width: CGFloat, insets: UIEdgeInsets, scale: CGFloat
+    ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat) {
+        guard let last = original.last else { return ([], 0) }
+        let sourceRange = CTLineGetStringRange(last.text)
+        let start = min(sourceLength, sourceRange.location)
+        let end = min(sourceLength, sourceRange.location + sourceRange.length)
+        let truncation = TailTruncation(
+            text: attributedText, range: NSRange(location: start, length: end - start), width: width
+        )
+        let finalText = truncation.text
+        let metricsText = NSMutableAttributedString(string: "")
+        let previous = original.dropLast().last
+        if let previous {
+            let range = CTLineGetStringRange(previous.text)
+            metricsText.append(attributedText.attributedSubstring(from: NSRange(
+                location: range.location,
+                length: range.length
+            )))
+            if let last = metricsText.string.unicodeScalars.last, !CharacterSet.newlines.contains(last) {
+                metricsText.append(NSAttributedString(string: "\n", attributes: attributedText.attributes(
+                    at: range.location + range.length - 1, effectiveRange: nil
+                )))
+            }
+        }
+        metricsText.append(finalText)
+        // 无限宽只用于两个最终显示行的垂直度量，避免超宽字形把人工分隔符另排一行。
+        // 真实字形来自已固定段落方向的末行，前面各行位置保持不变。
+        let metrics = TextFrame(
+            framesetter: CTFramesetterCreateWithAttributedString(metricsText),
+            width: .greatestFiniteMagnitude, scale: scale
+        )
+        let firstBaseline = metrics.origins.first.map { metrics.height - $0.y } ?? 0
+        let lastBaseline = metrics.origins.last.map { metrics.height - $0.y } ?? firstBaseline
+        let offset = previous.map { $0.baseline.y - insets.top - firstBaseline } ?? 0
+        var lines = Array(original.dropLast())
+        lines.append(LYGlyphTextLayout.Line(
+            text: truncation.drawsToken ? truncation
+                .line : CTLineCreateWithAttributedString(NSAttributedString(string: "")),
+            baseline: CGPoint(x: insets.left + truncation.alignmentOffset, y: insets.top + offset + lastBaseline),
+            visibleSourceRanges: truncation.visibleSourceRanges(
+                in: truncation.line,
+                source: attributedText.string as NSString
+            ),
+            sourceOffset: truncation.sourceOffset,
+            truncationTokenRange: truncation.drawsToken ? truncation.tokenRange : nil
+        ))
+        return (lines, offset + metrics.contentHeight)
+    }
+}
+
+/// Core Text 的帧度量与行原点，保持系统行高规则；坐标尚未转换为 UIKit。
+@MainActor
+struct TextFrame {
+    let contentHeight: CGFloat
+    let height: CGFloat
+    let lines: [CTLine]
+    let origins: [CGPoint]
+
+    init(framesetter: CTFramesetter, width: CGFloat, scale: CGFloat) {
+        let suggested = CTFramesetterSuggestFrameSizeWithConstraints(
+            framesetter, CFRange(location: 0, length: 0), nil,
+            CGSize(width: width, height: CGFloat.greatestFiniteMagnitude), nil
+        )
+        contentHeight = suggested.height
+        height = ceil(suggested.height * scale) / scale + 1 / scale
+        let path = CGPath(rect: CGRect(x: 0, y: 0, width: width, height: height), transform: nil)
+        let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
+        lines = CTFrameGetLines(frame) as! [CTLine]
+        var origins = [CGPoint](repeating: .zero, count: lines.count)
+        CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
+        self.origins = origins
     }
 }

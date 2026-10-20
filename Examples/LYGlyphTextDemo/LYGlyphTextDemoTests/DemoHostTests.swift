@@ -15,6 +15,33 @@ final class DemoHostTests: XCTestCase {
         XCTAssertEqual(controller.title, "UIKit")
         XCTAssertNotNil(controller.view.viewWithAccessibilityIdentifier("richTextPreview"))
     }
+
+    func testUIKitLineLimitControlUpdatesPreviewAndRestoresUnlimitedLines() throws {
+        let controller = try UIKitDemoController(samples: DemoSamples())
+        controller.loadViewIfNeeded()
+        let preview = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("richTextPreview") as? LYGlyphTextLabel
+        )
+        let samples = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("sampleControl") as? UISegmentedControl
+        )
+        let limits = try XCTUnwrap(
+            controller.view.viewWithAccessibilityIdentifier("lineLimitControl") as? UISegmentedControl
+        )
+        XCTAssertEqual(preview.configuration.numberOfLines, 0)
+        samples.selectedSegmentIndex = SampleKind.multiline.rawValue
+        samples.sendActions(for: .valueChanged)
+        let width = CGSize(width: 160, height: CGFloat.greatestFiniteMagnitude)
+        let unlimitedHeight = preview.sizeThatFits(width).height
+        limits.selectedSegmentIndex = LineLimit.three.rawValue
+        limits.sendActions(for: .valueChanged)
+        XCTAssertEqual(preview.configuration.numberOfLines, 3)
+        XCTAssertLessThan(preview.sizeThatFits(width).height, unlimitedHeight)
+        limits.selectedSegmentIndex = LineLimit.unlimited.rawValue
+        limits.sendActions(for: .valueChanged)
+        XCTAssertEqual(preview.configuration.numberOfLines, 0)
+        XCTAssertEqual(preview.sizeThatFits(width).height, unlimitedHeight)
+    }
 }
 
 private extension UIView {

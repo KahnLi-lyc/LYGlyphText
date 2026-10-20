@@ -137,7 +137,9 @@ public final class LYGlyphTextLabel: UIView {
         let text = resolvedText ?? ResolvedText(document: document, traits: traitCollection)
         resolvedText = text
         let scale = traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
-        let layout = text.layout(width: width, insets: configuration.insets, scale: scale)
+        let layout = text.layout(
+            width: width, insets: configuration.insets, scale: scale, numberOfLines: max(0, configuration.numberOfLines)
+        )
         cachedLayouts.insert((width, layout), at: 0)
         if cachedLayouts.count > 2 { cachedLayouts.removeLast() }
         return layout
