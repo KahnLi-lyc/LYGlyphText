@@ -57,7 +57,7 @@ Examples/LYGlyphTextDemo/
 - 单一 library product 与单一业务 target，零第三方运行依赖；Apple 系统框架不属于第三方源码。
 - 示例工程包含名为 LYGlyphTextDemo 的 shared scheme，通过本地 package 引用组件；示例不进入 library target。
 - Core Text 与 UIKit/Core Foundation 类型可在 Swift 中调用；纯 Swift 不意味着不能调用 Apple 的 C／Objective-C 系统 API。
-- 开发使用 `codex/` 前缀分支，验证后自动提交并安全合入本地 main；默认不 push，PR／Tag／Release 需明确授权。流程见 [参与开发](../../../CONTRIBUTING.md)。
+- 开发使用 `codex/` 前缀分支，验证后自动提交、安全合入本地 main 并普通推送至 origin/main；用户明确要求不推送时跳过，推送失败不强推或自动变基。PR／Tag／Release 需明确授权。流程见 [参与开发](../../../CONTRIBUTING.md)。
 - 中文 DocC、命名、最小公开接口、MainActor、幂等清理及格式配置遵守 [编码规范](../../../CODING_STYLE.md)；不照搬业务 App 的固定字号、TCA 或 SnapKit 依赖。
 
 ## 3. 接口契约
@@ -195,7 +195,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** 已归档资料、用户确定的技术路线、开发约定与布局契约。**输出：** 规范文档、固定格式配置及可运行的文档／格式检查入口；不创建组件空壳。
 
-- [x] 建立 AGENTS、CODING_STYLE、CONTRIBUTING，更新 README 与本计划，明确自动本地合入 main、不默认推送。
+- [x] 建立 AGENTS、CODING_STYLE、CONTRIBUTING，更新 README 与本计划；当前交付约定为验证后自动提交、合入 main 并普通推送，历史阶段的实际推送情况按各自记录留证。
 - [x] 建立 EditorConfig 与 SwiftFormat 0.59.1 配置，保留版权头；工具安装必须显式，普通检查不联网或自动下载。
 - [x] 建立 docs／format 检查入口和工具回归测试，覆盖失效链接、检查范围、零 Swift 文件、工具缺失及版本不符。
 - [x] 用真实固定版本工具验证临时 Swift 样例的失败→格式化→通过及幂等性，记录结果；阶段 0 时组件编译／运行尚未验证，后续证据另记。

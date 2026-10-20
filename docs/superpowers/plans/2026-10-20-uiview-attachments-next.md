@@ -29,4 +29,4 @@
 - 同文档双宿主独立；错误共享视图不被抢走；部分裁切区域不响应，按钮实际点击只执行自身事件；布局优先级、现有图片方向和尾部省略回归保留。
 - SwiftUI 同 provider 更新不重建、换 provider 使用新闭包、dismantle 重复安全；weak 引用验证旧视图和旧 provider 释放。示例闭包避免强持有宿主形成循环。
 - 运行 docs、固定版本 format、build 和指定独占 Simulator 的完整宿主／UI 测试，记录非零数量和截图；Swift 6.0 编译器、iOS 16、VoiceOver 和真实设备各自留证，不由新 SDK 编译推导通过。
-- 验证通过后使用任务分支并按独占集成锁安全合入本地 main；默认不推送、不创建 Tag 或 Release。
+- 验证通过后使用任务分支并按独占集成锁安全合入本地 main，随后按 CONTRIBUTING 默认普通推送至 origin/main；不创建 Tag 或 Release。

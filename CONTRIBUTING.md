@@ -55,7 +55,7 @@ scripts/swiftformat.sh Package.swift
 
 Swift 6 模式编译、Swift 6.0 工具链兼容、iOS 16 运行分别验证；新 SDK、部署目标、静态阅读及 fake 测试不能代替最低系统或真实操作结果。
 
-## 开发与本地集成
+## 开发、集成与自动推送
 
 1. 检查工作区和活动 worktree，明确改动与验收范围。默认目标分支 `main`；使用 `codex/<task>`，需要隔离或并行时使用独立 worktree。
 2. 每次提交一个可说明、可验证的任务；不混入无关格式化、依赖升级或重构。不强制 fetch／pull。
@@ -63,12 +63,14 @@ Swift 6 模式编译、Swift 6.0 工具链兼容、iOS 16 运行分别验证；�
 4. 本地合入串行执行：在 Git common directory 下用原子 mkdir 获取 `lyglyphtext-integration.lock`，写明任务、进程和目标 SHA；使用 trap 只释放自己持有的锁。已有锁时停止并报告，不自动删除他人锁。
 5. 锁内重新核对 feature tip、目标 tip、目标 checkout 的干净状态及 worktree 占用。目标为 feature 祖先时，feature 是快进候选；否则创建本任务候选分支／worktree进行普通合并。只验证最终候选 SHA；目标变化后重新评估，不覆盖或 force-update main。
 6. 候选验证通过后，在目标 checkout 以 `git merge --ff-only <candidate>` 更新本地 main。快进后确认 SHA 一致；同 SHA 不再重复检查。冲突、未知文件、锁异常或验证失败时停止并保留现场。
-7. 确认当前 feature tip 已是 main 的祖先，且临时 worktree 干净、没有未知未跟踪／忽略文件后，只清理本任务创建的 worktree 和本地分支；使用 git worktree remove 与 git branch -d，不强制删除。
+7. 合入结果验证通过后，在集成锁内核对 origin 指向本仓库，待推送提交均为已授权成果，然后默认自动执行一次 `git push origin main`。不推送临时 feature 分支，不需要每轮重复确认；用户明确要求不推送时跳过。范围不明时停止并报告。
+8. push 失败不回滚本地合入，不自动 pull／rebase、不强推或改写历史，保留成果并报告失败原因。push 成功后核对远端 main SHA 与候选一致，才能报告远端交付完成。
+9. push 无论成功或失败，只要当前 feature tip 已是 main 的祖先，且临时 worktree 干净、没有未知未跟踪／忽略文件，就只清理本任务创建的 worktree 和本地分支；使用 git worktree remove 与 git branch -d，不强制删除。合入或验证失败时不推送、不清理。
 
-上述是人工／代理执行约定，当前检查脚本不代替 Git 集成流程。推送、PR、远端删除、Tag 和 Release 需明确任务授权；默认只合入本地 main，不自动 push、pull、rebase 或改写历史。
+上述是人工／代理执行约定，当前检查脚本不代替 Git 集成流程。普通目标分支 push 已由仓库约定默认授权；PR、远端删除、Tag 和 Release 仍需明确任务授权。不自动 pull、rebase 或改写历史。
 
 ## 交付说明
 
-记录问题与最终行为、公开 API／依赖变化、目标分支与提交、真实检查及限制。README 只说明实际状态；安装说明与版本号在真实 Package 可用后补充。
+记录问题与最终行为、公开 API／依赖变化、目标分支与提交、真实检查、push 结果及限制；明确区分本地完成与远端交付。README 只说明实际状态；安装说明与版本号在真实 Package 可用后补充。
 
 构建产物、工具缓存、签名凭据、个人路径及内部项目源码不进入提交。生成文件先修改事实源；不要把普通源码文件误判为生成物。第三方复用按 REFERENCES 保留许可与来源。
