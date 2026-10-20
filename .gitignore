@@ -1,0 +1,29 @@
+# macOS / editor local state
+.DS_Store
+._*
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Swift Package Manager / Xcode generated files
+.build/
+.swiftpm/
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcresult/
+
+# Local research material must remain outside this repository
+/References/
+/*-master/
+/_archives/
+/Artifacts/
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
