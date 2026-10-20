@@ -165,7 +165,7 @@ class ToolingTests(unittest.TestCase):
         self.assertEqual(commands, [[str(self.root / "scripts/swiftformat.sh"), "--lint", str(self.root / "Package.swift"), str(self.root / "Sources/Own.swift")]])
 
     def test_unknown_verification_mode_fails(self):
-        result = subprocess.run([str(PROJECT / "scripts/verify.sh"), "build"], capture_output=True, text=True)
+        result = subprocess.run([str(PROJECT / "scripts/verify.sh"), "unknown"], capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("docs|format", result.stderr)
 

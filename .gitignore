@@ -30,3 +30,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Demo projects are generated from project.yml
+*.xcodeproj/

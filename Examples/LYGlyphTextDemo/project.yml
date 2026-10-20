@@ -1,0 +1,62 @@
+name: LYGlyphTextDemo
+options:
+  minimumXcodeGenVersion: 2.46.0
+  deploymentTarget:
+    iOS: '16.0'
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    IPHONEOS_DEPLOYMENT_TARGET: '16.0'
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGNING_ALLOWED: NO
+packages:
+  LYGlyphText:
+    path: ../..
+targets:
+  LYGlyphTextDemo:
+    type: application
+    platform: iOS
+    sources: [LYGlyphTextDemo]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.lyglyphtext.demo
+        TARGETED_DEVICE_FAMILY: '1,2'
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+    dependencies:
+      - package: LYGlyphText
+  LYGlyphTextDemoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - LYGlyphTextDemoTests
+      - ../../Tests/LYGlyphTextTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.lyglyphtext.demo.tests
+    dependencies:
+      - target: LYGlyphTextDemo
+      - package: LYGlyphText
+  LYGlyphTextDemoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LYGlyphTextDemoUITests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.lyglyphtext.demo.uitests
+    dependencies:
+      - target: LYGlyphTextDemo
+schemes:
+  LYGlyphTextDemo:
+    build:
+      targets:
+        LYGlyphTextDemo: all
+        LYGlyphTextDemoTests: [test]
+        LYGlyphTextDemoUITests: [test]
+    test:
+      gatherCoverageData: true
+      targets:
+        - LYGlyphTextDemoTests
+        - LYGlyphTextDemoUITests

@@ -2,22 +2,26 @@
 
 先阅读 [开发规则](AGENTS.md)、[编码规范](CODING_STYLE.md)、[实施计划](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md) 和 [参考资料](docs/REFERENCES.md)。
 
-当前已交付文档与工程检查工具；Package、组件、Demo、组件测试尚未实现。以下工具检查不代表组件构建或运行通过。
+当前已提供基础显示 Package、UIKit／SwiftUI Demo 与宿主测试。能力和真实环境见 [基础显示验证记录](docs/verification/2026-10-20-basic-display.md)；工具检查与组件运行分别留证。
 
 ## 本地工具与检查
 
-需要 Git、Bash、Python 3.9+；格式工具固定为 SwiftFormat **0.59.1**，上游提交 `22a472ced4c621a0e41b982a6f32dec868d09392`。普通检查不联网、不修改源码或安装工具。
+需要 Git、Bash、Python 3.9+；组件构建另需 Xcode 和 XcodeGen **2.46.0**，运行测试需要可用的 iOS Simulator；格式工具固定为 SwiftFormat **0.59.1**，上游提交 `22a472ced4c621a0e41b982a6f32dec868d09392`。普通检查不联网、不修改源码或安装工具。
 
 ```sh
 scripts/verify.sh docs
 scripts/verify.sh format
+scripts/verify.sh build
+scripts/verify.sh test <UDID>
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
 - docs：检查本仓跟踪及未忽略的新文本文件的 UTF-8／LF／末尾换行、Markdown 围栏和本地链接文件存在性、Shell 语法，以及暂存／未暂存 diff。只检查文件路径，不验证链接锚点、远端网页或扫描全部敏感信息；提交前仍需人工审查公开内容。
 - format：只 lint 本仓未被忽略、且不在生成目录内的 Swift 文件，使用根目录配置。不重写源码；零 Swift 文件明确输出“不适用”，不是代码格式通过。
 - 工具回归测试：在临时 Git 仓库验证链接、检查范围、零文件及工具错误等行为，不包含组件测试，也不需要 Simulator。
-- build／test 模式尚未提供，待 Package 和测试宿主建立后新增；未知模式返回非零结果。
+- build：核对 XcodeGen 2.46.0，生成忽略的 Demo 工程，分别构建 Package 和 Simulator 应用。
+- test <UDID>：核对指定 iOS Simulator，执行 shared scheme 的宿主单测和 UI 测试。根目录 Package 单测源码纳入宿主执行，不额外重复运行。零测试、全跳过、失败结果返回非零。
+- build／test 的环境、日志和 xcresult 保存在 `.build/verification/`，不自动删除既有结果。生成工程以 `Examples/LYGlyphTextDemo/project.yml` 为事实源，不直接修改生成文件。未知模式或错误参数返回非零。
 
 首次需要格式工具时，显式安装到本仓忽略的 `.build` 目录；该操作会从公开上游取源码并使用本机 Swift 编译，因此还需要 Xcode／Swift 工具链：
 
@@ -27,7 +31,7 @@ scripts/swiftformat.sh --bootstrap
 
 `LYGLYPHTEXT_BUILD_ROOT` 可指定独立工具缓存目录；`LYGLYPHTEXT_SWIFTFORMAT` 可指定已有二进制的完整路径。每次使用都核对版本，不回退到 PATH 中的任意版本。Bootstrap 核对源码提交号；拒绝覆盖来源不明的已有源码目录。
 
-显式格式化仅用于本任务文件，例如未来创建 Package.swift 后：
+显式格式化仅用于本任务文件，例如：
 
 ```sh
 scripts/swiftformat.sh Package.swift

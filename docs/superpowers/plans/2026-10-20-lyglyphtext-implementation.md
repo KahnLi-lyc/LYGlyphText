@@ -8,7 +8,7 @@
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-20；阶段 0 为本轮交付的规范与工具；阶段 1—7 是待实施规范。当前没有 Package、组件源码、Demo 或组件测试。工程工具检查不能替代组件编译／运行证据。
+**状态与日期：** 2026-10-20；已从资料阶段进入基础显示闭环。当前仅公开 attributedText 文档、内边距配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；本轮证据见 [基础显示验证记录](../../verification/2026-10-20-basic-display.md)。
 
 ---
 
@@ -36,7 +36,7 @@
 
 仓库为 `KahnLi-lyc/LYGlyphText`，公开、默认分支 main；产品与模块统一命名 LYGlyphText。工作区总目录不初始化 Git，第三方参考库不属于本仓库。
 
-后续编码阶段创建如下结构，本次文档阶段不创建这些文件：
+基础目录已建立；未来能力在对应职责目录增量实现：
 
 ```text
 Package.swift
@@ -47,7 +47,7 @@ Sources/LYGlyphText/
   SwiftUI/        UIViewRepresentable 包装
 Tests/LYGlyphTextTests/
 Examples/LYGlyphTextDemo/
-  LYGlyphTextDemo.xcodeproj
+  project.yml             固定 XcodeGen 2.46.0；生成 .xcodeproj 不提交
   LYGlyphTextDemo/       UIKit 与 SwiftUI 示例
   LYGlyphTextDemoTests/  带宿主测试
   LYGlyphTextDemoUITests/ 交互测试
@@ -62,7 +62,7 @@ Examples/LYGlyphTextDemo/
 
 ## 3. 接口契约
 
-下面定义首版 API 的责任与最低必要字段；实现必须遵守这些输入输出与语义，不引入业务路由、全局单例或网络服务。
+下面定义完整首版的目标 API；**本轮实际 API 仅为** `LYGlyphTextDocument.init(attributedText:) throws`、`LYGlyphTextDocumentError`、`LYGlyphTextConfiguration.textContainerInset`、`LYGlyphTextLabel` 的 document／configuration／preferredMaxLayoutWidth 与标准尺寸接口、`LYGlyphTextView(document:configuration:)`。Document 保存独立文本值与支持的样式值，不持有输入的可变段落对象。附件属性及 U+FFFC 明确失败。后续 API 未以空壳声明方式提前公开。
 
 | 类型／入口 | 契约 |
 |---|---|
@@ -198,7 +198,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [x] 建立 AGENTS、CODING_STYLE、CONTRIBUTING，更新 README 与本计划，明确自动本地合入 main、不默认推送。
 - [x] 建立 EditorConfig 与 SwiftFormat 0.59.1 配置，保留版权头；工具安装必须显式，普通检查不联网或自动下载。
 - [x] 建立 docs／format 检查入口和工具回归测试，覆盖失效链接、检查范围、零 Swift 文件、工具缺失及版本不符。
-- [x] 用真实固定版本工具验证临时 Swift 样例的失败→格式化→通过及幂等性，记录结果，组件编译／运行保持未验证。
+- [x] 用真实固定版本工具验证临时 Swift 样例的失败→格式化→通过及幂等性，记录结果；阶段 0 时组件编译／运行尚未验证，后续证据另记。
 
 **完成标准：** 文档与检查工具可用，Auto Layout 契约和验收完整；工具测试不冒充组件测试。执行记录保存于 docs/verification。
 
@@ -206,11 +206,12 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** 本计划与阶段 0 的工程规范。**输出：** 可在 iOS Simulator 编译的 package、本地 package 示例、shared scheme、测试宿主。
 
-- [ ] 建立第 2 节的目录与 Swift 6／iOS 16 配置，设置零第三方依赖；建立最小公开文档与视图入口作为后续垂直实现起点。
-- [ ] 示例首页提供 UIKit、SwiftUI 两个入口；建立单一测试 fixture 数据文件供两端复用。
-- [ ] 为后续布局验收预留单行、多行、并排按钮、StackView、列表与 SwiftUI 宽度切换示例入口，不用空壳演示宣称已适配。
-- [ ] 配置 package scheme `LYGlyphText`、demo shared scheme `LYGlyphTextDemo`，测试使用 XCTest 并在 MainActor 调用 UIKit 代码。
-- [ ] 运行第 6 节的清单／构建／测试命令，记录实际 scheme 与目的地；只记录已运行结果。
+- [x] 建立第 2 节的目录与 Swift 6／iOS 16 配置，设置零第三方依赖；建立最小公开文档与视图入口作为后续垂直实现起点。
+- [x] 示例首页提供 UIKit、SwiftUI 两个入口；建立单一测试 fixture 数据文件供两端复用。
+- [x] 提供短文、多行、混合样式、并排按钮和 UIKit／SwiftUI 宽度切换的真实示例；不添加尚未实现的列表或附件入口。
+- [ ] 后续提供列表、附件和完整 StackView 矩阵的真实示例。
+- [x] 配置 package scheme `LYGlyphText`、demo shared scheme `LYGlyphTextDemo`，测试使用 XCTest 并在 MainActor 调用 UIKit 代码。
+- [x] 运行第 6 节的清单／构建／测试命令，记录实际 scheme 与目的地；只记录已运行结果。
 
 **完成标准：** iOS Simulator 构建和最小宿主测试通过；无三方依赖、无 .m／.mm／.c 实现文件；README 明确仍为开发中。
 
@@ -218,11 +219,13 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** 文档输入和容器约束。**输出：** 规范化快照、布局行与测量尺寸，无附件 View 创建。
 
-- [ ] 完成第 3 节的两类文档入口、安全范围转换、错误类型与复制隔离；测试 caller 修改原 NSMutableAttributedString／NSMutableParagraphStyle 不影响已创建文档。
-- [ ] 建立 Core Text 行布局及统一坐标；测试空文本、有限宽度、长单词、中英文、段落方向、行距和不同字号。
-- [ ] 测量显式换行、内边距、0／有限／无限宽度和明确尺寸附件；固有高度计算不受旧展示高度限制。
-- [ ] 实现有界布局缓存与失效；比较测量前后 factory 调用次数，确保测量不安装 View。
-- [ ] 测试 NSString 的 UTF-16 长度与 Swift Character 数量不同的字符串，覆盖家庭 emoji、肤色修饰、组合重音、旗帜。
+- [x] 完成 attributedText 最小入口与明确附件错误；不可变文本／样式值隔离，测试调用方修改原 NSMutableAttributedString／NSMutableParagraphStyle 后显示保持不变。
+- [x] 建立 Core Text 行布局、基线和 UTF-16 原文范围；验证空文本、中英文、家庭 emoji、组合重音、不同字号和基本方向。
+- [x] 测量显式换行（包括纯换行）、空白、内边距、0／有限／无限宽度；高度不受旧展示高度限制。
+- [x] 每 Label 最多两份布局缓存，内容／配置／trait 变化后失效；测量不创建 View。
+- [ ] 后续完成 segments、actions、attachments 输入、范围校验和安全转换接口。
+- [ ] 后续扩展行距、其他装饰样式、明确尺寸附件与 factory 次数验证。
+- [ ] 补齐更完整 Unicode／双向文本矩阵（包括肤色、旗帜及动作范围）。
 
 **完成标准：** 有限尺寸、不越界；在相同约束下测量与展示使用同一布局；重复内容不会被错误地认为同一动作实例。
 
@@ -230,13 +233,15 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** 文档、布局与外部尺寸约束。**输出：** UIKit 富文本显示、固有尺寸、多行自动撑高及可见原文映射。
 
-- [ ] 在 UIView 绘制支持的文字属性、背景与装饰；对比 fixture 的预期行数、基线和尺寸。
+- [x] 在 UIView 绘制字体和前景色，像素测试确认实际彩色文字与高度裁切；示例核对换行。
+- [ ] 后续实现背景与装饰属性，扩展基线与视觉对照。
 - [ ] 增加行数限制与尾部省略，构造最后一行的映射；测试刚好容纳、只容纳省略号和混合方向文本。
 - [ ] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；验证坐标偏移没有重复应用。
-- [ ] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
-- [ ] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
-- [ ] 实现有效宽度变化的固有尺寸失效，测试 0→正值、窄→宽→窄、旧高度不影响新高度及布局收敛；测量不调用 layoutIfNeeded 或安装附件。
-- [ ] 显式压缩高度后裁切绘制／高亮／命中，不自动缩字；测量自身不修改 frame、约束或调用业务回调。
+- [x] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
+- [x] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
+- [x] 实现有效宽度变化的固有尺寸失效，测试 0→正值、窄→宽→窄、旧高度不影响新高度及布局收敛；测量不调用 layoutIfNeeded 或安装附件。
+- [x] 显式压缩高度后裁切文字，不自动缩字；sizeThatFits 不修改 frame／约束。
+- [ ] 后续验证高度裁切的高亮、动作与附件命中。
 - [ ] 在演示中提供可见布局边界开关，用于人工检查，开关只属于示例／调试入口。
 
 **完成标准：** 相同约束下测量与显示高度差不超过 1 个物理像素；Auto Layout 自动撑高、优先级及离屏测量通过，无新增约束冲突或反复布局；截断映射不包含隐藏内容。几何测试使用稳定系统字体和明确尺寸，视觉记录注明系统版本。
@@ -268,7 +273,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 **输入：** SwiftUI 宽度提议、环境和回调更新。**输出：** 两端行为一致的自适应组件。
 
-- [ ] 完成 make／update／sizeThatFits／dismantle，测试 nil／0／有限／无限宽度、.frame、HStack／VStack、窄宽反复切换，以及同文档下替换回调。
+- [x] 完成 make／update／sizeThatFits／dismantle；基础 .frame、理想／零／有限宽度、替换／清空文档及两端高度对比通过。
+- [ ] 后续补齐 HStack／VStack／List、完整宽度切换矩阵与回调更新。
 - [ ] 横向／纵向 UIStackView 验证合法对齐方式、并排按钮和不同优先级；不以 UIView 默认基线代替 UILabel 文字基线适配。
 - [ ] UITableView 自动行高、UICollectionView 自适应及离屏测量覆盖长短文本替换、附件变化、0→正宽、旋转／分屏／窗口缩放；宿主提供确定宽度和完整约束链。
 - [ ] 在 List／LazyVStack 及 UIKit 列表中复用组件；测试附件和高亮状态不串行，更新过程不形成测量循环。
@@ -301,29 +307,23 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 
 docs 检查本地链接文件存在性、文本约定、Shell 语法及 diff，不验证远端网页或锚点。format 零 Swift 文件时必须报告“不适用”；有 Swift 文件但缺少固定工具时失败，不自动安装。具体安装／覆盖变量见 CONTRIBUTING。工具测试只证明检查行为，不是组件测试。
 
-### 6.2 后续组件构建与测试
+### 6.2 当前组件构建与测试
 
-以下命令仅适用于对应代码与工程已经创建之后，当前文档仓库不能运行组件构建。所有测试命令从仓库根目录执行；使用实际存在的 iOS Simulator UDID，不填入不存在的设备名称。
+从仓库根目录运行。build 使用 XcodeGen 2.46.0 生成 Demo 工程，并构建 Package 与应用；test 显式传入独立可用的 Simulator UDID，保存日志和 xcresult。普通检查不下载工具。
 
 ```sh
 swift package dump-package
+scripts/verify.sh build
 xcodebuild -list
 xcodebuild -list -project Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj
 xcrun simctl list devices available
-xcodebuild -scheme LYGlyphText -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/LYGlyphText-Build build SWIFT_VERSION=6 CODE_SIGNING_ALLOWED=NO
-xcodebuild -showdestinations -project Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj -scheme LYGlyphTextDemo
-```
-
-测试目的地通过 `LYGLYPHTEXT_SIMULATOR_ID` 指定为上一步列出的可用 UDID，并保存环境记录。该变量不覆盖任何系统环境变量。
-
-```sh
-test -n "$LYGLYPHTEXT_SIMULATOR_ID"
-xcodebuild -scheme LYGlyphText -destination "platform=iOS Simulator,id=$LYGLYPHTEXT_SIMULATOR_ID" -derivedDataPath /tmp/LYGlyphText-PackageTests test SWIFT_VERSION=6 CODE_SIGNING_ALLOWED=NO
-xcodebuild -project Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj -scheme LYGlyphTextDemo -destination "platform=iOS Simulator,id=$LYGLYPHTEXT_SIMULATOR_ID" -derivedDataPath /tmp/LYGlyphText-DemoTests test SWIFT_VERSION=6 CODE_SIGNING_ALLOWED=NO
+scripts/verify.sh test <UDID>
 git diff --check
 ```
 
-预期分别为有效 package 清单、明确 scheme／目的地、`BUILD SUCCEEDED`、`TEST SUCCEEDED` 和无空白错误。`swift test` 在 macOS 宿主上不能代替依赖 UIKit 的 iOS Simulator 测试。
+宿主 scheme 为 LYGlyphTextDemo，包含根 Tests 的 Package 测试源码、Demo 宿主测试和 UI 测试；一轮不再重复运行独立 Package test scheme。有效清单、BUILD SUCCEEDED、TEST SUCCEEDED 与非零测试数分别核查；macOS swift test 不能代替 UIKit 的 iOS Simulator 运行。命令和参数以 CONTRIBUTING 为准。
+
+下表是完整首版验收矩阵；本轮已覆盖的子集单独记录在基础显示验证文档，不将整张矩阵提前标记通过。
 
 | 场景组 | 必验场景 | 验证方法 |
 |---|---|---|
@@ -375,10 +375,10 @@ Apple 原始资料：
 | 文档与仓库初始化 | 已完成；本轮更新工程规范和布局契约 |
 | 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
-| Package、组件源码、Demo | 未实现 |
-| Swift 6 组件编译与测试 | 未执行：无组件代码 |
-| Auto Layout／布局优先级／StackView／列表／SwiftUI 尺寸行为 | 待阶段 2—6 实施与验收 |
-| iOS 16／最新系统运行 | 未验证 |
+| Package、组件源码、Demo | 基础显示闭环已实现；完整首版能力未完成 |
+| Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和宿主／UI 测试，见基础显示验证记录；Swift 6.0 编译器仍未验证 |
+| Auto Layout／布局优先级／SwiftUI 基础尺寸 | 本轮提供基础实现和行为测试；完整 StackView／列表矩阵待阶段 6 |
+| iOS 16／当前系统运行 | iOS 16 未验证；本轮 iOS 27.0 专用 Simulator 运行，见基础显示验证记录 |
 | VoiceOver、性能、真实设备行为 | 未验证 |
 
 后续完成一个阶段时，只勾选有证据的任务，并在提交说明中写明行为变化、测试与限制。首版发布前不得把本文的预期行为写成既成事实。
