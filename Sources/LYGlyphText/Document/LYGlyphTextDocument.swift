@@ -26,16 +26,30 @@ public enum LYGlyphTextDocumentError: Error, Equatable {
 
 /// 在主线程构造的不可变富文本快照，不持有视图或业务回调。
 ///
-/// 当前解释 font、foregroundColor、段落对齐和基本书写方向，以及显式描述的图片／视图附件。
-/// 其他装饰属性不参与显示；显式字体保持固定，缺省字体使用动态 body。
+/// 保存白名单字符样式、完整逻辑段落值，以及显式描述的图片／视图附件。
+/// 未知属性忽略；显式字体保持固定，缺省字体使用动态 body。
 @MainActor
 public final class LYGlyphTextDocument {
     struct StyleRun {
         let range: NSRange
         let font: UIFont?
         let color: UIColor?
-        let alignment: NSTextAlignment
-        let writingDirection: NSWritingDirection
+        let background: UIColor?
+        let kern: CGFloat?
+        let baselineOffset: CGFloat
+        let underlineStyle: Int
+        let underlineColor: UIColor?
+        let strikethroughStyle: Int
+        let strikethroughColor: UIColor?
+        let ligature: Int
+        let paragraph: ParagraphStyle
+        var alignment: NSTextAlignment {
+            paragraph.alignment
+        }
+
+        var writingDirection: NSWritingDirection {
+            paragraph.writingDirection
+        }
     }
 
     let string: String
@@ -127,15 +141,29 @@ public final class LYGlyphTextDocument {
         // 因而即使 copy 之后再存储，也不能依赖可变输入的对象身份隔离。
         string = sourceString
         var runs: [StyleRun] = []
-        attributedText.enumerateAttributes(in: fullRange) { attributes, range, _ in
-            let paragraph = attributes[.paragraphStyle] as? NSParagraphStyle
-            runs.append(StyleRun(
-                range: range,
-                font: attributes[.font] as? UIFont,
-                color: attributes[.foregroundColor] as? UIColor,
-                alignment: paragraph?.alignment ?? .natural,
-                writingDirection: paragraph?.baseWritingDirection ?? .natural
-            ))
+        var cursor = 0
+        while cursor < source.length {
+            let paragraphRange = source.paragraphRange(for: NSRange(location: cursor, length: 0))
+            let paragraph = ParagraphStyle(attributedText.attribute(
+                .paragraphStyle, at: paragraphRange.location, effectiveRange: nil
+            ) as? NSParagraphStyle)
+            attributedText.enumerateAttributes(in: paragraphRange) { attributes, range, _ in
+                runs.append(StyleRun(
+                    range: range,
+                    font: attributes[.font] as? UIFont,
+                    color: attributes[.foregroundColor] as? UIColor,
+                    background: attributes[.backgroundColor] as? UIColor,
+                    kern: StyleNumber.scalar(attributes[.kern]),
+                    baselineOffset: StyleNumber.scalar(attributes[.baselineOffset]) ?? 0,
+                    underlineStyle: StyleNumber.decoration(attributes[.underlineStyle]),
+                    underlineColor: attributes[.underlineColor] as? UIColor,
+                    strikethroughStyle: StyleNumber.decoration(attributes[.strikethroughStyle]),
+                    strikethroughColor: attributes[.strikethroughColor] as? UIColor,
+                    ligature: StyleNumber.integer(attributes[.ligature], allowed: 0 ... 2) ?? 1,
+                    paragraph: paragraph
+                ))
+            }
+            cursor = NSMaxRange(paragraphRange)
         }
         styleRuns = runs
     }

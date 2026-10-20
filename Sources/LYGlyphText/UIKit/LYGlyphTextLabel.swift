@@ -68,6 +68,7 @@ public final class LYGlyphTextLabel: UIView {
             if oldValue != bounds {
                 attachmentRevision &+= 1
                 setNeedsLayout()
+                setNeedsDisplay()
             }
         }
     }
@@ -149,16 +150,14 @@ public final class LYGlyphTextLabel: UIView {
     /// 绘制与测量共用布局结果，高度不足时裁切，不自动缩小字体。
     override public func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
+        let layout = measuredLayout(width: max(0, bounds.width))
+        guard let geometry = DisplayGeometry(bounds: bounds, layoutSize: layout.size, configuration: configuration)
+        else { return }
         context.saveGState()
         context.clip(to: bounds)
-        let insets = configuration.insets
-        context.clip(to: CGRect(
-            x: bounds.minX + insets.left, y: bounds.minY + insets.top,
-            width: max(0, bounds.width - insets.left - insets.right),
-            height: max(0, bounds.height - insets.top - insets.bottom)
-        ))
-        context.translateBy(x: bounds.minX, y: bounds.minY)
-        measuredLayout(width: max(0, bounds.width)).draw(in: context)
+        context.clip(to: geometry.contentClip)
+        context.translateBy(x: geometry.translation.x, y: geometry.translation.y)
+        layout.draw(in: context)
         context.restoreGState()
     }
 
@@ -202,15 +201,6 @@ public final class LYGlyphTextLabel: UIView {
         invalidateText()
     }
 
-    private var attachmentContentRect: CGRect {
-        let insets = configuration.insets
-        return CGRect(
-            x: bounds.minX + insets.left, y: bounds.minY + insets.top,
-            width: max(0, bounds.width - insets.left - insets.right),
-            height: max(0, bounds.height - insets.top - insets.bottom)
-        )
-    }
-
     /// 先移除全部内部状态和 superview，再允许业务清理回调重入。
     private func unmount(_ removed: [MountedAttachment], removing container: AttachmentContainer? = nil) {
         guard !removed.isEmpty || container != nil else { return }
@@ -245,22 +235,25 @@ public final class LYGlyphTextLabel: UIView {
         isReconcilingAttachments = true
         defer { isReconcilingAttachments = false }
         let revision = attachmentRevision
-        let contentRect = attachmentContentRect
-        let placements = measuredLayout(width: max(0, bounds.width)).viewAttachments.filter {
-            let rect = $0.rect.offsetBy(dx: bounds.minX, dy: bounds.minY)
-            return !contentRect.isEmpty && rect.intersects(contentRect)
+        let layout = measuredLayout(width: max(0, bounds.width))
+        let geometry = DisplayGeometry(bounds: bounds, layoutSize: layout.size, configuration: configuration)
+        let contentRect = geometry?.contentClip ?? .zero
+        let placements = layout.viewAttachments.compactMap { placement -> (LYGlyphTextLayout.ViewAttachment, CGRect)? in
+            guard let rect = geometry?.displayRect(placement.rect),
+                  !contentRect.isEmpty, rect.intersects(contentRect) else { return nil }
+            return (placement, rect)
         }
-        let visibleIDs = Set(placements.map(\.attachment.id))
+        let visibleIDs = Set(placements.map(\.0.attachment.id))
         failedAttachmentIDs.formIntersection(visibleIDs)
         let hiddenIDs = Set(mountedAttachments.keys).subtracting(visibleIDs)
         let removed = hiddenIDs.compactMap { mountedAttachments.removeValue(forKey: $0) }
         unmount(removed)
         guard revision == attachmentRevision, window != nil, let provider = viewProvider else { return }
         attachmentContainer?.frame = contentRect
-        for placement in placements {
+        for (placement, displayRect) in placements {
             guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
             let descriptor = placement.attachment
-            let rect = placement.rect.offsetBy(dx: bounds.minX - contentRect.minX, dy: bounds.minY - contentRect.minY)
+            let rect = displayRect.offsetBy(dx: -contentRect.minX, dy: -contentRect.minY)
             if let mounted = mountedAttachments[descriptor.id] {
                 mounted.view.frame = rect
                 continue
@@ -302,7 +295,11 @@ public final class LYGlyphTextLabel: UIView {
     func measuredLayout(width: CGFloat?) -> LYGlyphTextLayout {
         let width = width.flatMap(normalizedWidth)
         if let cached = cachedLayouts.first(where: { $0.width == width }) { return cached.layout }
-        let text = resolvedText ?? ResolvedText(document: document, traits: traitCollection)
+        let text = resolvedText ?? ResolvedText(
+            document: document,
+            traits: traitCollection,
+            wrapping: configuration.wrapping
+        )
         resolvedText = text
         let scale = traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
         let layout = text.layout(

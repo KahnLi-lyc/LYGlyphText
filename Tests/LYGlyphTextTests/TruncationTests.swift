@@ -356,4 +356,149 @@ final class TruncationTests: XCTestCase {
             return count + indices.count(where: { NSLocationInRange($0, range) })
         }
     }
+
+    func testTruncationPreservesPriorBaselinesAndCompleteParagraphMetrics() throws {
+        for hardBreak in [false, true] {
+            let style = NSMutableParagraphStyle()
+            style.lineSpacing = 12
+            style.paragraphSpacing = 14
+            style.paragraphSpacingBefore = 9
+            style.firstLineHeadIndent = 24
+            style.headIndent = 8
+            style.tailIndent = -12
+            style.minimumLineHeight = 30
+            style.maximumLineHeight = 44
+            style.lineHeightMultiple = 1.25
+            let string = hardBreak ? "one two\nthree four\nfive six\nseven eight" : String(
+                repeating: "one two three four five ",
+                count: 8
+            )
+            let view = try label("")
+            view.document = try LYGlyphTextDocument(attributedText: NSAttributedString(
+                string: string,
+                attributes: [.font: UIFont.systemFont(ofSize: 20), .paragraphStyle: style]
+            ))
+            let full = view.measuredLayout(width: 140)
+            for limit in [1, 2, 3] {
+                view.configuration.numberOfLines = limit
+                let clipped = view.measuredLayout(width: 140)
+                XCTAssertEqual(clipped.lines.count, limit)
+                for index in 0 ..< limit {
+                    XCTAssertEqual(clipped.lines[index].baseline.y, full.lines[index].baseline.y, accuracy: 0.01)
+                    if index < limit - 1 {
+                        XCTAssertEqual(clipped.lines[index].baseline, full.lines[index].baseline)
+                        XCTAssertEqual(clipped.lines[index].visibleSourceRanges, full.lines[index].visibleSourceRanges)
+                        XCTAssertEqual(
+                            CTLineGetTypographicBounds(clipped.lines[index].text, nil, nil, nil),
+                            CTLineGetTypographicBounds(full.lines[index].text, nil, nil, nil),
+                            accuracy: 0.01
+                        )
+                    }
+                }
+                let last = try XCTUnwrap(clipped.lines.last)
+                let run = try XCTUnwrap(try XCTUnwrap((CTLineGetGlyphRuns(last.text) as? [CTRun])?.last))
+                let paragraph =
+                    try XCTUnwrap(
+                        (CTRunGetAttributes(run) as NSDictionary)[kCTParagraphStyleAttributeName]
+                    ) as! CTParagraphStyle
+                for (specifier, expected): (CTParagraphStyleSpecifier, CGFloat) in [
+                    (.lineSpacingAdjustment, 12),
+                    (.paragraphSpacing, 14),
+                    (.paragraphSpacingBefore, 9),
+                    (.firstLineHeadIndent, 24),
+                    (.headIndent, 8),
+                    (.tailIndent, -12),
+                    (.minimumLineHeight, 30),
+                    (.maximumLineHeight, 44),
+                    (.lineHeightMultiple, 1.25)
+                ] {
+                    var value: CGFloat = 0
+                    CTParagraphStyleGetValueForSpecifier(paragraph, specifier, MemoryLayout<CGFloat>.size, &value)
+                    XCTAssertEqual(value, expected, accuracy: 0.01)
+                }
+            }
+        }
+    }
+
+    func testTruncationUsesFirstAndContinuationAreasForBothTailConventions() throws {
+        for direction in [NSWritingDirection.leftToRight, .rightToLeft] {
+            for alignment in [NSTextAlignment.left, .center, .right, .natural] {
+                for tail: CGFloat in [-18, 112] {
+                    let style = NSMutableParagraphStyle()
+                    style.baseWritingDirection = direction
+                    style.alignment = alignment
+                    style.firstLineHeadIndent = 30
+                    style.headIndent = 12
+                    style.tailIndent = tail
+                    let view = try label("")
+                    view.document = try LYGlyphTextDocument(attributedText: NSAttributedString(
+                        string: String(
+                            repeating: direction == .rightToLeft ? "مرحبا بالعالم " : "hello world ",
+                            count: 20
+                        ), attributes: [.font: UIFont.systemFont(ofSize: 20), .paragraphStyle: style]
+                    ))
+                    for limit in [1, 2] {
+                        view.configuration.numberOfLines = limit
+                        let last = try XCTUnwrap(view.measuredLayout(width: 150).lines.last)
+                        let advance = CGFloat(CTLineGetTypographicBounds(last.text, nil, nil, nil))
+                        let leading: CGFloat = limit == 1 ? 30 : 12
+                        let end: CGFloat = tail > 0 ? tail : 150 + tail
+                        let capacity = end - leading
+                        let start = direction == .rightToLeft ? 150 - end : leading
+                        let flush: CGFloat = alignment == .center ? 0.5 :
+                            (alignment == .right || (alignment == .natural && direction == .rightToLeft) ? 1 : 0)
+                        XCTAssertLessThanOrEqual(advance, capacity + 0.01)
+                        XCTAssertEqual(
+                            last.baseline.x,
+                            start + CGFloat(CTLineGetPenOffsetForFlush(last.text, flush, Double(capacity))),
+                            accuracy: 0.01
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    func testNaturalLTRPositiveIndentIsNotMistakenForRTL() throws {
+        let style = NSMutableParagraphStyle()
+        style.firstLineHeadIndent = 35
+        style.headIndent = 15
+        let view = try label("", limit: 1)
+        view.document = try LYGlyphTextDocument(attributedText: NSAttributedString(
+            string: String(repeating: "hello world ", count: 20),
+            attributes: [.font: UIFont.systemFont(ofSize: 20), .paragraphStyle: style]
+        ))
+        XCTAssertEqual(try XCTUnwrap(view.measuredLayout(width: 150).lines.last).baseline.x, 35, accuracy: 0.01)
+    }
+
+    func testTokenDoesNotInheritNewCharacterMetricsOrDecoration() throws {
+        let view = try label("", limit: 1)
+        view.document = try LYGlyphTextDocument(attributedText: NSAttributedString(
+            string: String(repeating: "MMMM ", count: 15),
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 20),
+                .kern: 2,
+                .baselineOffset: 8,
+                .backgroundColor: UIColor.red,
+                .underlineStyle: 1,
+                .strikethroughStyle: 1
+            ]
+        ))
+        let last = try XCTUnwrap(view.measuredLayout(width: 150).lines.last)
+        let token = try XCTUnwrap(last.truncationTokenRange)
+        let run = try XCTUnwrap(try XCTUnwrap((CTLineGetGlyphRuns(last.text) as? [CTRun])?.first { NSLocationInRange(
+            token.location,
+            NSRange(location: CTRunGetStringRange($0).location, length: CTRunGetStringRange($0).length)
+        ) }))
+        let attributes = CTRunGetAttributes(run) as NSDictionary
+        for key in [
+            kCTKernAttributeName,
+            kCTBaselineOffsetAttributeName,
+            kCTUnderlineStyleAttributeName,
+            kCTRunDelegateAttributeName
+        ] {
+            XCTAssertNil(attributes[key])
+        }
+        XCTAssertNil(attributes[NSAttributedString.Key.backgroundColor])
+    }
 }

@@ -54,10 +54,12 @@ final class DemoSamples {
 
     let reuseDocuments: [LYGlyphTextDocument]
     let documents: [SampleKind: LYGlyphTextDocument]
+    let styles: StyleDemoSamples
     private let viewDocuments: [SampleKind: [ImageAlignment: LYGlyphTextDocument]]
     private let imageDocuments: [SampleKind: [ImageAlignment: LYGlyphTextDocument]]
 
     init() throws {
+        styles = try StyleDemoSamples()
         reuseDocuments = try (0 ..< 80).map { row in
             try LYGlyphTextDocument(attributedText: NSAttributedString(
                 string: "\u{FFFC} 第 \(row) 行：滚动离屏后由列表宿主清理，再绑定新文档。\n同一 Cell 的按钮与文字必须属于当前行。",

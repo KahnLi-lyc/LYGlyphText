@@ -232,9 +232,11 @@ func testActionCannotSplitComposedCharacter() {
 - [x] 在至少一组共用样例中用 segments 构造已有图片或 view 内容，保持可见文本和声明几何；emoji 前缀的 UTF-16 累计由 SegmentTests 与直接消费者验证。仅替换构造方式，不增加交互假按钮或宣称动作已经可点击。
 - [x] 更新实际 API 文档、总队列 M1a 状态与专项验证记录。保留 M1b／I1 未完成状态。
 - [x] 运行第 9 节 M1a 检查：127／127 Passed，docs／format／build 通过；提交／集成／推送状态见总队列及专项记录。
-- [ ] 完成后自动执行 M1b，不请求继续许可。
+- [x] M1a `b74a0cb` 已合入／推送并核对 SHA，自动开始 M1b，不请求继续许可。
 
 ## 4. M1b 样式快照与段落规范化
+
+**执行状态：** M1a `b74a0cb` 已交付并推送；M1b 在 `codex/text-styles` 按 B1 → B2／B3 → B4a／B4b → B5 串行实施，各块有真实红／绿与独立规格、质量审查。最终跨层审查批准，正式 docs／format／build／215 项完整回归通过；证据见 [M1b 记录](../../verification/2026-10-20-m1b-styles.md)。B6 只剩锁内集成、一次普通推送及实际 SHA 补记，尚不宣称远端已交付。根代理维护文档与最终集成，每个实施者独占本任务 Simulator，避免并行构建或改写同一源码。
 
 ### 4.1 支持白名单与缺省值
 
@@ -329,7 +331,10 @@ public struct LYGlyphTextConfiguration: Equatable {
 
 - 保持 inset 非有限／负值归零、numberOfLines 负值按无限行的已有语义。configuration.wrapping **统一覆盖**输入 paragraph.lineBreakMode，避免两套换行配置互相竞争。只提供 word／character；行数超限仍只尾部省略。
 - wrapping 传入 ResolvedText 创建 CTParagraphStyle 的过程，配置变更清除该 label 的 resolved input 与最多两份宽度缓存。垂直对齐无需重排，但允许沿用配置变更统一失效的简单路径；不新增全局缓存。
-- 垂直对齐只影响展示，不影响 intrinsicContentSize、sizeThatFits、systemLayoutSizeFitting 或 SwiftUI proposal 测量。
+- 垂直对齐只影响展示，不改变 Label 的 intrinsicContentSize、sizeThatFits、systemLayoutSizeFitting 或默认 SwiftUI 自然高度。B5 实测外层 `.frame(height:)` 只扩大 SwiftUI 容器，底层 Label 仍为自然高度，因此新增显式展示高度，不将所有有限 proposal.height 当作展示高度。
+- `LYGlyphTextView` 在既有初始化参数末尾增加 `displayHeight: CGFloat? = nil`，并有同名可变属性。nil／非有限／负值使用原自然高度；有限且非负值使用指定 point 高度（含 0），仅改变底层 Label 展示外框，文字仍按宽度独立排版。属性变化由 SwiftUI 正常重新测量，不修改文档、约束或宿主优先级。
+- SwiftUI 对有限非负 proposal.width 返回该宽度，保证实际 Label 与 UIKit 同宽；nil／无限宽仍使用原理想宽度，非法负宽按已有安全归一化处理。默认 displayHeight 为 nil 时不消费 proposal.height，保留自然撑高及大高度离屏测量。示例直接使用 displayHeight。
+- 针对 displayHeight 增加自然／增高／压缩／零／非法高度、短文本实际宽度及运行时替换测试；测量阶段工厂调用数仍为零。失败证据 `.build/verification/m1b-b5-red/` 保留原外层 frame 探针，不将修订后的测试描述为外层 frame 已生效。
 - `extra = max(0, bounds.height - measuredLayout.size.height)`；top／center／bottom 的 y 偏移分别 0／extra÷2／extra。measured size 已包含上下 inset，因此不得再次扣除 inset。内容更高时偏移固定 0，继续顶部裁切。
 - 归一化布局仍以容器左上角为原点、已含 inset；展示变换为 `bounds.origin + CGPoint(x: 0, y: offset)`，应用一次。Label 的内容裁切区固定为 bounds 内扣 inset 的矩形，不跟着文字向下移动。
 - 绘制背景／字形／删除线／图片、V1 的可见 view 过滤和 view 容器 frame、未来动作／无障碍矩形使用同一个 internal 展示变换。测量不安装 view；offset 不能反向反馈到文档或附件尺寸。
@@ -384,7 +389,7 @@ public struct LYGlyphTextConfiguration: Equatable {
 - 删除线的中心为实际 glyph baseline 上方 CTFontGetXHeight(font)／2；单线厚度为 max(CTFontGetUnderlineThickness(font), 1/displayScale)，thick 为两倍，double 为两条单线、中心间距两倍单线厚度。线的物理像素对齐只在绘制时进行，不改变测量／源片段。
 - 标准 pattern dash 长度按该单线厚度的倍数：dot=[1,2]、dash=[4,2]、dashDot=[4,2,1,2]、dashDotDot=[4,2,1,2,1,2]；solid 无 dash。相邻同样式片段的 dash 相位按视觉连续片段累计，不每个 glyph 重新起点。byWord 按原完整字符簇分割 whitespace，空白不画线。
 - underline 的 base／pattern 只有经过实际像素测试的 Core Text 支持 bits 才走原生绘制；CTUnderlineStyleModifiers 并未承诺 NSUnderlineStyle.byWord，不能仅凭 rawValue 桥接就宣称支持。必须用 `"AA AA"` 的实际 byWord underline 像素测试，确认空白 advance 区域没有下划线且两端字词有线。
-- 如果 native 忽略 byWord，则仅对带该 modifier 的 run 使用内部下划线回退：从共享最终可见源片段按完整字符簇 whitespace 分词，采用 CTFontGetUnderlinePosition／Thickness、相同标准 base／pattern、resolved underlineColor（缺省 foreground）绘制。该 run 在传入 Core Text 的绘制属性中将 native underlineStyle 设为 none／移除，确保只绘一次；不改 shaping、Document 或公开 API。不带 byWord 且已验证支持的 style 继续原生路径。回退同样排除生成 token、隐藏源和人工分隔符。
+- 如果 native 忽略 byWord，或 pattern 的实际 on/off 长度不符合上述明确单位，则对带相应 modifier 的 run 使用内部下划线回退：从共享最终可见源片段按完整字符簇 whitespace 分词，采用 CTFontGetUnderlinePosition／Thickness、相同标准 base／pattern、resolved underlineColor（缺省 foreground）绘制。该 run 在传入 Core Text 的绘制属性中将 native underlineStyle 设为 none／移除，确保只绘一次；不改 shaping、Document 或公开 API。不带 byWord／pattern 且已验证支持的 solid style 继续原生路径。实际探针已确认当前系统 dot／dash 间隔不符合本组件单位数组，因此标准 pattern 与 byWord 均采用回退；此调整不增加公开 API 或改变 shaping。回退同样排除生成 token、隐藏源和人工分隔符。
 - strike 颜色同样默认 foreground；显式色不被 fallback 覆盖。所有原生／回退装饰路径共享 trait 解析、baseline 与 contentClip，不新增专用布局或业务文档。
 - 生成 token 不继承这些装饰，其下方／后方不得残留隐藏源字形的装饰。高度裁切、inset 和非零 bounds.origin 仍只在 Label 边界应用一次。
 
@@ -392,52 +397,52 @@ public struct LYGlyphTextConfiguration: Equatable {
 
 ### Task B1：样式快照和段落规范化
 
-- [ ] 先写 StyleTests 中 mutable 属性／paragraph 隔离和逐字段快照断言；纳入两个字符样式 run 横跨 paragraph 边界，以及同段落后续 paragraph style 冲突。预期段落首字符值获胜；第二段按自己的首字符值。
-- [ ] 写数值规范化用例：NaN／正负 infinity kern 变为 nil 且省略 CT key，baseline 变为 0；有限负 kern／baseline 保留；缺省 kern 与显式 0 的 CT key 不同且不改变原默认 shaping；非数值类型忽略；ligature=-1／3／非整数变为 1；未知 underline／strike base 或 bits 变为 0；段落非有限变为 0，有限负 spacing／firstLineHeadIndent／headIndent／tailIndent 保留，有限负 min／max／multiple 变为 0；min > 非零 max 时 max 变为 0。断言 typed snapshot 与最终 Core Text 取值都有限，不只检查“没有崩溃”。
-- [ ] 写 extreme-finite 回归：分别给 kern、baseline、每个 spacing／indent、min／max／multiple 输入 `CGFloat.greatestFiniteMagnitude`、其负值、`CGFloat(Float.greatestFiniteMagnitude)` 及会在字符数／行数／字体高度乘法中溢出的组合；不要只测试 NaN／infinity。断言预处理不会将危险值传给 Core Text，最终 size／baseline／glyph／rect／缓存／像素取整均有限，fallback 次数最多一次、provider 调用为 0；并列断言普通 ±2 kern、±8 baseline、±12 spacing／head／tail 与普通 min／max／multiple 原值及行为保持不变。
-- [ ] 添加 typed immutable StyleRun／ParagraphStyle 字段，复制原输入值；分离段落规范化与字符 run 快照。先不宣称绘制已完成。
-- [ ] 运行 StyleTests／DocumentTests／ActionTests／SegmentTests，确保所有既有动作／附件错误稳定，原输入修改不影响文档。
+- [x] 先写 StyleTests 中 mutable 属性／paragraph 隔离和逐字段快照断言；纳入两个字符样式 run 横跨 paragraph 边界，以及同段落后续 paragraph style 冲突。预期段落首字符值获胜；第二段按自己的首字符值。
+- [x] 写数值规范化用例：NaN／正负 infinity kern 变为 nil 且省略 CT key，baseline 变为 0；有限负 kern／baseline 保留；缺省 kern 与显式 0 的 CT key 不同且不改变原默认 shaping；非数值类型忽略；ligature=-1／3／非整数变为 1；未知 underline／strike base 或 bits 变为 0；段落非有限变为 0，有限负 spacing／firstLineHeadIndent／headIndent／tailIndent 保留，有限负 min／max／multiple 变为 0；min > 非零 max 时 max 变为 0。断言 typed snapshot 与最终 Core Text 取值都有限，不只检查“没有崩溃”。
+- [x] 写 extreme-finite 回归：分别给 kern、baseline、每个 spacing／indent、min／max／multiple 输入 `CGFloat.greatestFiniteMagnitude`、其负值、`CGFloat(Float.greatestFiniteMagnitude)` 及会在字符数／行数／字体高度乘法中溢出的组合；不要只测试 NaN／infinity。断言预处理不会将危险值传给 Core Text，最终 size／baseline／glyph／rect／缓存／像素取整均有限，fallback 次数最多一次、provider 调用为 0；并列断言普通 ±2 kern、±8 baseline、±12 spacing／head／tail 与普通 min／max／multiple 原值及行为保持不变。
+- [x] 添加 typed immutable StyleRun／ParagraphStyle 字段，复制原输入值；分离段落规范化与字符 run 快照。先不宣称绘制已完成。
+- [x] 运行 StyleTests／DocumentTests／ActionTests／SegmentTests，确保所有既有动作／附件错误稳定，原输入修改不影响文档。
 
 ### Task B2：Core Text 属性及段落行为
 
-- [ ] 固定 UIFont、宽度和 scale，写 kern 改变 advance／换行、ligature 0 与 1 shaping、正负 baseline 的实际 glyph／图片位置测试；测量不依赖旧 bounds.height。
-- [ ] 写两段三行 fixture，分别变化 lineSpacing、paragraphSpacingBefore／After、firstLineHeadIndent／headIndent、tailIndent 正负、minimum／maximum／multiple，断言正确基线差与排版区域；包含负 spacing、悬挂缩进、RTL 和尾随换行空行。增加无外部宽度约束＋正 headIndent 的用例，确认理想宽度包含必要缩进，不因原先仅测字形 advance 而意外软换行；正 tailIndent 的系统固定 trailing 位置仍应遵守。
-- [ ] 将白名单映射到 Core Text keys 与完整 CTParagraphStyle；用当前 traits resolve 所有颜色，默认 body／label 不变。实现 wrapping 注入，先用 `.word` 保持现有调用兼容。
-- [ ] 写并运行固定英文短语的 word／character 不同断行测试；使用文本 `"alpha beta gamma"`，宽度设为固定字体 `"alpha b"` 的测量 advance＋一个物理像素，避免硬编码恰巧边界。
-- [ ] 运行 LayoutTests／AttachmentTests／ViewAttachmentTests 与 B2 目标类，确认 maximumLineHeight 的显式限制不会被附件反向改写。
+- [x] 固定 UIFont、宽度和 scale，写 kern 改变 advance／换行、ligature 0 与 1 shaping、正负 baseline 的实际 glyph／图片位置测试；测量不依赖旧 bounds.height。
+- [x] 写两段三行 fixture，分别变化 lineSpacing、paragraphSpacingBefore／After、firstLineHeadIndent／headIndent、tailIndent 正负、minimum／maximum／multiple，断言正确基线差与排版区域；包含负 spacing、悬挂缩进、RTL 和尾随换行空行。增加无外部宽度约束＋正 headIndent 的用例，确认理想宽度包含必要缩进，不因原先仅测字形 advance 而意外软换行；正 tailIndent 的系统固定 trailing 位置仍应遵守。
+- [x] 将白名单映射到 Core Text keys 与完整 CTParagraphStyle；用当前 traits resolve 所有颜色，默认 body／label 不变。实现 wrapping 注入，先用 `.word` 保持现有调用兼容。
+- [x] 写并运行固定英文短语的 word／character 不同断行测试；使用文本 `"alpha beta gamma"`，宽度设为固定字体 `"alpha b"` 的测量 advance＋一个物理像素，避免硬编码恰巧边界。
+- [x] 运行 LayoutTests／AttachmentTests／ViewAttachmentTests 与 B2 目标类，确认 maximumLineHeight 的显式限制不会被附件反向改写。
 
 ### Task B3：尾部省略保持完整段落上下文
 
-- [ ] 写失败用例：首行与续行不同 headIndent、两种 tailIndent、center／right／natural RTL；numberOfLines=1 与 2 的 token 必须位于有效区域内；隐藏首 strong 字符不能改变方向；仅 LTR 缩进不能误判成 RTL。
-- [ ] 写含 lineSpacing、段前后距、min／max／multiple 的软换行截断；上一可见行为 continuation，下一行为 continuation／新 paragraph 两种情况；隐藏超高图片／view 不抬高末行。比较未截断参考前缀的前面各行 baseline 和最终可见布局高度。
-- [ ] 实现第 6.1／6.2 节：完整段落值、有效尾行区域、保留原字符簇收缩、完整可见上下文度量副本。度量副本不参加原文 range 查询。
-- [ ] 确认真实 `…` 有 source range，生成 token 无 source range；仅 token／无法容纳 token 的既有回归继续通过。
-- [ ] 运行完整 TruncationTests 和附件截断目标测试；失败时保留日志，禁止去掉 indent／spacing 测试或改为普通换行以绕过。
+- [x] 写失败用例：首行与续行不同 headIndent、两种 tailIndent、center／right／natural RTL；numberOfLines=1 与 2 的 token 必须位于有效区域内；隐藏首 strong 字符不能改变方向；仅 LTR 缩进不能误判成 RTL。
+- [x] 写含 lineSpacing、段前后距、min／max／multiple 的软换行截断；上一可见行为 continuation，下一行为 continuation／新 paragraph 两种情况；隐藏超高图片／view 不抬高末行。比较未截断参考前缀的前面各行 baseline 和最终可见布局高度。
+- [x] 实现第 6.1／6.2 节：完整段落值、有效尾行区域、保留原字符簇收缩、完整可见上下文度量副本。度量副本不参加原文 range 查询。
+- [x] 确认真实 `…` 有 source range，生成 token 无 source range；仅 token／无法容纳 token 的既有回归继续通过。
+- [x] 运行完整 TruncationTests 和附件截断目标测试；失败时保留日志，禁止去掉 indent／spacing 测试或改为普通换行以绕过。
 
 ### Task B4：共同视觉片段与装饰绘制
 
-- [ ] 写 TextGeometryTests：跨行 action 返回多片段；混合 Arabic／English 同行片段不覆盖视觉间隙；字符簇内分段属性仍映射到完整源簇；token、人工 separator、保行 sentinel 不产生片段。
-- [ ] 写相邻 `f`／`i` 动作测试，选固定系统可用的连字字体（先断言 fixture 确有少于两个 glyph 的 fi 连字，不能零命中／不成连字却标通过）。同文档有／无 actions 的 glyph 数、positions、baselines 完全一致；两个 action 各有非零 rect，内部边界相同且交集宽度为 0；同 ID 也不能合并。
-- [ ] 对未提供 ligature caret 的字体路径使用 internal 纯函数输入测试 fallback 的等分与 RTL 顺序，不把系统字体未触发的分支误写为已覆盖。
-- [ ] 实现 VisibleTextFragments；装饰与动作查询共享最终源映射，不先做 I1 手势。
-- [ ] 写 DecorationDrawingTests：固定背景色形成真实像素块；single／thick／double strike 与自定义色；每种 pattern／byWord 空白断开；underline 自定义色；baseline 正负、mixed font、RTL、被截断装饰和生成 token；透明背景不能重复混色。
-- [ ] 单独运行 `"AA AA"` 的 native underline `.single.union(.byWord)` 像素试验，记录 native 是否真正跳过空白，不用属性字典存在性代替渲染结果；若失败实现第 7 节共享片段回退并在该 run 抑制 native underline。验证普通单词有线、空白无线、自定义色／baseline／RTL／截断正确，以及透明线色没有双重绘制加深。不添加新的 public API。
-- [ ] 先确认像素测试在现有缺失绘制下失败，再实现 TextDecorations 和 Core Text underline。像素采样取色块内部并同时检查裁切外无变化，避免依赖抗锯齿边缘完全相等。
-- [ ] 明暗 trait 变化使用同一个 Document，确认默认前景／显式动态背景／underline／strike 色更新；PressedStyle 的 UIColor 解析也随 trait 更新，但不声称已实现按下反馈。
+- [x] 写 TextGeometryTests：跨行 action 返回多片段；混合 Arabic／English 同行片段不覆盖视觉间隙；字符簇内分段属性仍映射到完整源簇；token、人工 separator、保行 sentinel 不产生片段。
+- [x] 写相邻 `f`／`i` 动作测试，选固定系统可用的连字字体（先断言 fixture 确有少于两个 glyph 的 fi 连字，不能零命中／不成连字却标通过）。同文档有／无 actions 的 glyph 数、positions、baselines 完全一致；两个 action 各有非零 rect，内部边界相同且交集宽度为 0；同 ID 也不能合并。
+- [x] 对未提供 ligature caret 的字体路径使用 internal 纯函数输入测试 fallback 的等分与 RTL 顺序，不把系统字体未触发的分支误写为已覆盖。
+- [x] 实现 VisibleTextFragments；装饰与动作查询共享最终源映射，不先做 I1 手势。
+- [x] 写 DecorationDrawingTests：固定背景色形成真实像素块；single／thick／double strike 与自定义色；每种 pattern／byWord 空白断开；underline 自定义色；baseline 正负、mixed font、RTL、被截断装饰和生成 token；透明背景不能重复混色。
+- [x] 单独运行 `"AA AA"` 的 native underline `.single.union(.byWord)` 像素试验，记录 native 是否真正跳过空白，不用属性字典存在性代替渲染结果；若失败实现第 7 节共享片段回退并在该 run 抑制 native underline；同时测量各 pattern 的实际像素间隔，不符合约定单位的 pattern 同样回退。验证普通单词有线、空白无线、自定义色／baseline／RTL／截断正确，以及透明线色没有双重绘制加深。不添加新的 public API。
+- [x] 先确认像素测试在现有缺失绘制下失败，再实现 TextDecorations 和 Core Text underline。像素采样取色块内部并同时检查裁切外无变化，避免依赖抗锯齿边缘完全相等。
+- [x] 明暗 trait 变化使用同一个 Document，确认默认前景／显式动态背景／underline／strike 色更新；PressedStyle 的 UIColor 解析也随 trait 更新，但不声称已实现按下反馈。
 
 ### Task B5：垂直对齐及 UIKit／SwiftUI 消费
 
-- [ ] 写 top／center／bottom 的同宽同内容测试：测量尺寸保持相等，bounds 高度多出 60pt 时文字／image／view 的可见位置分别增加 0／30／60pt；inset 已计入一次。
-- [ ] 写受压高度偏移为 0、非零 bounds.origin、宽度往返、部分附件裁切。沿用 V1 provider 计数断言：上述纯测量与几何查询 factory 调用为 0。
-- [ ] 加入配置枚举与统一展示 offset helper；draw 和 V1 附件同步消费同一变换，contentClip 固定。不得在测量中创建 view 或 layoutIfNeeded。
-- [ ] 更新两端共用样例：装饰、混合段落、word／character、top／center／bottom；UIKit／SwiftUI 相同输入同宽高度差不超过一个物理像素，展示截图记录系统和 scale。
-- [ ] 运行直接 UIKit／SwiftUI 宿主测试、V1 生命周期／按钮自身交互／复用回归，确保展示偏移未破坏附件点击或导致重复挂载。
+- [x] 写 top／center／bottom 的同宽同内容测试：测量尺寸保持相等，bounds 高度多出 60pt 时文字／image／view 的可见位置分别增加 0／30／60pt；inset 已计入一次。
+- [x] 写受压高度偏移为 0、非零 bounds.origin、宽度往返、部分附件裁切。沿用 V1 provider 计数断言：上述纯测量与几何查询 factory 调用为 0。
+- [x] 加入配置枚举与统一展示 offset helper；draw 和 V1 附件同步消费同一变换，contentClip 固定。不得在测量中创建 view 或 layoutIfNeeded。
+- [x] 更新两端共用样例：装饰、混合段落、word／character、top／center／bottom；UIKit／SwiftUI 相同输入同宽高度差不超过一个物理像素，展示截图记录系统和 scale。
+- [x] 运行直接 UIKit／SwiftUI 宿主测试、V1 生命周期／按钮自身交互／复用回归，确保展示偏移未破坏附件点击或导致重复挂载。
 
 ### Task B6：M1b 交付
 
-- [ ] 将实际支持白名单、paragraph 首字符规则、换行优先级、垂直对齐和 ligature caret fallback 写入 README／DocC，未知属性不写成“保留全部富文本属性”。
-- [ ] 更新总计划：M1a／M1b 按真实证据完成，I1 开始前尚无文字 tap／longPress／取消／动作无障碍结论。记录仍未验证的 iOS 16、Swift 6.0 编译器、真机、人工 VoiceOver，不阻塞独立本地实现。
-- [ ] 运行第 9 节 M1b 检查，按 CONTRIBUTING 独占集成与普通推送；通过后自动进入 I1，使用本计划的动作和片段契约。
+- [x] 将实际支持白名单、paragraph 首字符规则、换行优先级、垂直对齐和 ligature caret fallback 写入 README／DocC，未知属性不写成“保留全部富文本属性”。
+- [x] 更新总计划：M1a／M1b 按真实证据完成，I1 开始前尚无文字 tap／longPress／取消／动作无障碍结论。记录仍未验证的 iOS 16、Swift 6.0 编译器、真机、人工 VoiceOver，不阻塞独立本地实现。
+- [ ] 运行第 9 节 M1b 检查，按 CONTRIBUTING 独占集成与普通推送；通过后自动进入 I1，使用本计划的动作和片段契约。检查已通过，集成／推送以真实 SHA 补记。
 
 ## 9. 验证、提交和真实证据
 

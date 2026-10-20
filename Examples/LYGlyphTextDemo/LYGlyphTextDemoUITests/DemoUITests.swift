@@ -26,6 +26,57 @@ final class DemoUITests: XCTestCase {
         verifyViewAttachments("openSwiftUI", name: "SwiftUI")
     }
 
+    func testUIKitStylesWrappingVerticalAlignmentAndNativeButtons() {
+        verifyStyles("openUIKitStyles", name: "UIKit")
+    }
+
+    func testSwiftUIStylesWrappingVerticalAlignmentAndNativeButtons() {
+        verifyStyles("openSwiftUIStyles", name: "SwiftUI")
+    }
+
+    private func verifyStyles(_ identifier: String, name: String) {
+        let app = XCUIApplication()
+        app.launch()
+        app.cells[identifier].tap()
+        let vertical = app.segmentedControls["styleVerticalControl"]
+        XCTAssertTrue(vertical.waitForExistence(timeout: 5))
+        let buttons = app.buttons.matching(identifier: "attachmentButton")
+        XCTAssertEqual(buttons.count, 2)
+        let expandedButton = buttons.element(boundBy: 1)
+        let top = expandedButton.frame.minY
+        for (title, delta) in [("顶部", 0.0), ("居中", 30.0), ("底部", 60.0)] {
+            vertical.buttons[title].tap()
+            XCTAssertEqual(expandedButton.frame.minY, top + delta, accuracy: 0.5)
+            capture(app, name: "\(name)-styles-display-extra60-\(title)")
+        }
+        for (style, wrapping, alignment, width, limit) in [
+            ("装饰混排", "字符", "居中", "160", "1 行"),
+            ("混合段落", "单词", "底部", "320", "无限行"),
+            ("混合段落", "字符", "顶部", "240", "3 行"),
+            ("装饰混排", "单词", "底部", "240", "2 行")
+        ] {
+            app.segmentedControls["styleSampleControl"].buttons[style].tap()
+            app.segmentedControls["styleWrappingControl"].buttons[wrapping].tap()
+            vertical.buttons[alignment].tap()
+            app.segmentedControls["styleWidthControl"].buttons[width].tap()
+            app.segmentedControls["styleLineLimitControl"].buttons[limit].tap()
+            let expected = "\(style) · \(wrapping) · \(alignment) · 宽度 \(width) · \(limit)"
+            let predicate = NSPredicate(format: "label == %@", expected)
+            expectation(for: predicate, evaluatedWith: app.staticTexts["styleStatus"])
+            waitForExpectations(timeout: 5)
+            capture(app, name: "\(name)-styles-\(style)-\(wrapping)-\(alignment)-\(width)-\(limit)")
+        }
+        expandedButton.tap()
+        XCTAssertEqual(app.staticTexts["styleAttachmentCount"].label, "按钮点击：1")
+        app.buttons["styleClear"].tap()
+        XCTAssertEqual(buttons.count, 0)
+        app.buttons["styleReload"].tap()
+        XCTAssertTrue(expandedButton.waitForExistence(timeout: 5))
+        expandedButton.tap()
+        XCTAssertEqual(app.staticTexts["styleAttachmentCount"].label, "按钮点击：2")
+        capture(app, name: "\(name)-styles-native-button-after-reload")
+    }
+
     func testUIViewListScrollReusesWithoutStaleButtonContent() {
         let app = XCUIApplication()
         app.launch()

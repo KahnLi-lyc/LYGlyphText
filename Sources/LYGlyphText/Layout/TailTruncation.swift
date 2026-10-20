@@ -15,13 +15,24 @@ struct TailTruncation {
         let original = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
         // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
         var attributes = original.filter {
-            $0.key == .font || $0.key == NSAttributedString.Key(kCTForegroundColorAttributeName as String)
+            $0.key == .font || $0.key == NSAttributedString.Key(kCTFontAttributeName as String)
+                || $0.key == NSAttributedString.Key(kCTForegroundColorAttributeName as String)
         }
         let paragraph = ResolvedParagraph(text: text, at: range.location)
         attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
         let token = NSAttributedString(string: "…", attributes: attributes)
         let tokenLine = CTLineCreateWithAttributedString(token)
-        drawsToken = CGFloat(CTLineGetTypographicBounds(tokenLine, nil, nil, nil)) <= width
+        let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))
+        var leading: CGFloat = 0
+        var tail: CGFloat = 0
+        let indent: CTParagraphStyleSpecifier = range.location == paragraphRange
+            .location ? .firstLineHeadIndent : .headIndent
+        CTParagraphStyleGetValueForSpecifier(paragraph.style, indent, MemoryLayout<CGFloat>.size, &leading)
+        CTParagraphStyleGetValueForSpecifier(paragraph.style, .tailIndent, MemoryLayout<CGFloat>.size, &tail)
+        let areaEnd = tail > 0 ? tail : (LayoutNumber.add(width, tail) ?? width)
+        let capacity = max(0, LayoutNumber.add(areaEnd, -leading) ?? 0)
+        let physicalStart = paragraph.direction == .rightToLeft ? (LayoutNumber.add(width, -areaEnd) ?? 0) : leading
+        drawsToken = CGFloat(CTLineGetTypographicBounds(tokenLine, nil, nil, nil)) <= capacity
         let source = text.string as NSString
         sourceOffset = range.location
         var end = NSMaxRange(range)
@@ -47,10 +58,14 @@ struct TailTruncation {
                 range: NSRange(location: 0, length: candidate.length)
             )
             let line = CTLineCreateWithAttributedString(candidate)
-            if CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)) <= width || end == range.location {
+            if CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)) <= capacity || end == range.location {
                 self.text = candidate.copy() as! NSAttributedString
                 self.line = line
-                alignmentOffset = CGFloat(CTLineGetPenOffsetForFlush(line, paragraph.flush, Double(width)))
+                alignmentOffset = physicalStart + CGFloat(CTLineGetPenOffsetForFlush(
+                    line,
+                    paragraph.flush,
+                    Double(capacity)
+                ))
                 tokenRange = NSRange(location: candidate.length - 1, length: 1)
                 break
             }
@@ -87,6 +102,7 @@ struct TailTruncation {
 private struct ResolvedParagraph {
     let style: CTParagraphStyle
     let flush: CGFloat
+    let direction: CTWritingDirection
 
     init(text: NSAttributedString, at location: Int) {
         let original = text.attribute(
@@ -107,11 +123,12 @@ private struct ResolvedParagraph {
             // 以 natural 对齐探测 Core Text 解析的基本方向，独立于宿主的 left/center/right。
             paragraph.addAttribute(
                 NSAttributedString.Key(kCTParagraphStyleAttributeName as String),
-                value: Self.style(alignment: .natural, direction: .natural),
+                value: ResolvedParagraphStyle.copy(original, probe: true),
                 range: NSRange(location: 0, length: paragraph.length)
             )
             let ideal = CTLineCreateWithAttributedString(paragraph)
-            let width = CGFloat(CTLineGetTypographicBounds(ideal, nil, nil, nil)) + 100
+            let advance = CGFloat(CTLineGetTypographicBounds(ideal, nil, nil, nil))
+            let width = LayoutNumber.add(advance, 100) ?? 100
             let frame = TextFrame(
                 framesetter: CTFramesetterCreateWithAttributedString(paragraph),
                 width: width,
@@ -119,34 +136,13 @@ private struct ResolvedParagraph {
             )
             direction = (frame.origins.first?.x ?? 0) > 1 ? .rightToLeft : .leftToRight
         }
-        style = Self.style(alignment: alignment, direction: direction)
+        style = ResolvedParagraphStyle.copy(original, direction: direction)
+        self.direction = direction
         flush = switch alignment {
         case .center: 0.5
         case .right: 1
         case .natural: direction == .rightToLeft ? 1 : 0
         default: 0
-        }
-    }
-
-    private static func style(alignment: CTTextAlignment, direction: CTWritingDirection) -> CTParagraphStyle {
-        var alignment = alignment
-        var direction = direction
-        return withUnsafePointer(to: &alignment) { alignmentPointer in
-            withUnsafePointer(to: &direction) { directionPointer in
-                let settings = [
-                    CTParagraphStyleSetting(
-                        spec: .alignment,
-                        valueSize: MemoryLayout<CTTextAlignment>.size,
-                        value: alignmentPointer
-                    ),
-                    CTParagraphStyleSetting(
-                        spec: .baseWritingDirection,
-                        valueSize: MemoryLayout<CTWritingDirection>.size,
-                        value: directionPointer
-                    )
-                ]
-                return CTParagraphStyleCreate(settings, settings.count)
-            }
         }
     }
 }

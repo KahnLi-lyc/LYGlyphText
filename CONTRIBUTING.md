@@ -2,7 +2,7 @@
 
 先阅读 [开发规则](AGENTS.md)、[编码规范](CODING_STYLE.md)、[实施计划](docs/superpowers/plans/2026-10-20-lyglyphtext-implementation.md) 和 [参考资料](docs/REFERENCES.md)。
 
-当前已提供基础显示、行数限制／尾部省略、UIImage／UIView 附件与分段／动作描述 Package、UIKit／SwiftUI Demo 与宿主测试。能力和真实环境见 [基础显示验证记录](docs/verification/2026-10-20-basic-display.md)、[截断验证记录](docs/verification/2026-10-20-line-limits.md)、[图片附件验证记录](docs/verification/2026-10-20-image-attachments.md) 和 [UIView 附件验证记录](docs/verification/2026-10-20-view-attachments.md)；工具检查与组件运行分别留证。
+当前已提供富文本样式／段落度量、换行／垂直对齐、行数限制／尾部省略、UIImage／UIView 附件与分段／动作描述 Package、UIKit／SwiftUI Demo 与宿主测试；文字手势仍待 I1。能力和真实环境见 [基础显示验证记录](docs/verification/2026-10-20-basic-display.md)、[截断验证记录](docs/verification/2026-10-20-line-limits.md)、[图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)、[UIView 附件验证记录](docs/verification/2026-10-20-view-attachments.md) 和 [样式验证记录](docs/verification/2026-10-20-m1b-styles.md)；工具检查与组件运行分别留证。
 
 ## 本地工具与检查
 

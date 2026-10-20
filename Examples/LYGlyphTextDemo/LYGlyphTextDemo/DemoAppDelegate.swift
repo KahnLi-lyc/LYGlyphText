@@ -31,14 +31,22 @@ final class DemoHomeController: UITableViewController {
     }
 
     override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        3
+        5
     }
 
     override func tableView(_: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-        cell.textLabel?.text = ["UIKit 示例", "SwiftUI 示例", "UIView 列表复用"][indexPath.row]
+        cell.textLabel?
+            .text = ["UIKit 示例", "SwiftUI 示例", "UIView 列表复用", "UIKit 样式与垂直对齐", "SwiftUI 样式与垂直对齐"][indexPath.row]
         cell.detailTextLabel?.text = "切换文本、宽度，查看富文本自动撑高"
-        cell.accessibilityIdentifier = ["openUIKit", "openSwiftUI", "openReuse"][indexPath.row]
+        cell
+            .accessibilityIdentifier = [
+                "openUIKit",
+                "openSwiftUI",
+                "openReuse",
+                "openUIKitStyles",
+                "openSwiftUIStyles"
+            ][indexPath.row]
         cell.accessoryType = .disclosureIndicator
         return cell
     }
@@ -50,6 +58,11 @@ final class DemoHomeController: UITableViewController {
             controller = UIKitDemoController(samples: samples)
         } else if indexPath.row == 2 {
             controller = ReuseDemoController(documents: samples.reuseDocuments)
+        } else if indexPath.row == 3 {
+            controller = UIKitStyleDemoController(samples: samples.styles)
+        } else if indexPath.row == 4 {
+            controller = UIHostingController(rootView: SwiftUIStyleDemoView(samples: samples.styles))
+            controller.title = "SwiftUI 样式"
         } else {
             controller = UIHostingController(rootView: SwiftUIDemoView(samples: samples))
             controller.title = "SwiftUI"

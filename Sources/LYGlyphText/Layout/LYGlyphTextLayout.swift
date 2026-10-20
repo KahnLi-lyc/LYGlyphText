@@ -33,10 +33,13 @@ struct LYGlyphTextLayout {
     let size: CGSize
     let lines: [Line]
     let attachments: [Attachment]
+    private let decorations: TextDecorations?
 
     init(
-        size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = []
+        size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = [],
+        decorations: TextDecorations? = nil
     ) {
+        self.decorations = decorations
         self.viewAttachments = viewAttachments
         self.size = size
         self.lines = lines
@@ -44,6 +47,8 @@ struct LYGlyphTextLayout {
     }
 
     func draw(in context: CGContext) {
+        let preparedDecorations = decorations?.prepare(in: self)
+        preparedDecorations?.drawBackgrounds(in: context)
         context.saveGState()
         context.textMatrix = .identity
         // Core Text 的字形坐标向上，布局基线向下；统一在绘制边界翻转。
@@ -53,6 +58,7 @@ struct LYGlyphTextLayout {
             CTLineDraw(line.text, context)
         }
         context.restoreGState()
+        preparedDecorations?.drawLines(in: context)
         // UIImage 的 UIKit 绘制路径负责方向与 scale；不直接翻转其 CGImage。
         UIGraphicsPushContext(context)
         for placement in attachments {
@@ -68,32 +74,87 @@ final class ResolvedText {
     let framesetter: CTFramesetter
     let sourceLength: Int
     let idealWidth: CGFloat
+    private let glyphPadding: CGFloat
     private let isEmpty: Bool
+    private let document: LYGlyphTextDocument?
+    private let traits: UITraitCollection
+    private let wrapping: LYGlyphTextConfiguration.Wrapping
+    private let discardsMetrics: Bool
+    private(set) var fallbackCount = 0
     private let attributedText: NSAttributedString
     private let attachments: [Int: LYGlyphTextAttachment]
     private let viewAttachments: [Int: LYGlyphTextViewAttachment]
+    private let decorationStyles: [TextDecorations.Style]
 
-    init(document: LYGlyphTextDocument?, traits: UITraitCollection) {
+    init(
+        document: LYGlyphTextDocument?, traits: UITraitCollection,
+        wrapping: LYGlyphTextConfiguration.Wrapping = .word, discardMetrics: Bool = false
+    ) {
+        self.document = document
+        self.traits = traits
+        self.wrapping = wrapping
+        discardsMetrics = discardMetrics
         let string = document?.string ?? ""
         sourceLength = (string as NSString).length
         isEmpty = sourceLength == 0
         attachments = document?.attachments ?? [:]
         viewAttachments = document?.viewAttachments ?? [:]
         let text = NSMutableAttributedString(string: string)
+        var decorationStyles: [TextDecorations.Style] = []
         for run in document?.styleRuns ?? [] {
-            let font = run.font ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
+            let proposedFont = run.font ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
+            let font = LayoutNumber.isSafe(proposedFont.lineHeight, times: CGFloat(sourceLength + 1))
+                ? proposedFont : UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
             let color = (run.color ?? .label).resolvedColor(with: traits)
-            text.setAttributes([
-                .font: font,
+            decorationStyles.append(.init(
+                range: run.range, background: run.background?.resolvedColor(with: traits).cgColor,
+                underlineStyle: run.underlineStyle,
+                underlineColor: (run.underlineColor?.resolvedColor(with: traits) ?? color).cgColor,
+                strikethroughStyle: run.strikethroughStyle,
+                strikethroughColor: (run.strikethroughColor?.resolvedColor(with: traits) ?? color).cgColor
+            ))
+            let factor = max(CGFloat(sourceLength + 1), font.lineHeight, 2)
+            var attributes: [NSAttributedString.Key: Any] = [
+                NSAttributedString.Key(kCTFontAttributeName as String): font,
                 NSAttributedString.Key(kCTForegroundColorAttributeName as String): color.cgColor,
-                NSAttributedString.Key(kCTParagraphStyleAttributeName as String): Self.paragraphStyle(for: run)
-            ], range: run.range)
+                NSAttributedString.Key(kCTParagraphStyleAttributeName as String): ResolvedParagraphStyle.create(
+                    run.paragraph, wrapping: wrapping, length: sourceLength, naturalHeight: font.lineHeight,
+                    discardMetrics: discardMetrics
+                ),
+                NSAttributedString.Key(kCTBaselineOffsetAttributeName as String): LayoutNumber.metric(
+                    run.baselineOffset, factor: factor, naturalHeight: font.lineHeight, discard: discardMetrics
+                ),
+                NSAttributedString.Key(kCTLigatureAttributeName as String): run.ligature,
+                NSAttributedString.Key(kCTUnderlineStyleAttributeName as String): TextDecorations
+                    .needsUnderlineFallback(run.underlineStyle) ? 0 : run.underlineStyle
+            ]
+            if !discardMetrics, let kern = run.kern, LayoutNumber.isMetricSafe(
+                kern,
+                factor: factor,
+                naturalHeight: font.lineHeight
+            ) {
+                attributes[NSAttributedString.Key(kCTKernAttributeName as String)] = kern
+            }
+            if !TextDecorations.needsUnderlineFallback(run.underlineStyle), run.underlineStyle & 0xF != 0,
+               let underlineColor = run.underlineColor
+            {
+                attributes[NSAttributedString.Key(kCTUnderlineColorAttributeName as String)] = underlineColor
+                    .resolvedColor(with: traits).cgColor
+            }
+            text.setAttributes(attributes, range: run.range)
         }
+        self.decorationStyles = decorationStyles
         for location in Set(attachments.keys).union(viewAttachments.keys) {
             guard let size = attachments[location]?.size ?? viewAttachments[location]?.size,
-                  let alignment = attachments[location]?.alignment ?? viewAttachments[location]?.alignment
+                  let alignment = attachments[location]?.alignment ?? viewAttachments[location]?.alignment,
+                  LayoutNumber.isSafe(size.width, times: CGFloat(sourceLength + 1)),
+                  LayoutNumber.isSafe(size.height, times: CGFloat(sourceLength + 1))
             else { continue }
-            let font = text.attribute(.font, at: location, effectiveRange: nil) as? UIFont
+            let font = text.attribute(
+                NSAttributedString.Key(kCTFontAttributeName as String),
+                at: location,
+                effectiveRange: nil
+            ) as? UIFont
                 ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits)
             let metrics = AttachmentMetrics(
                 size: size, ascender: font.ascender, descender: font.descender,
@@ -115,98 +176,118 @@ final class ResolvedText {
         let stringValue = text.string as NSString
         var cursor = 0
         var maximumWidth: CGFloat = 0
+        var maximumPadding: CGFloat = 0
         while cursor < text.length {
             let range = stringValue.lineRange(for: NSRange(location: cursor, length: 0))
             let line = CTLineCreateWithAttributedString(text.attributedSubstring(from: range))
-            let width = CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil))
-            maximumWidth = max(maximumWidth, width)
+            var ascent: CGFloat = 0
+            var descent: CGFloat = 0
+            var leading: CGFloat = 0
+            let advance = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, &leading))
+            if let padding = LayoutNumber.add(ascent, descent), let fullPadding = LayoutNumber.add(padding, leading) {
+                maximumPadding = max(maximumPadding, fullPadding)
+            }
+            // 自然宽度按每条显式行自己的段落缩进计算，不能把另一段的缩进加到最长行上。
+            var indent: CGFloat = 0
+            var tail: CGFloat = 0
+            if let style = text.attribute(
+                NSAttributedString.Key(kCTParagraphStyleAttributeName as String),
+                at: cursor,
+                effectiveRange: nil
+            ) {
+                let paragraph = style as! CTParagraphStyle
+                let paragraphRange = stringValue.paragraphRange(for: NSRange(location: cursor, length: 0))
+                let spec: CTParagraphStyleSpecifier = cursor == paragraphRange
+                    .location ? .firstLineHeadIndent : .headIndent
+                CTParagraphStyleGetValueForSpecifier(paragraph, spec, MemoryLayout<CGFloat>.size, &indent)
+                CTParagraphStyleGetValueForSpecifier(paragraph, .tailIndent, MemoryLayout<CGFloat>.size, &tail)
+            }
+            if let width = LayoutNumber.add(advance, max(0, indent)),
+               let fullWidth = LayoutNumber.add(width, max(0, -tail))
+            {
+                maximumWidth = max(maximumWidth, fullWidth)
+            }
             cursor = NSMaxRange(range)
         }
         idealWidth = maximumWidth
-    }
-
-    private static func paragraphStyle(for run: LYGlyphTextDocument.StyleRun) -> CTParagraphStyle {
-        var alignment: CTTextAlignment = switch run.alignment {
-        case .left: .left
-        case .center: .center
-        case .right: .right
-        case .justified: .justified
-        default: .natural
-        }
-        var direction: CTWritingDirection = switch run.writingDirection {
-        case .leftToRight: .leftToRight
-        case .rightToLeft: .rightToLeft
-        default: .natural
-        }
-        var lineBreakMode = CTLineBreakMode.byWordWrapping
-        // CTParagraphStyleCreate 在调用内复制值；指针不逃逸这些作用域。
-        return withUnsafePointer(to: &alignment) { alignmentPointer in
-            withUnsafePointer(to: &direction) { directionPointer in
-                withUnsafePointer(to: &lineBreakMode) { lineBreakPointer in
-                    let settings = [
-                        CTParagraphStyleSetting(
-                            spec: .alignment,
-                            valueSize: MemoryLayout<CTTextAlignment>.size,
-                            value: alignmentPointer
-                        ),
-                        CTParagraphStyleSetting(
-                            spec: .baseWritingDirection,
-                            valueSize: MemoryLayout<CTWritingDirection>.size,
-                            value: directionPointer
-                        ),
-                        CTParagraphStyleSetting(
-                            spec: .lineBreakMode,
-                            valueSize: MemoryLayout<CTLineBreakMode>.size,
-                            value: lineBreakPointer
-                        )
-                    ]
-                    return CTParagraphStyleCreate(settings, settings.count)
-                }
-            }
-        }
+        glyphPadding = maximumPadding
     }
 
     func layout(
         width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0
     ) -> LYGlyphTextLayout {
-        let horizontal = insets.left + insets.right
-        let vertical = insets.top + insets.bottom
-        let outerWidth = width ?? (idealWidth + horizontal)
-        let available = max(0, outerWidth - horizontal)
-        func pixelCeil(_ value: CGFloat) -> CGFloat {
-            ceil(value * scale) / scale
+        func inset(_ value: CGFloat) -> CGFloat {
+            value >= 0 && LayoutNumber.isSafe(value, times: 4) ? value : 0
         }
-        if isEmpty || (width != nil && available <= 0) {
+        let insets = UIEdgeInsets(
+            top: inset(insets.top),
+            left: inset(insets.left),
+            bottom: inset(insets.bottom),
+            right: inset(insets.right)
+        )
+        let horizontal = LayoutNumber.add(insets.left, insets.right) ?? 0
+        let vertical = LayoutNumber.add(insets.top, insets.bottom) ?? 0
+        let scale = scale > 0 && LayoutNumber.isSafe(scale, times: max(idealWidth, horizontal, vertical, 2)) ? scale : 1
+        let finiteWidth = width.flatMap { $0 >= 0 && LayoutNumber.isSafe($0, times: 4) ? $0 : nil }
+        let outerWidth = finiteWidth ?? (LayoutNumber.add(idealWidth, horizontal) ?? idealWidth)
+        let available = max(0, LayoutNumber.add(outerWidth, -horizontal) ?? 0)
+        func pixelCeil(_ value: CGFloat) -> CGFloat {
+            LayoutNumber.pixelCeil(value, scale: scale)
+        }
+        if isEmpty || (finiteWidth != nil && available <= 0) {
             return LYGlyphTextLayout(
                 size: CGSize(width: min(outerWidth, pixelCeil(horizontal)), height: pixelCeil(vertical)), lines: []
             )
         }
         // 理想宽度向上对齐像素，避免浮点误差换行；纯换行仍需正宽路径保留行高。
-        let contentWidth = width == nil ? max(1 / scale, pixelCeil(available)) : available
-        let frame = TextFrame(framesetter: framesetter, width: contentWidth, scale: scale)
-        let lines = zip(frame.lines, frame.origins).map { line, origin in
+        let contentWidth = finiteWidth == nil ? max(1 / scale, pixelCeil(available)) : available
+        let frame = TextFrame(
+            framesetter: framesetter,
+            width: contentWidth,
+            scale: scale,
+            expectedLength: attributedText.length,
+            minimumPadding: glyphPadding
+        )
+        func fallback() -> LYGlyphTextLayout {
+            if !discardsMetrics {
+                fallbackCount += 1
+                return ResolvedText(document: document, traits: traits, wrapping: wrapping, discardMetrics: true)
+                    .layout(
+                        width: finiteWidth,
+                        insets: insets,
+                        scale: scale,
+                        numberOfLines: numberOfLines
+                    )
+            }
+            return LYGlyphTextLayout(size: CGSize(width: pixelCeil(horizontal), height: pixelCeil(vertical)), lines: [])
+        }
+        guard frame.isValid else { return fallback() }
+        let lines = zip(frame.lines, frame.origins).compactMap { line, origin -> LYGlyphTextLayout.Line? in
+            guard let baselineX = LayoutNumber.add(insets.left, origin.x),
+                  let baselineY = LayoutNumber.add(insets.top, frame.height - origin.y) else { return nil }
             let range = CTLineGetStringRange(line)
             let start = min(sourceLength, max(0, range.location))
             let end = min(sourceLength, max(start, range.location + range.length))
             return LYGlyphTextLayout.Line(
                 text: line,
-                baseline: CGPoint(x: insets.left + origin.x, y: insets.top + frame.height - origin.y),
+                baseline: CGPoint(x: baselineX, y: baselineY),
                 visibleSourceRanges: end > start ? [NSRange(location: start, length: end - start)] : [],
                 sourceOffset: 0,
                 truncationTokenRange: nil
             )
         }
         if numberOfLines > 0, lines.count > numberOfLines {
-            let visible = truncatedLines(
+            guard let visible = truncatedLines(
                 Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale
-            )
+            ) else { return fallback() }
             return LYGlyphTextLayout(
                 size: CGSize(
                     width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
                     height: pixelCeil(visible.height + vertical)
                 ),
                 lines: visible.lines, attachments: visibleAttachments(in: visible.lines),
-                viewAttachments: visibleViewAttachments(in: visible.lines)
+                viewAttachments: visibleViewAttachments(in: visible.lines),
+                decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale)
             )
         }
         return LYGlyphTextLayout(
@@ -215,8 +296,18 @@ final class ResolvedText {
                 height: pixelCeil(frame.contentHeight + vertical)
             ),
             lines: lines, attachments: visibleAttachments(in: lines),
-            viewAttachments: visibleViewAttachments(in: lines)
+            viewAttachments: visibleViewAttachments(in: lines),
+            decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale)
         )
+    }
+
+    private static func padding(for text: NSAttributedString) -> CGFloat {
+        let line = CTLineCreateWithAttributedString(text)
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        var leading: CGFloat = 0
+        CTLineGetTypographicBounds(line, &ascent, &descent, &leading)
+        return LayoutNumber.add(LayoutNumber.add(ascent, descent) ?? 0, leading) ?? 0
     }
 
     private func visibleAttachments(in lines: [LYGlyphTextLayout.Line]) -> [LYGlyphTextLayout.Attachment] {
@@ -251,18 +342,19 @@ final class ResolvedText {
                 let metrics = Unmanaged<AttachmentMetrics>.fromOpaque(
                     CTRunDelegateGetRefCon(delegate)
                 ).takeUnretainedValue()
-                return (location, CGRect(
-                    x: line.baseline.x + position.x,
-                    y: line.baseline.y - position.y - metrics.bottom - size.height,
-                    width: size.width, height: size.height
-                ))
+                let x = line.baseline.x + position.x
+                let y = line.baseline.y - position.y - metrics.bottom - size.height
+                guard LayoutNumber.isSafe(x), LayoutNumber.isSafe(y), LayoutNumber.isSafe(size.width),
+                      LayoutNumber.isSafe(size.height), LayoutNumber.isSafe(x + size.width),
+                      LayoutNumber.isSafe(y + size.height) else { return nil }
+                return (location, CGRect(x: x, y: y, width: size.width, height: size.height))
             }
         }
     }
 
     private func truncatedLines(
         _ original: [LYGlyphTextLayout.Line], width: CGFloat, insets: UIEdgeInsets, scale: CGFloat
-    ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat) {
+    ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat)? {
         guard let last = original.last else { return ([], 0) }
         let sourceRange = CTLineGetStringRange(last.text)
         let start = min(sourceLength, sourceRange.location)
@@ -272,35 +364,45 @@ final class ResolvedText {
         )
         let finalText = truncation.text
         let metricsText = NSMutableAttributedString(string: "")
-        let previous = original.dropLast().last
-        if let previous {
+        // 用所有可见源行重建度量前缀；软换行保持同一段落，硬分隔符保留原值。
+        // 该字符串不参与源映射，人工字符不携带附件 delegate 或位置。
+        for previous in original.dropLast() {
             let range = CTLineGetStringRange(previous.text)
-            metricsText.append(attributedText.attributedSubstring(from: NSRange(
+            let sourceRange = NSRange(
                 location: range.location,
-                length: range.length
-            )))
-            if let last = metricsText.string.unicodeScalars.last, !CharacterSet.newlines.contains(last) {
-                var attributes = attributedText.attributes(at: range.location + range.length - 1, effectiveRange: nil)
+                length: min(range.length, sourceLength - range.location)
+            )
+            metricsText.append(attributedText.attributedSubstring(from: sourceRange))
+            if let last = metricsText.string.unicodeScalars.last,
+               !CharacterSet.newlines.contains(last)
+            {
+                var attributes = attributedText.attributes(at: NSMaxRange(sourceRange) - 1, effectiveRange: nil)
                 attributes.removeValue(forKey: NSAttributedString.Key(kCTRunDelegateAttributeName as String))
                 attributes.removeValue(forKey: AttachmentMetrics.locationKey)
-                metricsText.append(NSAttributedString(string: "\n", attributes: attributes))
+                metricsText.append(NSAttributedString(string: "\u{2028}", attributes: attributes))
             }
         }
         metricsText.append(finalText)
-        // 无限宽只用于两个最终显示行的垂直度量，避免超宽字形把人工分隔符另排一行。
-        // 真实字形来自已固定段落方向的末行，前面各行位置保持不变。
+        // 已用显式软分隔符固定行边界，宽度只需容纳这些有限的最终 advance。
+        var metricsWidth: CGFloat = width
+        for previous in original {
+            let advance = CGFloat(CTLineGetTypographicBounds(previous.text, nil, nil, nil))
+            if LayoutNumber.isSafe(advance) { metricsWidth = max(metricsWidth, advance) }
+        }
+        metricsWidth = LayoutNumber.add(metricsWidth, max(1, idealWidth)) ?? max(width, idealWidth)
         let metrics = TextFrame(
-            framesetter: CTFramesetterCreateWithAttributedString(metricsText),
-            width: .greatestFiniteMagnitude, scale: scale
+            framesetter: CTFramesetterCreateWithAttributedString(metricsText), width: metricsWidth, scale: scale,
+            expectedLength: metricsText.length, minimumPadding: Self.padding(for: metricsText)
         )
-        let firstBaseline = metrics.origins.first.map { metrics.height - $0.y } ?? 0
-        let lastBaseline = metrics.origins.last.map { metrics.height - $0.y } ?? firstBaseline
-        let offset = previous.map { $0.baseline.y - insets.top - firstBaseline } ?? 0
+        let lastBaseline = metrics.origins.last.map { metrics.height - $0.y } ?? 0
+        guard metrics.isValid, let x = LayoutNumber.add(insets.left, truncation.alignmentOffset),
+              let y = LayoutNumber.add(insets.top, lastBaseline),
+              TextFrame.isFinite(truncation.line) else { return nil }
         var lines = Array(original.dropLast())
         lines.append(LYGlyphTextLayout.Line(
             text: truncation.drawsToken ? truncation
                 .line : CTLineCreateWithAttributedString(NSAttributedString(string: "")),
-            baseline: CGPoint(x: insets.left + truncation.alignmentOffset, y: insets.top + offset + lastBaseline),
+            baseline: CGPoint(x: x, y: y),
             visibleSourceRanges: truncation.visibleSourceRanges(
                 in: truncation.line,
                 source: attributedText.string as NSString
@@ -308,7 +410,7 @@ final class ResolvedText {
             sourceOffset: truncation.sourceOffset,
             truncationTokenRange: truncation.drawsToken ? truncation.tokenRange : nil
         ))
-        return (lines, offset + metrics.contentHeight)
+        return (lines, metrics.contentHeight)
     }
 }
 
@@ -319,19 +421,72 @@ struct TextFrame {
     let height: CGFloat
     let lines: [CTLine]
     let origins: [CGPoint]
+    let isValid: Bool
 
-    init(framesetter: CTFramesetter, width: CGFloat, scale: CGFloat) {
+    init(
+        framesetter: CTFramesetter, width: CGFloat, scale: CGFloat, expectedLength: Int? = nil,
+        minimumPadding: CGFloat = 0
+    ) {
+        guard width > 0, LayoutNumber.isSafe(width), scale > 0, LayoutNumber.isSafe(scale) else {
+            contentHeight = 0
+            height = 0
+            lines = []
+            origins = []
+            isValid = false
+            return
+        }
         let suggested = CTFramesetterSuggestFrameSizeWithConstraints(
             framesetter, CFRange(location: 0, length: 0), nil,
-            CGSize(width: width, height: CGFloat.greatestFiniteMagnitude), nil
+            CGSize(width: width, height: CGFloat(Float.greatestFiniteMagnitude) / 4), nil
         )
+        guard LayoutNumber.isSafe(suggested.width), suggested.height >= 0,
+              LayoutNumber.isSafe(suggested.height, times: scale),
+              let frameHeight = LayoutNumber.add(
+                  LayoutNumber.pixelCeil(suggested.height, scale: scale),
+                  max(1 / scale, minimumPadding)
+              ),
+              frameHeight > 0
+        else {
+            contentHeight = 0
+            height = 0
+            lines = []
+            origins = []
+            isValid = false
+            return
+        }
         contentHeight = suggested.height
-        height = ceil(suggested.height * scale) / scale + 1 / scale
-        let path = CGPath(rect: CGRect(x: 0, y: 0, width: width, height: height), transform: nil)
+        height = frameHeight
+        let path = CGPath(rect: CGRect(x: 0, y: 0, width: width, height: frameHeight), transform: nil)
         let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), path, nil)
-        lines = CTFrameGetLines(frame) as! [CTLine]
-        var origins = [CGPoint](repeating: .zero, count: lines.count)
-        CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
-        self.origins = origins
+        let candidateLines = CTFrameGetLines(frame) as! [CTLine]
+        var candidateOrigins = [CGPoint](repeating: .zero, count: candidateLines.count)
+        CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &candidateOrigins)
+        let visibleRange = CTFrameGetVisibleStringRange(frame)
+        let coversText = expectedLength.map { visibleRange.location + visibleRange.length >= $0 } ?? true
+        let valid = coversText && !candidateLines.isEmpty && candidateOrigins.allSatisfy {
+            LayoutNumber.isSafe($0.x) && LayoutNumber.isSafe($0.y) && LayoutNumber.isSafe(frameHeight - $0.y)
+        } && candidateLines.allSatisfy(Self.isFinite)
+        lines = valid ? candidateLines : []
+        origins = valid ? candidateOrigins : []
+        isValid = valid
+    }
+
+    static func isFinite(_ line: CTLine) -> Bool {
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        var leading: CGFloat = 0
+        let width = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, &leading))
+        guard [width, ascent, descent, leading].allSatisfy({ LayoutNumber.isSafe($0) }) else { return false }
+        for run in CTLineGetGlyphRuns(line) as! [CTRun] {
+            let count = CTRunGetGlyphCount(run)
+            var positions = [CGPoint](repeating: .zero, count: count)
+            var advances = [CGSize](repeating: .zero, count: count)
+            CTRunGetPositions(run, CFRange(location: 0, length: 0), &positions)
+            CTRunGetAdvances(run, CFRange(location: 0, length: 0), &advances)
+            guard positions.allSatisfy({ LayoutNumber.isSafe($0.x) && LayoutNumber.isSafe($0.y) }),
+                  advances.allSatisfy({ LayoutNumber.isSafe($0.width) && LayoutNumber.isSafe($0.height) })
+            else { return false }
+        }
+        return true
     }
 }

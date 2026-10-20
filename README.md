@@ -2,14 +2,14 @@
 
 面向 UIKit 与 SwiftUI 的只读富文本 Swift Package，使用纯 Swift 和 Core Text，零第三方运行依赖。最低部署目标 iOS 16，Swift tools 6.0／Swift 6 language mode。
 
-当前提供富文本显示、自动撑高、**行数限制／尾部省略、行内图片及 UIView 附件**：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
+当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制／尾部省略、行内图片及 UIView 附件**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。文字点击／长按尚待实现。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
 
 ## 已实现
 
 - MainActor 不可变 `LYGlyphTextDocument`：隔离复制输入字符串及段落样式。
 - `init(segments:)` 自动累计 UTF-16 附件和动作范围；`actions` 输入校验非空 ID、完整字符边界及范围重叠。当前动作仅为描述数据。
-- 字体、前景色、段落对齐和基本书写方向；缺省动态 body 字体和 label 颜色。显式字号保持固定。
-- 多行单词换行、显式换行、中英文与 emoji、顶部对齐、内边距。
+- 字体、前景／背景色、字距、基线偏移、连字、下划线／删除线及段落度量；缺省动态 body 字体和 label 颜色。显式字号保持固定。
+- 多行单词／字符换行、显式换行、中英文与 emoji、内边距及三种垂直对齐；证据见 [M1b 记录](docs/verification/2026-10-20-m1b-styles.md)。
 - `configuration.numberOfLines`：0 或负值为无限行，正值限制显示行数；溢出时末行尾部显示 `…`。
 - `LYGlyphTextAttachment`：UIImage 按明确的 point 尺寸参与换行，可相对占位字体区域顶部／居中／底部对齐；超宽部分裁切，不自动缩小。
 - `LYGlyphTextViewAttachment` 与 MainActor provider：根据最终可见几何挂载宿主独占的 UIView，支持附件自身按钮；测量不调用工厂，隐藏后卸载释放。
@@ -73,7 +73,42 @@ struct Example: View {
 
 显式换行（含末尾空行）计入行数；刚好容纳时不省略。生成的省略号继承最后可见行起点的字体和前景色。正宽度仅够省略号时只显示省略号，连省略号也放不下时保留该行高度但不绘制文字。外部高度裁切不触发额外省略号。
 
-SwiftUI nil／无限宽度使用理想尺寸，有限宽度用于排版，0 返回安全的零宽结果。SwiftUI `layoutPriority` 由宿主管理，不映射为 UIKit 优先级。当前不保证与 UILabel 首／末文字基线对齐等价。
+SwiftUI nil／无限宽度使用理想尺寸，有限非负宽度决定底层 Label 的实际宽度，0 返回安全的零宽结果。默认忽略高度提议并按内容撑高。SwiftUI `layoutPriority` 由宿主管理，不映射为 UIKit 优先级。当前不保证与 UILabel 首／末文字基线对齐等价。
+
+`configuration.verticalAlignment` 默认为 `.top`，可设 `.center`／`.bottom`。宿主外框比自然内容高时，文字、装饰及附件共用偏移；高度受压时偏移为 0，超出部分裁切。自然尺寸测量保持不变。
+
+SwiftUI 需要额外高度或压缩展示时，使用显式的 `displayHeight`；单独给外层 `.frame(height:)` 不保证扩大底层 Label：
+
+```swift
+LYGlyphTextView(
+    document: document,
+    configuration: .init(verticalAlignment: .center),
+    displayHeight: 160
+)
+.frame(width: 240)
+```
+
+`displayHeight` 单位为 point；nil／非有限／负值回退自然高度，有限非负值（含 0）指定展示高度。它不改变文本或附件的排版尺寸。
+
+## 字符样式与段落
+
+支持的 NSAttributedString 属性在文档构造时保存为独立的类型化快照：
+
+| 属性 | 行为 |
+|---|---|
+| `.font`、`.foregroundColor`、`.backgroundColor` | 字体、前景与背景；语义颜色按当前 traits 解析，背景不填满行距／段距 |
+| `.kern`、`.baselineOffset` | point 字距及基线偏移；缺省 kern 不写入 Core Text key，显式 0 保留；普通有限负值允许 |
+| `.ligature` | 接受 0／1／2，其余归默认 1；实际连字取决于字体 |
+| `.underlineStyle`／`.underlineColor`、`.strikethroughStyle`／`.strikethroughColor` | none／single／thick／double，solid／dot／dash／dashDot／dashDotDot 及 byWord；缺省线色继承前景 |
+| `.paragraphStyle` | 对齐、基本方向、行距、段前后距、首行／续行 headIndent、tailIndent、最小／最大行高及倍数 |
+
+完整逻辑段落以第一个 UTF-16 字符的段落样式为准；段内后续冲突值不覆盖它。`configuration.wrapping` 默认为 `.word`，可设 `.character`，覆盖输入段落的 lineBreakMode。未列出的制表位、断词和其他属性不构成支持承诺。
+
+非有限度量归缺省；有限负 minimum／maximum／multiple 归 0，非零 max 小于 min 时忽略 max。极端有限值若使内部坐标或像素精度失效，解析时归缺省；系统返回无效帧时最多以缺省可选度量重试一次。原文档快照不变，不保证任意负间距都能由系统原样显示。
+
+背景、删除线及必要的下划线回退消费最终可见源片段，生成省略号不继承装饰。当前系统的原生 byWord 和 pattern 间隔未满足契约，因此由内部绘制；普通实线下划线保留 Core Text 路径。图片与 UIView 绘制在装饰上方。
+
+内部片段保留实际 shaping。连字内部优先使用系统 caret；没有可用边界时按完整字符簇等分 advance，RTL 反向。此规则仅用于几何，不拆字形或禁用连字。文字手势及按下反馈仍待 I1。
 
 ## 行内图片
 

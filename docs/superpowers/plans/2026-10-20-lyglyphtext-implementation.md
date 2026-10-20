@@ -8,7 +8,7 @@
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-20；已完成基础显示、行数限制／尾部省略及行内 UIImage／UIView。当前公开 attributedText／segments／actions、两类附件描述与 provider、内边距／行数配置、Label 和 SwiftUI 包装，支持字体／前景色／对齐／基本方向、多行与自动撑高。以下完整首版接口是后续目标，不表示均已提供；证据见 [基础显示记录](../../verification/2026-10-20-basic-display.md)、[行数限制记录](../../verification/2026-10-20-line-limits.md)、[图片附件记录](../../verification/2026-10-20-image-attachments.md) 与 [UIView 附件记录](../../verification/2026-10-20-view-attachments.md)。
+**状态与日期：** 2026-10-20；已完成基础显示、行数限制／尾部省略、行内 UIImage／UIView 及分段／动作描述；M1b 的样式／完整已声明段落值、word／character 与统一垂直展示已通过 215 项正式回归，待本任务锁内集成推送。文字点击／长按、高亮、完整宿主矩阵、显示环境及无障碍仍是后续目标。证据见 [基础显示记录](../../verification/2026-10-20-basic-display.md)、[行数限制记录](../../verification/2026-10-20-line-limits.md)、[图片附件记录](../../verification/2026-10-20-image-attachments.md)、[UIView 附件记录](../../verification/2026-10-20-view-attachments.md) 与 [样式记录](../../verification/2026-10-20-m1b-styles.md)。
 
 ---
 
@@ -62,7 +62,7 @@ Examples/LYGlyphTextDemo/
 
 ## 3. 接口契约
 
-下面定义完整首版的目标 API。**当前实际 API** 包含 `LYGlyphTextDocument.init(attributedText:attachments:viewAttachments:actions:) throws`（两个字典和 actions 默认空）、`init(segments:)`、MainActor 的 `LYGlyphTextSegment`／`LYGlyphTextAction`／`LYGlyphTextPressedStyle`、`LYGlyphTextDocumentError`、MainActor 的 `LYGlyphTextAttachment`、`LYGlyphTextViewAttachment` 与 `LYGlyphTextAttachmentViewProvider`，以及共享的 `LYGlyphTextAttachmentAlignment`、configuration 内边距／行数、Label 的 document／configuration／preferredMaxLayoutWidth／viewProvider／reloadAttachments 和标准尺寸接口，以及 `LYGlyphTextView(document:configuration:viewProvider:)`。图片描述包含只读 id、image、size、alignment 和 alternativeText；视图描述包含 id、viewID、size、alignment、alternativeText 与 isInteractive。对齐默认 bottom，替代文本默认 nil，交互默认 false。Document 保存独立文本与支持的样式值，不持有 UIView、工厂或可变段落对象。两类附件共用 UTF-16 独立 U+FFFC、唯一 ID 和尺寸校验，拒绝同位置冲突、标准 attachment 和未描述的 U+FFFC。分段自动累计 UTF-16 位置，动作保存独立输入顺序并校验 ID、数值范围、完整字符及重叠；文字动作交互和其他样式仍未实现，不提前公开空壳 API。
+下面定义完整首版的目标 API。**当前实际 API** 包含 `LYGlyphTextDocument.init(attributedText:attachments:viewAttachments:actions:) throws`（两个字典和 actions 默认空）、`init(segments:)`、MainActor 的 `LYGlyphTextSegment`／`LYGlyphTextAction`／`LYGlyphTextPressedStyle`、`LYGlyphTextDocumentError`、两类 MainActor 附件描述与 `LYGlyphTextAttachmentViewProvider`，以及共享 `LYGlyphTextAttachmentAlignment`。configuration 已有内边距／行数／word、character wrapping／top、center、bottom verticalAlignment；Label 已有 document／configuration／preferredMaxLayoutWidth／viewProvider／reloadAttachments 和标准尺寸接口；SwiftUI 已有 `LYGlyphTextView(document:configuration:viewProvider:displayHeight:)`，默认 displayHeight=nil 保持自然高度。图片描述包含只读 id、image、size、alignment 和 alternativeText；视图描述包含 id、viewID、size、alignment、alternativeText 与 isInteractive。附件对齐默认 bottom，替代文本默认 nil，交互默认 false。Document 保存独立文本与已声明字符／段落样式值，不持有 UIView、工厂或可变段落对象。两类附件共用 UTF-16 独立 U+FFFC、唯一 ID 和尺寸校验，拒绝同位置冲突、标准 attachment 和未描述的 U+FFFC。分段累计 UTF-16 位置，动作保留输入顺序并校验 ID、数值范围、完整字符及重叠；文字动作交互仍未实现，不提前公开空壳 API。
 
 | 类型／入口 | 契约 |
 |---|---|
@@ -74,7 +74,7 @@ Examples/LYGlyphTextDemo/
 | `LYGlyphTextAttachmentViewProvider` | 已实现：MainActor 引用类型，持有不可变 makeView 与可选 onUnmount；以 provider 对象身份判断失效。完整所有权、可见性、重入与释放契约见 [连续开发计划](2026-10-20-continuous-development.md)。 |
 | `LYGlyphTextConfiguration` | 包含 textContainerInset、numberOfLines、word／character wrapping 与 top／center／bottom 垂直对齐。默认 0 内边距、0 行限制、word wrapping、top 对齐；有行数限制时尾部省略。 |
 | `LYGlyphTextLabel: UIView` | `document`、`configuration`、`onAction`、`viewProvider`、`reloadAttachments()`、`intrinsicContentSize` 与 `sizeThatFits(_:)`，支持标准 `systemLayoutSizeFitting`。`document == nil` 清空文本、附件、交互及无障碍元素。`preferredMaxLayoutWidth` 默认 0，正值为包含内边距的固有尺寸测量宽度；实际绘制按 bounds。沿用标准 Hugging／Compression Resistance API。 |
-| `LYGlyphTextView: UIViewRepresentable` | 初始化输入与 Label 一致：document、configuration、onAction、viewProvider；实现 makeUIView、updateUIView、sizeThatFits、dismantleUIView。 |
+| `LYGlyphTextView: UIViewRepresentable` | 已有 document、configuration、viewProvider、displayHeight；onAction 待 I1 追加。实现 makeUIView、updateUIView、sizeThatFits、dismantleUIView；默认自然高度，显式 displayHeight 指定展示外框。 |
 | `LYGlyphTextActionEvent` | 输出 actionID、原文 UTF-16 range、可见片段矩形数组，以及 tap／longPress 类型。矩形坐标属于展示视图本地坐标，不向业务暴露 CTLine／CTRun。 |
 | `LYGlyphTextLayout` | internal；保存容器约束、排版行、基线、可见原文区间、附件矩形、动作片段矩形与截断映射，不能成为公开 ABI。 |
 
@@ -199,14 +199,14 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 |---|---|---|---|---|
 | D0 规则与计划同步 | 已完成 | 现有基础显示／行数／UIImage | 规则一致、当前 API 准确、V1 契约明确；docs 通过后提交／集成／推送 | 本计划、AGENTS、CONTRIBUTING 与连续开发计划；docs 通过，提交 `160c3c4` 已合入并推送，远端 SHA 已核对 |
 | V1 UIView／provider／生命周期／按钮自身交互 | 已完成 | D0 | 测量零工厂调用、可见复用／隐藏卸载、所有权与重入、SwiftUI 清理、真实按钮与列表复用；保留 72 项基线 | [专项记录](../../verification/2026-10-20-view-attachments.md)：102／102 Passed，八张截图已检查；`70e8340` 已合入并推送，远端 SHA 一致 |
-| M1a segments／actions／范围校验 | 已验证，待集成 | V1 | 分段安全构建、UTF-16／组合字符／动作重叠校验、初始化快照与现有输入兼容 | [M1 契约](2026-10-20-document-actions-styles.md) 与 [专项记录](../../verification/2026-10-20-m1a-document.md)：127／127 Passed，两张共用样例截图；不提供文字交互 |
-| M1b 样式／换行／统一展示几何 | 待执行 | M1a | 装饰、完整段落值、word／character、垂直对齐、最终可见片段与连字几何 | M1 契约；待专项测试及截图，不沿用基础显示结论 |
+| M1a segments／actions／范围校验 | 已完成 | V1 | 分段安全构建、UTF-16／组合字符／动作重叠校验、初始化快照与现有输入兼容 | [M1 契约](2026-10-20-document-actions-styles.md) 与 [专项记录](../../verification/2026-10-20-m1a-document.md)：127／127 Passed，两张共用样例截图；`b74a0cb` 已合入／推送、远端 SHA 一致；不提供文字交互 |
+| M1b 样式／换行／统一展示几何 | 验收通过，待集成推送 | M1a | 装饰、完整段落值、word／character、垂直对齐、最终可见片段与连字几何 | [M1 契约](2026-10-20-document-actions-styles.md) 与 [专项记录](../../verification/2026-10-20-m1b-styles.md)：B1—B5 两阶段审查及最终集成审查批准，215／215 Passed，10 张原图已检查；本提交随后按锁流程集成／普通推送 |
 | I1 文本点击／长按／高亮／取消 | 待执行 | M1b | 真实手势、空白／截断／RTL 命中、单次回调与取消零事件、附件优先级 | 待状态机、几何与 UI 证据 |
 | H1 宿主矩阵 | 待执行 | I1 | StackView、UITableView／UICollectionView、HStack／VStack／List／LazyVStack、宽度切换与复用收敛 | 现有基础尺寸记录仅覆盖子集；完整矩阵待验收 |
 | A1 显示环境／无障碍 | 待执行 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | 现有图片默认字体测试仅为子集；人工 VoiceOver 未验证 |
 | P1 回归／性能／发布准备 | 待执行 | A1；缺失环境不阻塞独立准备 | 完整回归、固定负载性能／释放、来源与 API／安装文档审查，列出发布阻塞项 | Swift 6.0／iOS 16／真机／性能仍未验证；PR／Tag／Release 未授权 |
 
-当前回归基线为 M1a 专项记录中的 **127／127 Passed（120 宿主＋7 UI，0 failed／0 skipped）**，保留 V1 的 102 项并新增 25 项；环境与证据见该记录。队列状态与各阶段勾选必须同步更新，不把未来工作标为完成。
+当前回归基线为 M1b 专项记录中的 **215／215 Passed（206 宿主＋9 UI，0 failed／0 skipped）**，保留 M1a 的全部 127 项并新增 88 项；环境与证据见该记录。队列状态与各阶段勾选必须同步更新，不把未来工作标为完成。
 
 阶段内按“建立测试／复现 → 实现最小行为 → 验证 → 更新记录 → 提交”执行。低影响文档调整不添加镜像实现的测试；布局、Unicode、交互及所有权必须有有意义的验证。各阶段提交须可单独审阅，不以空壳声明代替完成。
 
@@ -247,7 +247,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 - [x] 完成图片 attachments 字典输入，以 UTF-16 位置关联独立 U+FFFC；校验描述完整性、位置、唯一 ID 和有限正尺寸，继续拒绝标准 NSTextAttachment。
 - [x] 完成 segments、actions 输入、UTF-16 数值／完整字符／重叠校验；官方 Swift range 转换与 CRLF 保护有测试，重复 ID 与相邻动作独立保留。
 - [x] UIView 的全部测量入口与离屏布局 factory 次数为零；挂载／失败／卸载和重入有计数、weak 释放验证。
-- [ ] 后续扩展行距与其他装饰样式。
+- [x] 扩展行距、完整已声明段落度量、字距／基线偏移／连字及背景／装饰样式，保留 typed 快照和极端数值防守。
 - [x] 显示／截断范围补充家庭 emoji、肤色、旗帜、组合重音、混合方向及字符内属性分段测试。
 - [ ] 后续补齐 Unicode／双向文本的动作范围与真实点击矩阵。
 
@@ -258,10 +258,10 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 **输入：** 文档、布局与外部尺寸约束。**输出：** UIKit 富文本显示、固有尺寸、多行自动撑高及可见原文映射。
 
 - [x] 在 UIView 绘制字体和前景色，像素测试确认实际彩色文字与高度裁切；示例核对换行。
-- [ ] 后续实现背景与装饰属性，扩展基线与视觉对照。
+- [x] 实现背景、下划线／删除线及 pattern／byWord 回退，真实像素覆盖透明合成、混合字号和正负基线。
 - [x] 增加 `configuration.numberOfLines`（0／负值为无限行）与尾部省略；末行可见 UTF-16 区间不包含隐藏内容／生成省略号，组合字符内 run 片段合并；测试刚好容纳、只容纳／无法容纳省略号、混合方向及隐藏首 strong 的自然 RTL。
-- [ ] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；验证坐标偏移没有重复应用。
-- [x] 图片附件覆盖内边距、宽度往返、非零 bounds 原点及高度压缩裁切；全部 UIImage 方向与声明尺寸有像素／几何测试。整组显示环境与垂直对齐功能仍待后续。
+- [x] 测试 textContainerInset、垂直对齐、不同 display scale、宽度变化、非零 bounds origin；文字、装饰与两类附件共享变换，偏移不重复应用。
+- [x] 图片附件覆盖内边距、宽度往返、非零 bounds 原点、高度压缩与三种垂直对齐；全部 UIImage 方向与声明尺寸有像素／几何测试。完整显示环境仍由 A1 验收。
 - [x] 实现 intrinsicContentSize、sizeThatFits、preferredMaxLayoutWidth 和 systemLayoutSizeFitting 宽度驱动测量，覆盖左右／固定／上限约束与明确宽度的离屏测量。
 - [x] 初始化标准 Hugging／Compression Resistance 默认值，测试优先级控制拉伸／压缩，更新文档不重置宿主值。
 - [x] 实现有效宽度变化的固有尺寸失效，测试 0→正值、窄→宽→窄、旧高度不影响新高度及布局收敛；测量不调用 layoutIfNeeded 或安装附件。
@@ -311,13 +311,14 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
 ### 阶段 7：回归、性能与发布
 
-**输入：** 前六阶段的实现与证据。**输出：** 可发布版本、文档与完整验证记录。
+**输入：** 前六阶段的实现与证据。**本轮输出：** 发布准备、文档与完整验证记录；缺失环境单列发布阻塞，不创建版本或发布。
 
 - [ ] 完成第 6 节矩阵；补齐最低 iOS 16 与最新可用系统的运行结果，最低系统无法获取时明确发布阻塞项，不伪造通过。
 - [ ] 在固定设备／模拟器和 Release 构建测量 100、1000、5000 个 UTF-16 单元，以及每条含 0／3／10 个附件的集合；记录冷排版、热缓存的 p50／p95、factory 次数、内存与滚动表现。
 - [ ] 用 Instruments 检查附件释放与持续滚动内存趋势；缓存占用必须符合“每 Label 最多两个布局”的约束，不先许诺未经测量的帧率。
 - [ ] 复核纯 Swift／零第三方运行依赖、来源与许可证、公开 API、README 安装和示例说明；只有验证完成后新增真实可用的安装指引。
-- [ ] 更新版本记录并创建首个 `0.1.0` tag／release，发布说明列出验证环境和已知限制。
+- [ ] 完成版本记录与首版发布说明草案，列出验证环境、已知限制和发布阻塞项；不创建 Tag 或 Release。
+- [ ] 后续另行授权：达到发布门槛后创建首个版本 Tag／Release；此项不属于本轮连续开发执行范围，也不因发布准备完成而勾选。
 
 **完成标准：** 无未说明的功能缺口；本地构建、设备运行、无障碍和性能证据分别列出；发布操作只在届时获得发布授权后执行，本文不代表立即发布组件。
 
