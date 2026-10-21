@@ -214,7 +214,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | G3 网络图片 | 已完成 | G2 | 远程图片附件、加载协议与系统框架默认加载器、取消／合并／缓存／GIF | [G3 记录](../../verification/2026-10-21-g3-remote-images.md)：397／397（373 宿主＋24 UI） |
 | G4 后台预排版 | 已完成 | G3 | LYGlyphTextPreparedLayout、Label.apply；Layout 层非隔离 | [G4 记录](../../verification/2026-10-21-g4-prepared-layout.md)：403／403（379 宿主＋24 UI），5000 UTF-16 主线程首次测量 p50 约 46ms→21µs（模拟器 Release） |
 | G5 选择与拷贝 | 已完成 | G4 | isSelectable、selectedRange、拖柄、系统编辑菜单拷贝／全选 | [G5 记录](../../verification/2026-10-21-g5-selection.md)：413／413（387 宿主＋26 UI） |
-| G6—G7 Label 2.x 能力 | 待执行 | G5；阶段依赖见路线图 | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
+| G6 文本解析器 | 已完成 | G5 | 链接、@提及、#话题#、自定义正则、表情短码图片 | [G6 记录](../../verification/2026-10-21-g6-parser.md)：418／418（392 宿主＋26 UI） |
+| G7 SwiftUI 参数与 2.x 准备 | 待执行 | G6 | 见路线图 | — | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
 
 ### R1 实施契约（2026-10-21）
 

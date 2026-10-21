@@ -317,6 +317,21 @@ label.onSelectionChange = { range in print(range as Any) }
 
 长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。没有放大镜；不支持编辑。
 
+## 文本解析
+
+```swift
+let parser = LYGlyphTextParser(rules: [
+    .emoticons(["[微笑]": smileImage], size: CGSize(width: 18, height: 18)),
+    .links(), .mentions(), .topics()
+])
+label.document = try parser.document(from: NSAttributedString(string: "[微笑] @小明 #春天# https://example.com"))
+label.onAction = { event in
+    // event.actionID: "mention:小明"、"topic:春天" 或 URL 字符串
+}
+```
+
+先替换表情短码为图片附件，再按规则顺序识别；重叠时前面的规则优先。`.pattern(_:actionID:)` 支持自定义正则。
+
 ## 运行 Demo 和检查
 
 需要 Xcode（含 iOS Simulator）、**XcodeGen 2.46.0**、Python 3；SwiftFormat 固定 **0.59.1**，安装或指定已有工具的方法见 [参与开发](CONTRIBUTING.md)。
