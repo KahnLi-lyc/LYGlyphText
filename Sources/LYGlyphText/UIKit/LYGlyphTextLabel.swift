@@ -64,12 +64,12 @@ public final class LYGlyphTextLabel: UIView {
         }
     }
 
-    private var hostAccessibilityElements: [Any]?
-    private var preparedAccessibilityElements: [Any] = []
-    private var preparedAccessibilityRevision: AccessibilityRevision?
-    private var preparedAccessibilityActions: [Int: ActionGeometry.Entry] = [:]
-    private var preparedAccessibilityElementIDs: Set<ObjectIdentifier> = []
-    private var isSendingAccessibilityAction = false
+    var hostAccessibilityElements: [Any]?
+    var preparedAccessibilityElements: [Any] = []
+    var preparedAccessibilityRevision: AccessibilityRevision?
+    var preparedAccessibilityActions: [Int: ActionGeometry.Entry] = [:]
+    var preparedAccessibilityElementIDs: Set<ObjectIdentifier> = []
+    var isSendingAccessibilityAction = false
 
     /// 宿主显式数组（包括空数组）优先；nil 恢复最近展示事务准备的自动内容。
     override public var accessibilityElements: [Any]? {
@@ -81,29 +81,27 @@ public final class LYGlyphTextLabel: UIView {
         set { hostAccessibilityElements = newValue }
     }
 
-    private var accessibilityRevision: AccessibilityRevision {
+    var accessibilityRevision: AccessibilityRevision {
         .init(document: documentRevision, geometry: geometryRevision, attachment: attachmentRevision)
     }
 
-    private var resolvedText: ResolvedText?
-    private var cachedLayouts: [(width: CGFloat?, layout: LYGlyphTextLayout)] = []
-    private var layoutBuildCount = 0
+    private var layoutCache = LayoutCache()
     private var intrinsicInvalidationCount = 0
     private var previousLayoutWidth: CGFloat?
-    private struct MountedAttachment {
+    struct MountedAttachment {
         let descriptor: LYGlyphTextViewAttachment
         let view: UIView
         let provider: LYGlyphTextAttachmentViewProvider
     }
 
-    private var attachmentContainer: AttachmentContainer?
-    private var mountedAttachments: [String: MountedAttachment] = [:]
-    private var failedAttachmentIDs: Set<String> = []
-    private var attachmentRevision: UInt64 = 0
-    private var isReconcilingAttachments = false
-    private var isTearingDown = false
-    private var attachmentCleanupDepth = 0
-    private struct PressSession {
+    var attachmentContainer: AttachmentContainer?
+    var mountedAttachments: [String: MountedAttachment] = [:]
+    var failedAttachmentIDs: Set<String> = []
+    var attachmentRevision: UInt64 = 0
+    var isReconcilingAttachments = false
+    var isTearingDown = false
+    var attachmentCleanupDepth = 0
+    struct PressSession {
         let actionIndex: Int
         let documentRevision: UInt64
         let geometryRevision: UInt64
@@ -114,21 +112,21 @@ public final class LYGlyphTextLabel: UIView {
         let usesRecognizer: Bool
     }
 
-    private var pressSession: PressSession?
-    private var actionTimer: ActionGestureTimer?
-    private var nextSequenceID: UInt64 = 0
-    private var documentRevision: UInt64 = 0
-    private var geometryRevision: UInt64 = 0
-    private var actionRecognizer: ActionGestureRecognizer?
-    private lazy var scrollObserver = ActionScrollObserver(owner: self)
-    private var observedScrollViews: [ObservedScrollView] = []
+    var pressSession: PressSession?
+    var actionTimer: ActionGestureTimer?
+    var nextSequenceID: UInt64 = 0
+    var documentRevision: UInt64 = 0
+    var geometryRevision: UInt64 = 0
+    var actionRecognizer: ActionGestureRecognizer?
+    lazy var scrollObserver = ActionScrollObserver(owner: self)
+    var observedScrollViews: [ObservedScrollView] = []
     var actionClock: ActionGestureClock = SystemActionGestureClock.shared {
         didSet {
             if oldValue !== actionClock { cancelActionInteraction() }
         }
     }
 
-    private static let attachmentLogger = Logger(subsystem: "LYGlyphText", category: "Attachments")
+    static let attachmentLogger = Logger(subsystem: "LYGlyphText", category: "Attachments")
 
     var pressedActionIndex: Int? {
         pressSession?.actionIndex
@@ -140,14 +138,14 @@ public final class LYGlyphTextLabel: UIView {
 
     var layoutMeasurementSnapshot: LayoutMeasurementSnapshot {
         LayoutMeasurementSnapshot(
-            layoutBuildCount: layoutBuildCount,
+            layoutBuildCount: layoutCache.buildCount,
             intrinsicInvalidationCount: intrinsicInvalidationCount,
-            cachedLayoutCount: cachedLayouts.count
+            cachedLayoutCount: layoutCache.count
         )
     }
 
     func resetLayoutMeasurementCounts() {
-        layoutBuildCount = 0
+        layoutCache.resetBuildCount()
         intrinsicInvalidationCount = 0
     }
 
@@ -289,8 +287,7 @@ public final class LYGlyphTextLabel: UIView {
     private func invalidateText() {
         clearAccessibilitySnapshot()
         attachmentRevision &+= 1
-        resolvedText = nil
-        cachedLayouts.removeAll(keepingCapacity: true)
+        layoutCache.invalidate()
         requestIntrinsicSizeInvalidation()
         setNeedsLayout()
         setNeedsDisplay()
@@ -317,383 +314,10 @@ public final class LYGlyphTextLabel: UIView {
         invalidateText()
     }
 
-    /// 先移除全部内部状态和 superview，再允许业务清理回调重入。
-    private func unmount(_ removed: [MountedAttachment], removing container: AttachmentContainer? = nil) {
-        guard !removed.isEmpty || container != nil else { return }
-        attachmentCleanupDepth += 1
-        defer {
-            attachmentCleanupDepth -= 1
-            setNeedsLayout()
-        }
-        // 一个旧批次全部清理完毕前，不允许新工厂重新取得尚未回调的旧实例。
-        container?.removeFromSuperview()
-        for attachment in removed {
-            attachment.view.removeFromSuperview()
-        }
-        for attachment in removed {
-            attachment.provider.onUnmount?(attachment.descriptor, attachment.view)
-        }
-    }
-
-    private func resetAttachments() {
-        clearAccessibilitySnapshot()
-        cancelActionInteraction()
-        attachmentRevision &+= 1
-        failedAttachmentIDs.removeAll()
-        let removed = Array(mountedAttachments.values)
-        mountedAttachments.removeAll()
-        let container = attachmentContainer
-        attachmentContainer = nil
-        setNeedsLayout()
-        unmount(removed, removing: container)
-    }
-
-    private func reconcileAttachments() {
-        guard !isTearingDown, attachmentCleanupDepth == 0, !isReconcilingAttachments, window != nil else { return }
-        isReconcilingAttachments = true
-        defer { isReconcilingAttachments = false }
-        let revision = attachmentRevision
-        let layout = measuredLayout(width: max(0, bounds.width))
-        let geometry = DisplayGeometry(bounds: bounds, layoutSize: layout.size, configuration: configuration)
-        let contentRect = geometry?.contentClip ?? .zero
-        let placements = layout.viewAttachments.compactMap { placement -> (LYGlyphTextLayout.ViewAttachment, CGRect)? in
-            guard let rect = geometry?.displayRect(placement.rect),
-                  !contentRect.isEmpty, rect.intersects(contentRect) else { return nil }
-            return (placement, rect)
-        }
-        let visibleIDs = Set(placements.map(\.0.attachment.id))
-        failedAttachmentIDs.formIntersection(visibleIDs)
-        let hiddenIDs = Set(mountedAttachments.keys).subtracting(visibleIDs)
-        if !hiddenIDs.isEmpty { cancelActionInteraction() }
-        let removed = hiddenIDs.compactMap { mountedAttachments.removeValue(forKey: $0) }
-        unmount(removed)
-        guard revision == attachmentRevision, window != nil, let provider = viewProvider else { return }
-        attachmentContainer?.frame = contentRect
-        for (placement, displayRect) in placements {
-            guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
-            let descriptor = placement.attachment
-            let rect = displayRect.offsetBy(dx: -contentRect.minX, dy: -contentRect.minY)
-            if let mounted = mountedAttachments[descriptor.id] {
-                mounted.view.frame = rect
-                continue
-            }
-            guard !failedAttachmentIDs.contains(descriptor.id) else { continue }
-            let candidate = provider.makeView(descriptor)
-            // 工厂可以同步替换文档、provider、reload 或移出 window；过期结果从未挂载。
-            guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
-            guard let candidate else {
-                failedAttachmentIDs.insert(descriptor.id)
-                continue
-            }
-            guard candidate !== self, candidate.superview == nil,
-                  !isDescendant(of: candidate),
-                  !mountedAttachments.values.contains(where: { $0.view === candidate })
-            else {
-                Self.attachmentLogger.debug("拒绝已有宿主、重复实例或自身／祖先的附件视图")
-                failedAttachmentIDs.insert(descriptor.id)
-                continue
-            }
-            let container: AttachmentContainer
-            if let existing = attachmentContainer {
-                container = existing
-            } else {
-                container = AttachmentContainer(frame: contentRect)
-                attachmentContainer = container
-                addSubview(container)
-            }
-            candidate.isUserInteractionEnabled = descriptor.isInteractive
-            candidate.frame = rect
-            guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
-            cancelActionInteraction()
-            mountedAttachments[descriptor.id] = MountedAttachment(
-                descriptor: descriptor, view: candidate, provider: provider
-            )
-            container.addSubview(candidate)
-        }
-    }
-
-    private func clearAccessibilitySnapshot() {
-        preparedAccessibilityElements = []
-        preparedAccessibilityActions = [:]
-        preparedAccessibilityElementIDs = []
-        preparedAccessibilityRevision = nil
-    }
-
-    private func prepareAccessibility(revision: AccessibilityRevision) {
-        guard revision == accessibilityRevision, !isTearingDown, attachmentCleanupDepth == 0,
-              !isReconcilingAttachments, window != nil else { return }
-        guard preparedAccessibilityRevision != revision else { return }
-        guard let document else {
-            clearAccessibilitySnapshot()
-            preparedAccessibilityRevision = revision
-            return
-        }
-        let layout = measuredLayout(width: max(0, bounds.width))
-        let nativeViews = mountedAttachments.mapValues(\.view)
-        let semantics = TextAccessibility(
-            layout: layout,
-            document: document,
-            bounds: bounds,
-            configuration: configuration,
-            nativeViews: nativeViews
-        )
-        let elements: [Any] = semantics.items.map { item in
-            switch item {
-            case let .text(entry): TextAccessibilityElement(owner: self, revision: revision, entry: entry)
-            case let .native(view): view
-            }
-        }
-        guard revision == accessibilityRevision, window != nil else { return }
-        let actions = ActionGeometry(layout: layout, bounds: bounds, configuration: configuration).entries
-        preparedAccessibilityActions = Dictionary(uniqueKeysWithValues: actions.map { ($0.actionIndex, $0) })
-        preparedAccessibilityElementIDs = Set(elements
-            .compactMap { ($0 as? TextAccessibilityElement).map(ObjectIdentifier.init) })
-        preparedAccessibilityElements = elements
-        preparedAccessibilityRevision = revision
-    }
-
-    func isCurrentAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
-        !isTearingDown && window != nil && element.revision == accessibilityRevision
-            && preparedAccessibilityRevision == accessibilityRevision
-            && preparedAccessibilityElementIDs.contains(ObjectIdentifier(element))
-    }
-
-    func canActivateAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
-        hostAccessibilityElements == nil && !isAccessibilityElement && isAccessibilityVisible
-            && isCurrentAccessibilityElement(element) && onAction != nil && element.entry.actionIndex != nil
-            && element.entry.actionIndex.flatMap { preparedAccessibilityActions[$0] } != nil
-    }
-
-    private var isAccessibilityVisible: Bool {
-        var ancestor: UIView? = self
-        while let view = ancestor {
-            guard !view.isHidden, view.alpha > 0, !view.accessibilityElementsHidden else { return false }
-            ancestor = view.superview
-        }
-        return true
-    }
-
-    func activateAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
-        guard !isSendingAccessibilityAction, canActivateAccessibilityElement(element) else { return false }
-        isSendingAccessibilityAction = true
-        defer { isSendingAccessibilityAction = false }
-        cancelActionInteraction()
-        // 取消路径也可能进入宿主代码；重新核对事务，再读最新闭包。
-        guard canActivateAccessibilityElement(element), let callback = onAction,
-              let index = element.entry.actionIndex, let entry = preparedAccessibilityActions[index]
-        else { return false }
-        callback(entry.event(kind: .tap))
-        return true
-    }
-
     func measuredLayout(width: CGFloat?) -> LYGlyphTextLayout {
-        let width = width.flatMap(normalizedWidth)
-        if let cached = cachedLayouts.first(where: { $0.width == width }) { return cached.layout }
-        let text = resolvedText ?? ResolvedText(
-            document: document,
-            traits: traitCollection,
-            wrapping: configuration.wrapping
+        layoutCache.layout(
+            width: width.flatMap(normalizedWidth), document: document, configuration: configuration,
+            traits: traitCollection
         )
-        resolvedText = text
-        let scale = traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
-        layoutBuildCount &+= 1
-        let layout = text.layout(
-            width: width, insets: configuration.insets, scale: scale, numberOfLines: max(0, configuration.numberOfLines)
-        )
-        cachedLayouts.insert((width, layout), at: 0)
-        if cachedLayouts.count > 2 { cachedLayouts.removeLast() }
-        return layout
-    }
-
-    func shouldReceiveActionTouch(at point: CGPoint, touchedView: UIView?) -> Bool {
-        if pressSession != nil {
-            cancelActionInteraction()
-            return false
-        }
-        return actionEntry(at: point, touchedView: touchedView) != nil
-    }
-
-    @discardableResult
-    func beginActionInteraction(at point: CGPoint, touchedView: UIView?, fromRecognizer: Bool = false) -> Bool {
-        guard pressSession == nil else {
-            cancelActionInteraction()
-            return false
-        }
-        guard let entry = actionEntry(at: point, touchedView: touchedView) else { return false }
-        let scrollViews = ancestorScrollViews()
-        guard !scrollViews.contains(where: isScrollViewActive) else { return false }
-        nextSequenceID &+= 1
-        let sequenceID = nextSequenceID
-        pressSession = PressSession(
-            actionIndex: entry.actionIndex,
-            documentRevision: documentRevision,
-            geometryRevision: geometryRevision,
-            ancestorScrollPanIDs: scrollPanIDs(for: scrollViews),
-            origin: point,
-            latestPoint: point,
-            sequenceID: sequenceID,
-            usesRecognizer: fromRecognizer
-        )
-        bindScrollObservers(scrollViews)
-        actionTimer = actionClock.schedule(after: 0.5, sequenceID: sequenceID) { [weak self] value in
-            self?.longPressTimerFired(sequenceID: value)
-        }
-        setNeedsDisplay()
-        return true
-    }
-
-    func moveActionInteraction(to point: CGPoint) {
-        guard var session = pressSession else { return }
-        session.latestPoint = point
-        pressSession = session
-        let distance = hypot(point.x - session.origin.x, point.y - session.origin.y)
-        guard distance <= 10, validatedEntry(for: session, at: point) != nil else {
-            cancelActionInteraction()
-            return
-        }
-    }
-
-    func endActionInteraction(at point: CGPoint) {
-        guard var session = pressSession else { return }
-        session.latestPoint = point
-        pressSession = session
-        guard let entry = validatedEntry(for: session, at: point), let callback = onAction else {
-            cancelActionInteraction()
-            return
-        }
-        let event = entry.event(kind: .tap)
-        finishActionInteraction(succeeded: true)
-        callback(event)
-    }
-
-    func cancelActionInteraction(transitionRecognizer: Bool = true) {
-        guard pressSession != nil || actionTimer != nil || !observedScrollViews.isEmpty else { return }
-        finishActionInteraction(succeeded: false, transitionRecognizer: transitionRecognizer)
-    }
-
-    func ancestorScrollDidChange(_ recognizer: UIPanGestureRecognizer) {
-        guard let observed = observedScrollViews.first(where: { $0.panGestureRecognizer === recognizer }),
-              recognizer.state == .began || recognizer.state == .changed
-              || observed.scrollView.map(isScrollViewActive) == true
-        else { return }
-        cancelActionInteraction()
-    }
-
-    func isAncestorScrollPan(_ recognizer: UIGestureRecognizer) -> Bool {
-        ancestorScrollViews().contains { $0.panGestureRecognizer === recognizer }
-    }
-
-    private func longPressTimerFired(sequenceID: UInt64) {
-        guard let session = pressSession, session.sequenceID == sequenceID else { return }
-        guard let entry = validatedEntry(for: session, at: session.latestPoint), let callback = onAction else {
-            cancelActionInteraction()
-            return
-        }
-        let event = entry.event(kind: .longPress)
-        finishActionInteraction(succeeded: true)
-        callback(event)
-    }
-
-    private func finishActionInteraction(succeeded: Bool, transitionRecognizer: Bool = true) {
-        guard let session = pressSession else {
-            actionTimer?.cancel()
-            actionTimer = nil
-            unbindScrollObservers()
-            return
-        }
-        pressSession = nil
-        actionTimer?.cancel()
-        actionTimer = nil
-        unbindScrollObservers()
-        setNeedsDisplay()
-        if transitionRecognizer, session.usesRecognizer {
-            actionRecognizer?.finishRecognition(succeeded: succeeded)
-        }
-    }
-
-    private func actionEntry(at point: CGPoint, touchedView: UIView?) -> ActionGeometry.Entry? {
-        guard !isTearingDown, window != nil, document != nil, onAction != nil,
-              bounds.width.isFinite, bounds.height.isFinite, bounds.width > 0, bounds.height > 0,
-              !isInteractiveAttachmentTarget(touchedView)
-        else { return nil }
-        let layout = measuredLayout(width: max(0, bounds.width))
-        return ActionGeometry(layout: layout, bounds: bounds, configuration: configuration).hit(at: point)
-    }
-
-    private func validatedEntry(for session: PressSession, at point: CGPoint) -> ActionGeometry.Entry? {
-        let scrollViews = ancestorScrollViews()
-        guard session.documentRevision == documentRevision, session.geometryRevision == geometryRevision,
-              session.ancestorScrollPanIDs == scrollPanIDs(for: scrollViews),
-              !scrollViews.contains(where: isScrollViewActive),
-              let entry = actionEntry(at: point, touchedView: nil), entry.actionIndex == session.actionIndex
-        else { return nil }
-        return entry
-    }
-
-    private func isInteractiveAttachmentTarget(_ view: UIView?) -> Bool {
-        guard let view else { return false }
-        return mountedAttachments.values.contains { mounted in
-            mounted.descriptor.isInteractive && (view === mounted.view || view.isDescendant(of: mounted.view))
-        }
-    }
-
-    private func ancestorScrollViews() -> [UIScrollView] {
-        var result: [UIScrollView] = []
-        var ancestor = superview
-        while let current = ancestor {
-            if let scrollView = current as? UIScrollView { result.append(scrollView) }
-            ancestor = current.superview
-        }
-        return result
-    }
-
-    private func isScrollViewActive(_ scrollView: UIScrollView) -> Bool {
-        scrollView.isDragging || scrollView.isDecelerating
-            || scrollView.panGestureRecognizer.state == .began
-            || scrollView.panGestureRecognizer.state == .changed
-    }
-
-    private func scrollPanIDs(for scrollViews: [UIScrollView]) -> Set<ObjectIdentifier> {
-        Set(scrollViews.map { ObjectIdentifier($0.panGestureRecognizer) })
-    }
-
-    private func bindScrollObservers(_ scrollViews: [UIScrollView]) {
-        unbindScrollObservers()
-        for scrollView in scrollViews {
-            let pan = scrollView.panGestureRecognizer
-            pan.addTarget(scrollObserver, action: #selector(ActionScrollObserver.scrollPanChanged(_:)))
-            observedScrollViews.append(.init(scrollView: scrollView, panGestureRecognizer: pan))
-        }
-    }
-
-    private func unbindScrollObservers() {
-        for observed in observedScrollViews {
-            observed.panGestureRecognizer?.removeTarget(
-                scrollObserver,
-                action: #selector(ActionScrollObserver.scrollPanChanged(_:))
-            )
-        }
-        observedScrollViews.removeAll()
-    }
-}
-
-/// 容器只命中实际交互附件，不拦截文字和空白区域的宿主手势。
-@MainActor
-private final class AttachmentContainer: UIView {
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        clipsToBounds = true
-        backgroundColor = .clear
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("请使用 init(frame:)")
-    }
-
-    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard bounds.contains(point) else { return nil }
-        let result = super.hitTest(point, with: event)
-        return result === self ? nil : result
     }
 }

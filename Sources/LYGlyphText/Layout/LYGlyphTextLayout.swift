@@ -144,7 +144,7 @@ final class ResolvedText {
     private let wrapping: LYGlyphTextConfiguration.Wrapping
     private let discardsMetrics: Bool
     private(set) var fallbackCount = 0
-    private let attributedText: NSAttributedString
+    let attributedText: NSAttributedString
     private let attachments: [Int: LYGlyphTextAttachment]
     private let viewAttachments: [Int: LYGlyphTextViewAttachment]
     private let decorationStyles: [TextDecorations.Style]

@@ -208,8 +208,9 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | A1 显示环境／无障碍 | 已交付 `b615c3e`，人工 VO 待验 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | [A1 计划](2026-10-21-environment-accessibility.md)与[专项记录](../../verification/2026-10-21-environment-accessibility.md)：359／359、8 张截图；人工 VoiceOver 未验证 |
 | P1 回归／性能／发布准备 | 独立准备验收完成，发布补证待验 | A1；缺失环境不阻塞独立准备 | 九组Release／缓存与释放／真实列表、CPU与RSS、来源及API／安装审查已归档 | [P1 计划](2026-10-21-performance-readiness.md)；Swift6.0／iOS16／真机／人工VoiceOver与专用分配／泄漏分析未验证；PR／Tag／Release未授权 |
 | R1 最低工具链／最低系统兼容性 | 独立检查完成；两项兼容性待补证 | P1 `1e787fb`；缺失环境不阻塞独立工作 | 真实 Swift 6.0 编译 Package／Demo／直接消费者，真实 iOS 16 宿主与 UI 运行；保留 368 项基线 | [R1 专项记录](../../verification/2026-10-21-minimum-compatibility.md)：Swift6.0／iOS16均缺环境；当前Swift6.4独立消费者构建通过，86 Swift及368方法保留，历史回归未重跑 |
-| G0 2.x Label 路线图 | 本轮交付 | R1 `43dc0c9` | 对照 YYLabel／BSLabel 的能力与代码审查、范围决定、G1—G7 队列与验收；只改文档 | [2.x 路线图](2026-10-21-label-roadmap.md)；docs 检查 |
-| G1—G7 Label 2.x 能力 | 待执行 | G0；阶段依赖见路线图 | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
+| G0 2.x Label 路线图 | 已交付 `f7d8cc9` | R1 `43dc0c9` | 对照 YYLabel／BSLabel 的能力与代码审查、范围决定、G1—G7 队列与验收；只改文档 | [2.x 路线图](2026-10-21-label-roadmap.md)；docs 检查 |
+| G1 显示内核重构 | 已完成 | G0 | LayoutCache、Label 职责拆分、截断估算搜索；公开 API 不变 | [G1 记录](../../verification/2026-10-21-g1-display-core.md)：371／371（347 宿主＋24 UI），368 项基线保留 |
+| G2—G7 Label 2.x 能力 | 待执行 | G1；阶段依赖见路线图 | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
 
 ### R1 实施契约（2026-10-21）
 

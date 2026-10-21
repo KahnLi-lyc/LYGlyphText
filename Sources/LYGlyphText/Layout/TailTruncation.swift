@@ -10,8 +10,13 @@ struct TailTruncation {
     let sourceOffset: Int
     let tokenRange: NSRange
     let drawsToken: Bool
+    /// 实际创建的候选 CTLine 数量，用于约束截断搜索成本。
+    let candidateCount: Int
 
-    init(text: NSAttributedString, range: NSRange, width: CGFloat) {
+    /// - Parameter usesEstimate: 纯 LTR 行先按位置估算截断点；关闭时从行尾逐个组合字符回退，作为等价对照。
+    init(
+        text: NSAttributedString, range: NSRange, width: CGFloat, tokenString: String = "…", usesEstimate: Bool = true
+    ) {
         let original = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
         // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
         var attributes = original.filter {
@@ -20,7 +25,7 @@ struct TailTruncation {
         }
         let paragraph = ResolvedParagraph(text: text, at: range.location)
         attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
-        let token = NSAttributedString(string: "…", attributes: attributes)
+        let token = NSAttributedString(string: tokenString, attributes: attributes)
         let tokenLine = CTLineCreateWithAttributedString(token)
         let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))
         var leading: CGFloat = 0
@@ -48,7 +53,9 @@ struct TailTruncation {
             if cluster.location < end { end = max(range.location, cluster.location) }
         }
         if !drawsToken { end = range.location }
-        while true {
+        var count = 0
+        func candidate(ending end: Int) -> (text: NSMutableAttributedString, line: CTLine, fits: Bool) {
+            count += 1
             let candidate = NSMutableAttributedString(attributedString: text.attributedSubstring(
                 from: NSRange(location: range.location, length: end - range.location)
             ))
@@ -58,19 +65,56 @@ struct TailTruncation {
                 range: NSRange(location: 0, length: candidate.length)
             )
             let line = CTLineCreateWithAttributedString(candidate)
-            if CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)) <= capacity || end == range.location {
-                self.text = candidate.copy() as! NSAttributedString
-                self.line = line
+            return (candidate, line, CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)) <= capacity)
+        }
+        func previousBoundary(_ end: Int) -> Int {
+            max(range.location, source.rangeOfComposedCharacterSequence(at: end - 1).location)
+        }
+        // 估算上界不满足时从其下一个边界继续；若上界已经满足，说明宽度并非单调，回到行尾逐个回退保持原结果。
+        var start = end
+        if usesEstimate, end > range.location, let upper = Self.estimatedUpperBound(
+            text: text, range: NSRange(location: range.location, length: end - range.location),
+            target: capacity - CGFloat(CTLineGetTypographicBounds(tokenLine, nil, nil, nil)),
+            direction: paragraph.direction
+        ), upper < end, !candidate(ending: upper).fits {
+            start = previousBoundary(upper)
+        }
+        end = start
+        while true {
+            let result = candidate(ending: end)
+            if result.fits || end == range.location {
+                self.text = result.text.copy() as! NSAttributedString
+                line = result.line
                 alignmentOffset = physicalStart + CGFloat(CTLineGetPenOffsetForFlush(
-                    line,
+                    result.line,
                     paragraph.flush,
                     Double(capacity)
                 ))
-                tokenRange = NSRange(location: candidate.length - 1, length: 1)
+                tokenRange = NSRange(location: result.text.length - token.length, length: token.length)
                 break
             }
-            end = max(range.location, source.rangeOfComposedCharacterSequence(at: end - 1).location)
+            end = previousBoundary(end)
         }
+        candidateCount = count
+    }
+
+    /// 纯 LTR 行由前缀 caret 位置估算可保留的逻辑结尾，再向后放宽两个组合字符吸收 kerning 与 shaping 误差。
+    private static func estimatedUpperBound(
+        text: NSAttributedString, range: NSRange, target: CGFloat, direction: CTWritingDirection
+    ) -> Int? {
+        guard direction == .leftToRight, target.isFinite else { return nil }
+        let prefix = CTLineCreateWithAttributedString(text.attributedSubstring(from: range))
+        let runs = CTLineGetGlyphRuns(prefix) as! [CTRun]
+        guard !runs.contains(where: { CTRunGetStatus($0).contains(.rightToLeft) }),
+              CGFloat(CTLineGetTypographicBounds(prefix, nil, nil, nil)) > max(0, target) else { return nil }
+        let index = CTLineGetStringIndexForPosition(prefix, CGPoint(x: max(0, target), y: 0))
+        guard index != kCFNotFound else { return nil }
+        let source = text.string as NSString
+        var upper = range.location + min(max(0, index), range.length)
+        for _ in 0 ..< 2 where upper < NSMaxRange(range) {
+            upper = NSMaxRange(source.rangeOfComposedCharacterSequence(at: upper))
+        }
+        return min(upper, NSMaxRange(range))
     }
 
     /// 根据最终 run 映射，并合并同一组合字符中被属性切开的片段。
