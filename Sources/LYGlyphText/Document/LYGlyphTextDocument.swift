@@ -42,6 +42,9 @@ public final class LYGlyphTextDocument {
         let strikethroughStyle: Int
         let strikethroughColor: UIColor?
         let ligature: Int
+        let shadow: TextShadow?
+        let strokeWidth: CGFloat
+        let strokeColor: UIColor?
         let paragraph: ParagraphStyle
         var alignment: NSTextAlignment {
             paragraph.alignment
@@ -62,11 +65,24 @@ public final class LYGlyphTextDocument {
     /// - Parameter attachments: 以原文 UTF-16 位置关联单个 U+FFFC 的图片描述，默认无附件。
     /// - Parameter viewAttachments: 以原文 UTF-16 位置关联单个 U+FFFC 的视图描述，默认无附件。
     /// - Parameter actions: 原文 UTF-16 动作范围；保持输入顺序，默认无动作。
-    /// - Throws: 先校验附件，再按输入顺序校验动作标识与范围，最后拒绝重叠动作。
+    /// - Parameter linkPressedStyle: 非 nil 时把 `.link` 属性（URL 或非空 String）的最长连续范围
+    ///   追加为动作，actionID 为 URL 的 absoluteString 或该字符串，使用此按下样式；默认 nil 忽略 `.link`。
+    /// - Throws: 先校验附件，再按输入顺序校验动作标识与范围，最后拒绝重叠动作（包括链接与显式动作重叠）。
     public init(
         attributedText: NSAttributedString, attachments: [Int: LYGlyphTextAttachment] = [:],
-        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:], actions: [LYGlyphTextAction] = []
+        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:], actions: [LYGlyphTextAction] = [],
+        linkPressedStyle: LYGlyphTextPressedStyle? = nil
     ) throws {
+        var actions = actions
+        if let linkPressedStyle {
+            attributedText.enumerateAttribute(
+                .link, in: NSRange(location: 0, length: attributedText.length), options: []
+            ) { value, range, _ in
+                let id = (value as? URL)?.absoluteString ?? (value as? String)
+                guard let id, !id.isEmpty else { return }
+                actions.append(LYGlyphTextAction(actionID: id, range: range, pressedStyle: linkPressedStyle))
+            }
+        }
         var attachmentRange: NSRange?
         let fullRange = NSRange(location: 0, length: attributedText.length)
         attributedText.enumerateAttribute(.attachment, in: fullRange) { value, range, stop in
@@ -160,6 +176,9 @@ public final class LYGlyphTextDocument {
                     strikethroughStyle: StyleNumber.decoration(attributes[.strikethroughStyle]),
                     strikethroughColor: attributes[.strikethroughColor] as? UIColor,
                     ligature: StyleNumber.integer(attributes[.ligature], allowed: 0 ... 2) ?? 1,
+                    shadow: (attributes[.shadow] as? NSShadow).flatMap(TextShadow.init),
+                    strokeWidth: StyleNumber.scalar(attributes[.strokeWidth]) ?? 0,
+                    strokeColor: attributes[.strokeColor] as? UIColor,
                     paragraph: paragraph
                 ))
             }

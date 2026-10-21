@@ -104,6 +104,17 @@ struct TextAccessibility {
             previousEnd = NSMaxRange(range)
         }
         flush()
+        // 可交互的截断 token 作为最后一个按钮元素；不可交互 token 只是装饰，不单独朗读。
+        if let index = layout.truncationTokenActionIndex, let token = layout.truncationToken,
+           !token.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            let rects = token.rects.compactMap { rect -> CGRect? in
+                guard let rect = display.displayRect(rect) else { return nil }
+                let clipped = rect.intersection(bounds).intersection(display.contentClip)
+                return !clipped.isNull && clipped.width > 0 && clipped.height > 0 ? clipped : nil
+            }
+            if !rects.isEmpty { result.append(.text(.init(label: token.text, rects: rects, actionIndex: index))) }
+        }
         items = result
     }
 }

@@ -185,6 +185,22 @@ func segmentedDocument(image: UIImage) throws -> LYGlyphTextDocument {
 
 Label 仅在最终可见动作矩形内开始手势：抬起发送一次 tap，持续 0.5 秒发送一次 longPress；移动超过 10pt、滚动接管、第二触点、输入或显示几何变化、层级移除及 SwiftUI 拆卸都会取消并立即恢复普通绘制。事件范围始终是完整原文范围，`visibleRects` 只包含当前真实可见部分，不包含生成的省略号。交互 UIView 子树优先处理自身触摸；普通文字、行尾／行间空白和内边距仍交给宿主选择与滚动。
 
+## 截断 token、圆角高亮与文字特效
+
+```swift
+label.configuration.numberOfLines = 3
+label.configuration.truncationToken = LYGlyphTextTruncationToken(
+    text: "…展开全文", foregroundColor: .systemBlue, actionID: "expand", pressedCornerRadius: 4
+)
+label.onAction = { event in
+    if event.isTruncationToken { /* 展开 */ }
+}
+```
+
+token 默认 nil 时仍为继承末行样式的 `…`；字体、颜色为 nil 时同样继承末行起点。token 是生成内容，事件 `range` 为 `NSRange(location: NSNotFound, length: 0)`；空间不足时整体省略。可交互 token 是最后一个无障碍按钮。`LYGlyphTextPressedStyle(cornerRadius:)` 让按下背景按行合并后绘制圆角。
+
+文档额外读取 `.shadow`（NSShadow）、`.strokeWidth`／`.strokeColor`：阴影与描边只影响绘制，不改变测量；按下局部着色的字形部分不绘制阴影。`LYGlyphTextDocument(attributedText:..., linkPressedStyle:)` 可把 `.link` 范围转为动作，actionID 为 URL 字符串；默认 nil 时仍忽略 `.link`。未支持：头部／中间截断、整段点击回调（宿主可自行添加手势）。
+
 ## 行内 UIView
 
 视图描述与 UIImage 描述分开；两类附件共享 UTF-16 占位、文档内唯一 ID 和明确尺寸校验。同一位置不能同时提供两种描述。工厂按 viewID 创建新的、尚未挂载的 UIView；不要在工厂闭包中强持有 Label。

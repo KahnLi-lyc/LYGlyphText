@@ -56,3 +56,19 @@ enum StyleNumber {
         return raw
     }
 }
+
+/// NSShadow 的不可变数值快照；偏移与模糊为 point，颜色为 nil 时使用 UIKit 默认的 1/3 不透明黑色。
+struct TextShadow {
+    let offset: CGSize
+    let blurRadius: CGFloat
+    let color: UIColor
+
+    init?(_ shadow: NSShadow) {
+        let offset = shadow.shadowOffset
+        let blur = shadow.shadowBlurRadius
+        guard offset.width.isFinite, offset.height.isFinite, blur.isFinite else { return nil }
+        self.offset = offset
+        blurRadius = max(0, blur)
+        color = (shadow.shadowColor as? UIColor) ?? UIColor.black.withAlphaComponent(1 / 3)
+    }
+}

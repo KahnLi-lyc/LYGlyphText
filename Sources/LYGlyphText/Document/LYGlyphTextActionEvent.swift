@@ -19,4 +19,17 @@ public struct LYGlyphTextActionEvent {
     public let visibleRects: [CGRect]
     /// 本次动作的交互类型。
     public let kind: Kind
+    /// 是否来自配置的截断 token；为 true 时 `range` 为 `NSRange(location: NSNotFound, length: 0)`，
+    /// 因为 token 是生成内容，没有原文位置。
+    public let isTruncationToken: Bool
+
+    init(
+        actionID: String, range: NSRange, visibleRects: [CGRect], kind: Kind, isTruncationToken: Bool = false
+    ) {
+        self.actionID = actionID
+        self.range = range
+        self.visibleRects = visibleRects
+        self.kind = kind
+        self.isTruncationToken = isTruncationToken
+    }
 }

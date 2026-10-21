@@ -27,7 +27,11 @@ struct LayoutCache {
         let scale = traits.displayScale > 0 ? traits.displayScale : 1
         buildCount &+= 1
         let layout = text.layout(
-            width: width, insets: configuration.insets, scale: scale, numberOfLines: max(0, configuration.numberOfLines)
+            width: width, insets: configuration.insets, scale: scale, numberOfLines: max(
+                0,
+                configuration.numberOfLines
+            ),
+            truncationToken: configuration.truncationToken
         )
         entries.insert((width, layout), at: 0)
         if entries.count > Self.capacity { entries.removeLast() }

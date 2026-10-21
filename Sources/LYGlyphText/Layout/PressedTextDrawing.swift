@@ -10,6 +10,9 @@ struct PressedTextDrawing {
         let color: CGColor
         let isColorGlyph: Bool
         let glyphCount: Int
+        let shadow: ResolvedShadow?
+        /// 属于截断 token 的 run；token 使用独立标记属性，不与原文合并为同一 run。
+        let isTruncationToken: Bool
     }
 
     enum Operation {
@@ -78,7 +81,9 @@ struct PressedTextDrawing {
                     baseline: line.baseline,
                     color: color,
                     isColorGlyph: isColorGlyph,
-                    glyphCount: CTRunGetGlyphCount(run)
+                    glyphCount: CTRunGetGlyphCount(run),
+                    shadow: attributes[ResolvedShadow.key] as? ResolvedShadow,
+                    isTruncationToken: attributes[TailTruncation.tokenKey] != nil
                 ))
             }
             runLookup.append(indices)
@@ -153,8 +158,11 @@ struct PressedTextDrawing {
         }
         let foreground = sourceActions
             .map { $0.action.pressedStyle.foregroundColor?.resolvedColor(with: traits).cgColor }
-        let background = sourceActions
-            .map { $0.action.pressedStyle.backgroundColor?.resolvedColor(with: traits).cgColor }
+        // 圆角背景由 Layout 按合并后的片段单独绘制，这里不再生成直角补丁。
+        let background = sourceActions.map { entry -> CGColor? in
+            guard entry.action.pressedStyle.cornerRadius == 0 else { return nil }
+            return entry.action.pressedStyle.backgroundColor?.resolvedColor(with: traits).cgColor
+        }
         var selectedCells: [Int: [VisibleTextFragment.RunPiece]] = [:]
         let visibleRects = sourceActions.map { Set($0.rects.map(RectKey.init)) }
         for cell in geometry.cells {
@@ -317,9 +325,11 @@ struct PressedTextDrawing {
         }
     }
 
+    /// - Parameter tokenColor: 非 nil 时截断 token 的 run 使用该颜色，表示 token 处于按下状态。
     func drawGlyphs(
         in context: CGContext,
         pressed: Int?,
+        tokenColor: CGColor? = nil,
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) {
         let action = pressed.flatMap { actions.indices.contains($0) ? actions[$0] : nil }
@@ -330,7 +340,8 @@ struct PressedTextDrawing {
                     range: CFRange(location: 0, length: 0),
                     baseline: run.baseline,
                     in: context,
-                    color: run.color,
+                    color: run.isTruncationToken ? tokenColor ?? run.color : run.color,
+                    shadow: run.shadow,
                     observe: observe
                 )
                 continue
@@ -338,7 +349,10 @@ struct PressedTextDrawing {
             for operation in operations {
                 switch operation {
                 case let .ordinary(range):
-                    draw(run.run, range: range, baseline: run.baseline, in: context, color: run.color, observe: observe)
+                    draw(
+                        run.run, range: range, baseline: run.baseline, in: context, color: run.color,
+                        shadow: run.shadow, observe: observe
+                    )
                 case let .selected(glyphIndex, selected):
                     let glyph = glyphs[glyphIndex]
                     context.saveGState()
@@ -375,7 +389,11 @@ struct PressedTextDrawing {
         color: CGColor,
         observe: (TextDecorations.PreparationEvent) -> Void
     ) {
-        draw(glyph.run, range: glyph.range, baseline: glyph.baseline, in: context, color: color, observe: observe)
+        // 按下的局部着色通过透明层和遮罩合成；阴影会进入遮罩，因此这部分字形不绘制阴影。
+        draw(
+            glyph.run, range: glyph.range, baseline: glyph.baseline, in: context, color: color, shadow: nil,
+            observe: observe
+        )
     }
 
     private func draw(
@@ -384,9 +402,14 @@ struct PressedTextDrawing {
         baseline: CGPoint,
         in context: CGContext,
         color: CGColor,
+        shadow: ResolvedShadow?,
         observe: (TextDecorations.PreparationEvent) -> Void
     ) {
         context.saveGState()
+        if let shadow {
+            // 阴影偏移位于设备基准空间，不受文本翻转矩阵影响；UIKit 上下文中正 height 向下。
+            context.setShadow(offset: shadow.offset, blur: shadow.blurRadius, color: shadow.color)
+        }
         context.setFillColor(color)
         context.textMatrix = .identity
         context.scaleBy(x: 1, y: -1)

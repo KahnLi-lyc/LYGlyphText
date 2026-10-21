@@ -4,6 +4,9 @@ import UIKit
 /// 固定原段落方向，在组合字符边界收缩逻辑尾部，再由 Core Text 重新 shaping。
 @MainActor
 struct TailTruncation {
+    /// 生成 token 的标记属性，使 token 独立成 run，便于命中、着色并与原文区分。
+    static let tokenKey = NSAttributedString.Key("LYGlyphText.truncationToken")
+
     let text: NSAttributedString
     let line: CTLine
     let alignmentOffset: CGFloat
@@ -15,7 +18,8 @@ struct TailTruncation {
 
     /// - Parameter usesEstimate: 纯 LTR 行先按位置估算截断点；关闭时从行尾逐个组合字符回退，作为等价对照。
     init(
-        text: NSAttributedString, range: NSRange, width: CGFloat, tokenString: String = "…", usesEstimate: Bool = true
+        text: NSAttributedString, range: NSRange, width: CGFloat, tokenString: String = "…",
+        tokenFont: UIFont? = nil, tokenColor: CGColor? = nil, usesEstimate: Bool = true
     ) {
         let original = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
         // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
@@ -25,6 +29,11 @@ struct TailTruncation {
         }
         let paragraph = ResolvedParagraph(text: text, at: range.location)
         attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
+        if let tokenFont { attributes[NSAttributedString.Key(kCTFontAttributeName as String)] = tokenFont }
+        if let tokenColor { attributes[NSAttributedString.Key(kCTForegroundColorAttributeName as String)] = tokenColor }
+        attributes[Self.tokenKey] = true
+        // 与原文 run 相同从绘制上下文取填充色，使按下状态可以改色；未按下时上下文颜色即 token 颜色。
+        attributes[NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String)] = true
         let token = NSAttributedString(string: tokenString, attributes: attributes)
         let tokenLine = CTLineCreateWithAttributedString(token)
         let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))

@@ -30,18 +30,23 @@ public struct LYGlyphTextConfiguration: Equatable {
     public var textContainerInset: UIEdgeInsets
 
     /// 最大显示行数，默认 0 表示无限行，负值按 0 处理。
-    /// 超出限制时在最后一条可见行显示尾部省略号。
+    /// 超出限制时在最后一条可见行显示尾部截断 token。
     public var numberOfLines: Int
+
+    /// 行数限制生效时追加在最后一条可见行尾部的 token；默认 nil 使用继承末行样式的 `…`。
+    public var truncationToken: LYGlyphTextTruncationToken?
 
     /// 创建显示配置，默认没有内边距且不限制行数。
     public init(
         textContainerInset: UIEdgeInsets = .zero, numberOfLines: Int = 0,
-        wrapping: Wrapping = .word, verticalAlignment: VerticalAlignment = .top
+        wrapping: Wrapping = .word, verticalAlignment: VerticalAlignment = .top,
+        truncationToken: LYGlyphTextTruncationToken? = nil
     ) {
         self.textContainerInset = textContainerInset
         self.numberOfLines = numberOfLines
         self.wrapping = wrapping
         self.verticalAlignment = verticalAlignment
+        self.truncationToken = truncationToken
     }
 
     var insets: UIEdgeInsets {

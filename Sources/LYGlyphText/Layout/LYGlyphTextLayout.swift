@@ -29,6 +29,16 @@ struct LYGlyphTextLayout {
         let rect: CGRect
     }
 
+    /// 实际绘制的截断 token；矩形相对于文本容器原点，颜色已按显示环境解析。
+    struct TruncationToken {
+        let text: String
+        let rects: [CGRect]
+        let actionID: String?
+        let pressedForegroundColor: CGColor?
+        let pressedBackgroundColor: CGColor?
+        let pressedCornerRadius: CGFloat
+    }
+
     let viewAttachments: [ViewAttachment]
     let size: CGSize
     let lines: [Line]
@@ -37,6 +47,14 @@ struct LYGlyphTextLayout {
     let actionIndex: [ActionSourceEntry]
     let preparedDecorations: TextDecorations.Prepared?
     let preparedDrawing: PressedTextDrawing
+    let truncationToken: TruncationToken?
+    /// 按动作序号保存需要圆角绘制的按下背景色；直角背景仍由 PressedTextDrawing 合成。
+    private let roundedPressedBackgrounds: [CGColor?]
+
+    /// 截断 token 的动作序号，位于全部文档动作之后；token 不可交互时为 nil。
+    var truncationTokenActionIndex: Int? {
+        truncationToken?.actionID == nil ? nil : actionIndex.count
+    }
 
     struct ActionSourceEntry {
         let actionIndex: Int
@@ -47,9 +65,10 @@ struct LYGlyphTextLayout {
     init(
         size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = [],
         decorations: TextDecorations? = nil, traits: UITraitCollection = .current, source: String? = nil,
-        actions: [LYGlyphTextAction] = [],
+        actions: [LYGlyphTextAction] = [], truncationToken: TruncationToken? = nil,
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) {
+        self.truncationToken = truncationToken
         self.viewAttachments = viewAttachments
         self.size = size
         self.lines = lines
@@ -66,6 +85,10 @@ struct LYGlyphTextLayout {
             )
         }
         actionIndex = Self.index(actions: actions, geometry: geometry)
+        roundedPressedBackgrounds = actionIndex.map { entry in
+            let style = entry.action.pressedStyle
+            return style.cornerRadius > 0 ? style.backgroundColor?.resolvedColor(with: traits).cgColor : nil
+        }
         preparedDrawing = PressedTextDrawing(
             lines: lines,
             geometry: geometry,
@@ -119,7 +142,23 @@ struct LYGlyphTextLayout {
         observe(.drawCachedContent)
         context.saveGState()
         preparedDrawing.drawBackgrounds(in: context, pressed: pressedActionIndex)
-        preparedDrawing.drawGlyphs(in: context, pressed: pressedActionIndex)
+        var tokenColor: CGColor?
+        if let pressedActionIndex, actionIndex.indices.contains(pressedActionIndex) {
+            if let color = roundedPressedBackgrounds[pressedActionIndex] {
+                Self.fillRounded(
+                    actionIndex[pressedActionIndex].rects,
+                    radius: actionIndex[pressedActionIndex].action.pressedStyle.cornerRadius, color: color, in: context
+                )
+            }
+        } else if let pressedActionIndex, pressedActionIndex == truncationTokenActionIndex,
+                  let token = truncationToken
+        {
+            if let color = token.pressedBackgroundColor {
+                Self.fillRounded(token.rects, radius: token.pressedCornerRadius, color: color, in: context)
+            }
+            tokenColor = token.pressedForegroundColor
+        }
+        preparedDrawing.drawGlyphs(in: context, pressed: pressedActionIndex, tokenColor: tokenColor)
         preparedDrawing.drawStrokes(in: context, pressed: pressedActionIndex, observe: observe)
         context.restoreGState()
         // UIImage 的 UIKit 绘制路径负责方向与 scale；不直接翻转其 CGImage。
@@ -128,6 +167,32 @@ struct LYGlyphTextLayout {
             placement.attachment.image.draw(in: placement.rect)
         }
         UIGraphicsPopContext()
+    }
+
+    /// 同一行相邻或重叠的片段先合并，再分别绘制圆角，避免逐字形出现分段圆角。
+    static func mergedLineRects(_ rects: [CGRect]) -> [CGRect] {
+        var merged: [CGRect] = []
+        for rect in rects.filter({ !$0.isEmpty }).sorted(by: { ($0.minY, $0.minX) < ($1.minY, $1.minX) }) {
+            if let last = merged.last, abs(last.minY - rect.minY) < 0.5, abs(last.maxY - rect.maxY) < 0.5,
+               rect.minX <= last.maxX + 0.5
+            {
+                merged[merged.count - 1] = last.union(rect)
+            } else {
+                merged.append(rect)
+            }
+        }
+        return merged
+    }
+
+    private static func fillRounded(_ rects: [CGRect], radius: CGFloat, color: CGColor, in context: CGContext) {
+        context.saveGState()
+        context.setFillColor(color)
+        for rect in mergedLineRects(rects) {
+            let radius = min(max(0, radius), rect.width / 2, rect.height / 2)
+            context.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+        }
+        context.fillPath()
+        context.restoreGState()
     }
 }
 
@@ -200,6 +265,19 @@ final class ResolvedText {
                 naturalHeight: font.lineHeight
             ) {
                 attributes[NSAttributedString.Key(kCTKernAttributeName as String)] = kern
+            }
+            if run.strokeWidth != 0, abs(run.strokeWidth) <= 100 {
+                // 描边宽度为字号百分比；正值仅描边，负值填充并描边。颜色显式设置，避免从上下文取默认黑色。
+                attributes[NSAttributedString.Key(kCTStrokeWidthAttributeName as String)] = run.strokeWidth
+                attributes[NSAttributedString.Key(kCTStrokeColorAttributeName as String)] = (
+                    run.strokeColor?.resolvedColor(with: traits) ?? color
+                ).cgColor
+            }
+            if let shadow = run.shadow {
+                attributes[ResolvedShadow.key] = ResolvedShadow(
+                    offset: shadow.offset, blurRadius: shadow.blurRadius,
+                    color: shadow.color.resolvedColor(with: traits).cgColor
+                )
             }
             if !TextDecorations.needsUnderlineFallback(run.underlineStyle), run.underlineStyle & 0xF != 0,
                let underlineColor = run.underlineColor
@@ -281,6 +359,7 @@ final class ResolvedText {
 
     func layout(
         width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0,
+        truncationToken: LYGlyphTextTruncationToken? = nil,
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) -> LYGlyphTextLayout {
         func inset(_ value: CGFloat) -> CGFloat {
@@ -323,7 +402,8 @@ final class ResolvedText {
                         width: finiteWidth,
                         insets: insets,
                         scale: scale,
-                        numberOfLines: numberOfLines
+                        numberOfLines: numberOfLines,
+                        truncationToken: truncationToken
                     )
             }
             return LYGlyphTextLayout(size: CGSize(width: pixelCeil(horizontal), height: pixelCeil(vertical)), lines: [])
@@ -345,7 +425,8 @@ final class ResolvedText {
         }
         if numberOfLines > 0, lines.count > numberOfLines {
             guard let visible = truncatedLines(
-                Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale
+                Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale,
+                token: truncationToken
             ) else { return fallback() }
             return LYGlyphTextLayout(
                 size: CGSize(
@@ -355,7 +436,8 @@ final class ResolvedText {
                 lines: visible.lines, attachments: visibleAttachments(in: visible.lines),
                 viewAttachments: visibleViewAttachments(in: visible.lines),
                 decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
-                traits: traits, source: document?.string ?? "", actions: document?.actions ?? [], observe: observe
+                traits: traits, source: document?.string ?? "", actions: document?.actions ?? [],
+                truncationToken: visible.token, observe: observe
             )
         }
         return LYGlyphTextLayout(
@@ -422,14 +504,17 @@ final class ResolvedText {
     }
 
     private func truncatedLines(
-        _ original: [LYGlyphTextLayout.Line], width: CGFloat, insets: UIEdgeInsets, scale: CGFloat
-    ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat)? {
-        guard let last = original.last else { return ([], 0) }
+        _ original: [LYGlyphTextLayout.Line], width: CGFloat, insets: UIEdgeInsets, scale: CGFloat,
+        token: LYGlyphTextTruncationToken?
+    ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat, token: LYGlyphTextLayout.TruncationToken?)? {
+        guard let last = original.last else { return ([], 0, nil) }
         let sourceRange = CTLineGetStringRange(last.text)
         let start = min(sourceLength, sourceRange.location)
         let end = min(sourceLength, sourceRange.location + sourceRange.length)
         let truncation = TailTruncation(
-            text: attributedText, range: NSRange(location: start, length: end - start), width: width
+            text: attributedText, range: NSRange(location: start, length: end - start), width: width,
+            tokenString: token?.displayText ?? "…", tokenFont: token?.font,
+            tokenColor: token?.foregroundColor?.resolvedColor(with: traits).cgColor
         )
         let finalText = truncation.text
         let metricsText = NSMutableAttributedString(string: "")
@@ -479,7 +564,35 @@ final class ResolvedText {
             sourceOffset: truncation.sourceOffset,
             truncationTokenRange: truncation.drawsToken ? truncation.tokenRange : nil
         ))
-        return (lines, metrics.contentHeight)
+        var tokenGeometry: LYGlyphTextLayout.TruncationToken?
+        if truncation.drawsToken, truncation.tokenRange.length > 0 {
+            let rects = (CTLineGetGlyphRuns(truncation.line) as! [CTRun]).compactMap { run -> CGRect? in
+                guard (CTRunGetAttributes(run) as NSDictionary)[TailTruncation.tokenKey] != nil,
+                      CTRunGetGlyphCount(run) > 0 else { return nil }
+                var ascent: CGFloat = 0
+                var descent: CGFloat = 0
+                let advance = CGFloat(CTRunGetTypographicBounds(
+                    run,
+                    CFRange(location: 0, length: 0),
+                    &ascent,
+                    &descent,
+                    nil
+                ))
+                var position = CGPoint.zero
+                CTRunGetPositions(run, CFRange(location: 0, length: 1), &position)
+                let rect = CGRect(x: x + position.x, y: y - ascent, width: advance, height: ascent + descent)
+                return [rect.minX, rect.maxX, rect.minY, rect.maxY].allSatisfy(\.isFinite) ? rect : nil
+            }
+            tokenGeometry = LYGlyphTextLayout.TruncationToken(
+                text: truncation.text.attributedSubstring(from: truncation.tokenRange).string, rects: rects,
+                actionID: token?.interactiveActionID,
+                pressedForegroundColor: token?.pressedForegroundColor?.resolvedColor(with: traits).cgColor,
+                pressedBackgroundColor: token?.pressedBackgroundColor?.resolvedColor(with: traits).cgColor,
+                pressedCornerRadius: token
+                    .map { $0.pressedCornerRadius.isFinite ? max(0, $0.pressedCornerRadius) : 0 } ?? 0
+            )
+        }
+        return (lines, metrics.contentHeight, tokenGeometry)
     }
 }
 
