@@ -29,7 +29,7 @@ H1 明确排除：Dynamic Type 完整字号矩阵、Dark Mode、环境 RTL、Voi
 
 ## 当前执行状态
 
-H1 功能验收完成：正式 docs／format／Swift 6 build 及 319／319 完整回归（298 宿主＋21 UI）通过，0 failed／skipped／expected failures，runtimeWarnings=[]；12 张最终截图已导出并逐张检查。73 个 Swift 文件冻结哈希全匹配，mtime 早于最终测试。H1a／H1b／H1c 已依次通过规格及质量审查；H1d 最终规格与质量证据复审已批准；提交、集成和普通推送待执行，不记录尚未发生的交付结果。当前下一项为 A1，完成 H1 交付后自动实施。详细红绿、环境、截图与未验证项见 [H1 验证记录](../../verification/2026-10-21-host-matrix.md)。
+H1 功能验收完成：正式 docs／format／Swift 6 build 及 319／319 完整回归（298 宿主＋21 UI）通过，0 failed／skipped／expected failures，runtimeWarnings=[]；12 张最终截图已导出并逐张检查。73 个 Swift 文件冻结哈希全匹配，mtime 早于最终测试。H1a／H1b／H1c 已依次通过规格及质量审查；H1d 最终规格与质量证据复审已批准；已以 `32ac04a11ee39b2ba5c863b5abedfef0c247cd4e` 提交，锁内快进合入 main、普通推送并核远端 SHA 一致；临时分支已安全清理。当前自动进入 A1。详细红绿、环境、截图与未验证项见 [H1 验证记录](../../verification/2026-10-21-host-matrix.md)。
 
 ## 2. 实施前覆盖审计
 
@@ -477,7 +477,7 @@ Expected: docs、format、Package/Demo Swift 6 mode build 与 shared scheme 完�
 
 规格审查按本计划第 1 节逐项映射到 named test、Demo 操作、正式结果和截图。质量审查检查公共 API diff 为空、Core Text 仍为唯一内核、缓存上限两项、诊断不持有对象、不形成 layout loop、列表与 SwiftUI 生命周期无泄漏。发现问题回对应块原实施者修复；修复触及 Swift 时重跑定向测试、format、build 和完整 test，并重新冻结。
 
-- [ ] **Step 5: 中文提交、锁内快进、普通 push 与清理**
+- [x] **Step 5: 中文提交、锁内快进、普通 push 与清理**
 
 只暂存本计划列出的 H1 文件和已检查截图：
 

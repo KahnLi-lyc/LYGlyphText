@@ -47,6 +47,7 @@ public final class LYGlyphTextLabel: UIView {
         didSet {
             if oldValue != configuration {
                 geometryRevision &+= 1
+                clearAccessibilitySnapshot()
                 cancelActionInteraction()
                 invalidateText()
             }
@@ -61,6 +62,27 @@ public final class LYGlyphTextLabel: UIView {
                 requestIntrinsicSizeInvalidation()
             }
         }
+    }
+
+    private var hostAccessibilityElements: [Any]?
+    private var preparedAccessibilityElements: [Any] = []
+    private var preparedAccessibilityRevision: AccessibilityRevision?
+    private var preparedAccessibilityActions: [Int: ActionGeometry.Entry] = [:]
+    private var preparedAccessibilityElementIDs: Set<ObjectIdentifier> = []
+    private var isSendingAccessibilityAction = false
+
+    /// 宿主显式数组（包括空数组）优先；nil 恢复最近展示事务准备的自动内容。
+    override public var accessibilityElements: [Any]? {
+        get {
+            if let hostAccessibilityElements { return hostAccessibilityElements }
+            guard preparedAccessibilityRevision == accessibilityRevision, window != nil else { return [] }
+            return preparedAccessibilityElements
+        }
+        set { hostAccessibilityElements = newValue }
+    }
+
+    private var accessibilityRevision: AccessibilityRevision {
+        .init(document: documentRevision, geometry: geometryRevision, attachment: attachmentRevision)
     }
 
     private var resolvedText: ResolvedText?
@@ -134,6 +156,7 @@ public final class LYGlyphTextLabel: UIView {
         didSet {
             if oldValue != bounds {
                 geometryRevision &+= 1
+                clearAccessibilitySnapshot()
                 cancelActionInteraction()
                 attachmentRevision &+= 1
                 setNeedsLayout()
@@ -145,6 +168,7 @@ public final class LYGlyphTextLabel: UIView {
     /// 创建支持代码布局的富文本视图，初始 Hugging 为 defaultLow，抗压缩为 defaultHigh。
     override public init(frame: CGRect) {
         super.init(frame: frame)
+        isAccessibilityElement = false
         isOpaque = false
         clipsToBounds = true
         contentMode = .redraw
@@ -210,7 +234,9 @@ public final class LYGlyphTextLabel: UIView {
             if explicitWidth == nil { requestIntrinsicSizeInvalidation() }
             setNeedsDisplay()
         }
+        let revision = accessibilityRevision
         reconcileAttachments()
+        prepareAccessibility(revision: revision)
     }
 
     /// 离开 window 即卸载，重新进入后在展示布局重建。
@@ -261,6 +287,7 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     private func invalidateText() {
+        clearAccessibilitySnapshot()
         attachmentRevision &+= 1
         resolvedText = nil
         cachedLayouts.removeAll(keepingCapacity: true)
@@ -309,6 +336,7 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     private func resetAttachments() {
+        clearAccessibilitySnapshot()
         cancelActionInteraction()
         attachmentRevision &+= 1
         failedAttachmentIDs.removeAll()
@@ -382,6 +410,80 @@ public final class LYGlyphTextLabel: UIView {
             )
             container.addSubview(candidate)
         }
+    }
+
+    private func clearAccessibilitySnapshot() {
+        preparedAccessibilityElements = []
+        preparedAccessibilityActions = [:]
+        preparedAccessibilityElementIDs = []
+        preparedAccessibilityRevision = nil
+    }
+
+    private func prepareAccessibility(revision: AccessibilityRevision) {
+        guard revision == accessibilityRevision, !isTearingDown, attachmentCleanupDepth == 0,
+              !isReconcilingAttachments, window != nil else { return }
+        guard preparedAccessibilityRevision != revision else { return }
+        guard let document else {
+            clearAccessibilitySnapshot()
+            preparedAccessibilityRevision = revision
+            return
+        }
+        let layout = measuredLayout(width: max(0, bounds.width))
+        let nativeViews = mountedAttachments.mapValues(\.view)
+        let semantics = TextAccessibility(
+            layout: layout,
+            document: document,
+            bounds: bounds,
+            configuration: configuration,
+            nativeViews: nativeViews
+        )
+        let elements: [Any] = semantics.items.map { item in
+            switch item {
+            case let .text(entry): TextAccessibilityElement(owner: self, revision: revision, entry: entry)
+            case let .native(view): view
+            }
+        }
+        guard revision == accessibilityRevision, window != nil else { return }
+        let actions = ActionGeometry(layout: layout, bounds: bounds, configuration: configuration).entries
+        preparedAccessibilityActions = Dictionary(uniqueKeysWithValues: actions.map { ($0.actionIndex, $0) })
+        preparedAccessibilityElementIDs = Set(elements
+            .compactMap { ($0 as? TextAccessibilityElement).map(ObjectIdentifier.init) })
+        preparedAccessibilityElements = elements
+        preparedAccessibilityRevision = revision
+    }
+
+    func isCurrentAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
+        !isTearingDown && window != nil && element.revision == accessibilityRevision
+            && preparedAccessibilityRevision == accessibilityRevision
+            && preparedAccessibilityElementIDs.contains(ObjectIdentifier(element))
+    }
+
+    func canActivateAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
+        hostAccessibilityElements == nil && !isAccessibilityElement && isAccessibilityVisible
+            && isCurrentAccessibilityElement(element) && onAction != nil && element.entry.actionIndex != nil
+            && element.entry.actionIndex.flatMap { preparedAccessibilityActions[$0] } != nil
+    }
+
+    private var isAccessibilityVisible: Bool {
+        var ancestor: UIView? = self
+        while let view = ancestor {
+            guard !view.isHidden, view.alpha > 0, !view.accessibilityElementsHidden else { return false }
+            ancestor = view.superview
+        }
+        return true
+    }
+
+    func activateAccessibilityElement(_ element: TextAccessibilityElement) -> Bool {
+        guard !isSendingAccessibilityAction, canActivateAccessibilityElement(element) else { return false }
+        isSendingAccessibilityAction = true
+        defer { isSendingAccessibilityAction = false }
+        cancelActionInteraction()
+        // 取消路径也可能进入宿主代码；重新核对事务，再读最新闭包。
+        guard canActivateAccessibilityElement(element), let callback = onAction,
+              let index = element.entry.actionIndex, let entry = preparedAccessibilityActions[index]
+        else { return false }
+        callback(entry.event(kind: .tap))
+        return true
     }
 
     func measuredLayout(width: CGFloat?) -> LYGlyphTextLayout {

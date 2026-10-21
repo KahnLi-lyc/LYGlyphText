@@ -19,6 +19,7 @@
 - `LYGlyphTextLabel.onAction` 和 SwiftUI `onAction` 返回 tap／longPress、动作 ID、完整原文 UTF-16 范围及最终可见矩形；取消不发送事件。
 - `LYGlyphTextView` 通过 UIViewRepresentable 复用 UIKit；直接使用 SwiftUI 宽度提议并在更新时使用最新动作回调。
 - UIKit 横／纵向 StackView、UITableView 自动行高、UICollectionView self-sizing，以及 SwiftUI `.frame`／HStack／VStack／List／LazyVStack 的宿主矩阵；完整宿主／UI 验收见 [H1 记录](docs/verification/2026-10-21-host-matrix.md)。
+- 最终可见内容的自动无障碍容器、动作激活及原生交互附件子树；人工 VoiceOver 尚未验收。
 - UIKit／SwiftUI 可操作示例、组件行为测试、宿主测试和 UI 测试。
 
 ## 本地接入
@@ -111,6 +112,16 @@ LYGlyphTextView(
 
 H1 宿主测试覆盖 0→320→600→240→320 宽度往返、稳定布局收敛和最多两份布局缓存。两端使用相同文档、配置、有效宽度及 display scale 时，自然高度差不超过一个物理像素。此结论来自宿主行为测试，不代表首／末基线等价或所有系统版本均已验收。
 
+## 显示环境与无障碍
+
+缺省 `.font` 使用当前环境的动态 body；显式 UIFont（包括已创建的 preferredFont／UIFontMetrics 快照）保持固定。字号变化重新测量并重算附件对齐，图片与 UIView 声明尺寸不额外缩放。语义前景、背景、线色和按下色按当前 trait 解析；RTL 保留原文逻辑映射，图片不额外镜像。
+
+Label 默认以容器提供最终可见内容的自动无障碍元素：按 UTF-16 逻辑顺序保留完整 grapheme，排除截断源与生成 token。图片／非交互 UIView 读取非空 alternativeText，nil／空白作装饰；已挂载的交互 UIView 保持原生子树及原有 AX 属性，不重复拼入文字动作。失败工厂可回退替代文本。
+
+有 onAction 且存在可见内容的动作元素提供 button trait，accessibilityActivate 发送现有 tap 事件、完整原文范围及当前可见矩形；读取最新回调，先清按压，同步重入不重复发送。布局／文档／附件生命周期变化使旧元素失效，元素不保活宿主。宿主显式 accessibilityElements 数组（包括 []）优先，置 nil 恢复自动；组件不覆盖宿主自行设置的 AX 属性。
+
+自动查询／激活与真实触摸均有测试，人工 VoiceOver 的朗读、停顿、重复朗读和焦点体验仍未验收。部分可见的原生附件保留 UIKit 子树；不保证任意原生后代 AX frame 按附件裁切。环境与截图证据见 [A1 专项记录](docs/verification/2026-10-21-environment-accessibility.md)。
+
 ## 字符样式与段落
 
 支持的 NSAttributedString 属性在文档构造时保存为独立的类型化快照：
@@ -148,7 +159,7 @@ func imageDocument(image: UIImage) throws -> LYGlyphTextDocument {
 }
 ```
 
-文档拒绝未描述的 U+FFFC、越界或不匹配的位置、非独立占位字符、重复 ID 和非有限／非正尺寸；标准 `NSTextAttachment` 仍明确拒绝。未传附件字典的旧调用保持兼容。被省略的图片不绘制、不增加最终行高；生成省略号不继承附件属性。替换图片或声明尺寸时创建新文档，两端使用同一入口。`alternativeText` 当前只保存描述数据，完整 VoiceOver 行内语义尚未验收。
+文档拒绝未描述的 U+FFFC、越界或不匹配的位置、非独立占位字符、重复 ID 和非有限／非正尺寸；标准 `NSTextAttachment` 仍明确拒绝。未传附件字典的旧调用保持兼容。被省略的图片不绘制、不增加最终行高；生成省略号不继承附件属性。替换图片或声明尺寸时创建新文档，两端使用同一入口。非空 `alternativeText` 用于自动可见语义；人工 VoiceOver 的完整朗读与焦点体验尚未验收。
 
 ## 分段与动作描述
 
@@ -221,15 +232,15 @@ scripts/verify.sh test <可用的独立模拟器UDID>
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
-build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；动作示例覆盖 tap、长按、滚动取消、回调替换、截断与短高度裁切；首页另有可选择的 UITableView 动作夹具和附件复用示例；UIKit／SwiftUI 宿主矩阵页提供 StackView／五种 SwiftUI 容器、Table／Collection、宽度往返、附件尺寸、按钮与回调切换。两端共用本地生成的方向箭头图片与文档，无网络依赖。工程生成物、构建日志和 xcresult 留在忽略目录内。
+build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；动作示例覆盖 tap、长按、滚动取消、回调替换、截断与短高度裁切；首页另有可选择的 UITableView 动作夹具和附件复用示例；UIKit／SwiftUI 宿主矩阵页提供 StackView／五种 SwiftUI 容器、Table／Collection、宽度往返、附件尺寸、按钮与回调切换。环境与无障碍页还提供三档真实字号、浅深、LTR／RTL、宽度、行数和回调控制；两端共用本地生成的方向箭头图片与文档，无网络依赖。工程生成物、构建日志和 xcresult 留在忽略目录内。
 
 test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测试视为失败。Package 单测源码也由 Demo 宿主执行，避免用 macOS `swift test` 代替 UIKit 验证。
 
 ## 后续能力
 
-尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；动作 VoiceOver 元素留待 A1。
+尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
 
-当前已处理默认字体和语义颜色的 trait 更新；完整 Dynamic Type、环境 RTL、VoiceOver 和最低系统验收继续按阶段推进。宿主适配范围和列表复用证据见 H1 记录，不推广为未测试容器或运行环境的保证。
+当前已处理动态 body、语义颜色与 RTL 的环境继承及自动 AX 语义；人工 VoiceOver 和最低系统验收继续独立留证。宿主适配范围和列表复用证据见 H1 记录，不推广为未测试容器或运行环境的保证。
 
 ## 文档与许可
 
@@ -238,6 +249,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 - [分段与动作描述验证记录](docs/verification/2026-10-20-m1a-document.md)
 - [文字交互验证记录](docs/verification/2026-10-20-interaction.md)
 - [宿主矩阵验证记录](docs/verification/2026-10-21-host-matrix.md)
+- [显示环境与无障碍验证记录](docs/verification/2026-10-21-environment-accessibility.md)
 - [UIView 附件与生命周期验证记录](docs/verification/2026-10-20-view-attachments.md)
 - [行内图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)
 - [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)

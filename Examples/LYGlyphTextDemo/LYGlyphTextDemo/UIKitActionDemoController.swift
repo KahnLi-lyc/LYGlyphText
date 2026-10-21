@@ -84,7 +84,7 @@ final class UIKitActionDemoController: UIViewController {
             diagnosticOverlay.sourceLabel = textLabel
             diagnosticOverlay.sourceDocument = samples.actionDocument
             diagnosticOverlay.translatesAutoresizingMaskIntoConstraints = false
-            textLabel.addSubview(diagnosticOverlay)
+            stack.addSubview(diagnosticOverlay)
             NSLayoutConstraint.activate([
                 diagnosticOverlay.leadingAnchor.constraint(equalTo: textLabel.leadingAnchor),
                 diagnosticOverlay.trailingAnchor.constraint(equalTo: textLabel.trailingAnchor),

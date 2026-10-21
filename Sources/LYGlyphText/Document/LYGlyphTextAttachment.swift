@@ -21,7 +21,8 @@ public struct LYGlyphTextAttachment {
     public let size: CGSize
     /// 相对于占位字符字体区域的对齐方式。
     public let alignment: LYGlyphTextAttachmentAlignment
-    /// 保存的替代文本；当前不提供完整的 VoiceOver 行内语义。
+    /// 最终可见图片的非空替代文本参与自动无障碍语义；nil、空串或仅空白文本作为装饰。
+    /// 人工 VoiceOver 朗读体验尚未验收。
     public let alternativeText: String?
 
     /// 创建附件描述。尺寸和文档内 ID 唯一性在文档初始化时校验。

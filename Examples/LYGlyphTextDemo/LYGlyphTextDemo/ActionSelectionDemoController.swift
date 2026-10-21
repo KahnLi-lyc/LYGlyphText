@@ -109,7 +109,7 @@ final class ActionSelectionCell: UITableViewCell {
         ])
         #if DEBUG
             diagnosticOverlay.translatesAutoresizingMaskIntoConstraints = false
-            glyphLabel.addSubview(diagnosticOverlay)
+            contentView.addSubview(diagnosticOverlay)
             NSLayoutConstraint.activate([
                 diagnosticOverlay.leadingAnchor.constraint(equalTo: glyphLabel.leadingAnchor),
                 diagnosticOverlay.trailingAnchor.constraint(equalTo: glyphLabel.trailingAnchor),

@@ -1,6 +1,6 @@
 # H1 宿主矩阵验证记录
 
-日期：2026-10-21。基线 `003558cd7c72116fcb889162ccf8ecd232e5ec70`，分支 `codex/host-matrix`。H1 功能验收完成：319／319（298 宿主＋21 UI），0 failed／skipped／expected failures，runtimeWarnings=[]；12 张最终截图已检查。H1a—H1c 已完成规格／质量审查，H1d 最终规格与质量证据复审已批准，提交／集成／推送待执行，不把尚未发生的交付写为完成。本记录不代替 A1 环境／无障碍及 P1 性能验收。
+日期：2026-10-21。基线 `003558cd7c72116fcb889162ccf8ecd232e5ec70`，分支 `codex/host-matrix`。H1 功能验收完成：319／319（298 宿主＋21 UI），0 failed／skipped／expected failures，runtimeWarnings=[]；12 张最终截图已检查。H1a—H1c 已完成规格／质量审查，H1d 最终规格与质量证据复审已批准，已以 `32ac04a11ee39b2ba5c863b5abedfef0c247cd4e` 提交、锁内快进 main 并普通推送，远端 SHA 核对一致，临时分支已清理。本记录不代替 A1 环境／无障碍及 P1 性能验收。
 
 ## 行为与接口
 
@@ -53,7 +53,7 @@ H1c 审查补齐真实 factory=0 的测量纯度、独立 UIKit 高度对照、r
 
 首轮完整宿主回归的 `testCollectionSelfSizingUsesAttributesWidthAndMatchesOffscreenMeasurement` 在 240／320／600pt 下分别取得 164.333／122.333／101.333pt，预期为 147／105／84pt，均多 17.333pt。核对哈希确认测试与 H1b 绿时一致，但 Demo collection 控制器在 H1b 绿后已改变；当前状态行的固有高度 13.333pt 与 spacing 4pt 未纳入旧测试预期。此为 Demo 宿主变化后的独立预期缺口，不称为组件排版错误，也不推断不存在的旧源码快照。修复仅补全状态行非空／有限正高度断言与总高度独立计算，并按实际 scale 像素取整、容差一个物理像素；新冻结与最终正式回归均已通过。该结果保留为首轮正式失败证据。修正后 11 项目标测试已全绿，新 build 通过；73 个 Swift 文件（含 Package）已重新冻结于 `.build/verification/h1-final/final-source-freeze.json`，完整正式回归使用该候选且 73／73 匹配、修改时间早于测试开始；清单 SHA-256 为 `f302e17f2460a10ecfdcd33a2b65f77aa2d95338a40c052674487894e08808a9`，旧冻结不代替本次结果。
 
-最终正式完整回归已通过，覆盖既有 I1 回归，不删减原有用例。298 项宿主比 I1 的 276 项增加 22 项，21 项 UI 保留既有 18 项并增加 3 项 H1 操作。交付提交、main 集成、普通 push 与远端 SHA 核对仍待执行。
+最终正式完整回归已通过，覆盖既有 I1 回归，不删减原有用例。298 项宿主比 I1 的 276 项增加 22 项，21 项 UI 保留既有 18 项并增加 3 项 H1 操作。交付提交 `32ac04a11ee39b2ba5c863b5abedfef0c247cd4e` 已锁内快进 main，普通 push 成功且远端 SHA 一致；已删除本任务临时分支。此次 push 有旧 credential helper 路径失效警告，但推送和远端核对均成功，未修改全局配置。
 
 ## 真实 UI 与截图
 

@@ -18,6 +18,7 @@ final class DemoAppDelegate: UIResponder, UIApplicationDelegate {
 @MainActor
 final class DemoHomeController: UITableViewController {
     private let samples: DemoSamples
+    private var environmentSamples: EnvironmentSamples?
 
     init(samples: DemoSamples) {
         self.samples = samples
@@ -31,14 +32,15 @@ final class DemoHomeController: UITableViewController {
     }
 
     override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        10
+        12
     }
 
     override func tableView(_: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = [
             "UIKit 示例", "SwiftUI 示例", "UIView 列表复用", "UIKit 样式与垂直对齐", "SwiftUI 样式与垂直对齐",
-            "UIKit 文字交互", "SwiftUI 文字交互", "文字交互与列表选择", "UIKit 宿主矩阵", "SwiftUI 宿主矩阵"
+            "UIKit 文字交互", "SwiftUI 文字交互", "文字交互与列表选择", "UIKit 宿主矩阵", "SwiftUI 宿主矩阵",
+            "UIKit 环境与无障碍", "SwiftUI 环境与无障碍"
         ][indexPath.row]
         cell.detailTextLabel?.text = "切换文本、宽度，查看富文本自动撑高"
         cell
@@ -52,7 +54,9 @@ final class DemoHomeController: UITableViewController {
                 "openSwiftUIActions",
                 "openActionList",
                 "openUIKitHostMatrix",
-                "openSwiftUIHostMatrix"
+                "openSwiftUIHostMatrix",
+                "openUIKitEnvironment",
+                "openSwiftUIEnvironment"
             ][indexPath.row]
         cell.accessoryType = .disclosureIndicator
         return cell
@@ -88,6 +92,20 @@ final class DemoHomeController: UITableViewController {
                 controller = try UIHostingController(rootView: SwiftUIHostMatrixView(samples: HostMatrixSamples()))
             } catch {
                 fatalError("无法创建 SwiftUI 宿主矩阵：\(error)")
+            }
+        } else if indexPath.row == 10 || indexPath.row == 11 {
+            do {
+                let shared = try environmentSamples ?? EnvironmentSamples()
+                environmentSamples = shared
+                if indexPath.row == 10 {
+                    controller = UIKitEnvironmentController(samples: shared)
+                } else {
+                    controller = UIHostingController(rootView: SwiftUIEnvironmentView(samples: shared))
+                }
+            } catch {
+                let errorController = UIViewController()
+                errorController.title = "无法构建环境示例：\(error)"
+                controller = errorController
             }
         } else {
             controller = UIHostingController(rootView: SwiftUIDemoView(samples: samples))

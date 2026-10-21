@@ -126,7 +126,7 @@ final class HostMatrixCollectionCell: UICollectionViewCell {
         #if DEBUG
             diagnostic.translatesAutoresizingMaskIntoConstraints = false
             diagnostic.sourceLabel = glyphLabel
-            glyphLabel.addSubview(diagnostic)
+            contentView.addSubview(diagnostic)
             NSLayoutConstraint.activate([
                 diagnostic.leadingAnchor.constraint(equalTo: glyphLabel.leadingAnchor),
                 diagnostic.trailingAnchor.constraint(equalTo: glyphLabel.trailingAnchor),
