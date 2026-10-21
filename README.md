@@ -308,6 +308,15 @@ cell.label.apply(prepared)               // 环境一致时主线程不再排版
 
 结果只对相同文档对象、配置、宽度和显示环境有效；字号类别、明暗或显示比例变化后 Label 自动按普通路径重新排版。预排版不创建附件视图、不调用工厂或图片加载器。
 
+## 选择与拷贝
+
+```swift
+label.isSelectable = true
+label.onSelectionChange = { range in print(range as Any) }
+```
+
+长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。没有放大镜；不支持编辑。
+
 ## 运行 Demo 和检查
 
 需要 Xcode（含 iOS Simulator）、**XcodeGen 2.46.0**、Python 3；SwiftFormat 固定 **0.59.1**，安装或指定已有工具的方法见 [参与开发](CONTRIBUTING.md)。

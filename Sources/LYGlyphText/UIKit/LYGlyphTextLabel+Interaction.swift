@@ -107,6 +107,11 @@ extension LYGlyphTextLabel {
         }
     }
 
+    /// 点是否落在可发送事件的动作或截断 token 上；选择手势据此让位给动作。
+    func isActionTarget(at point: CGPoint) -> Bool {
+        actionEntry(at: point, touchedView: nil) != nil
+    }
+
     private func actionEntry(at point: CGPoint, touchedView: UIView?) -> ActionGeometry.Entry? {
         guard !isTearingDown, window != nil, document != nil, onAction != nil,
               bounds.width.isFinite, bounds.height.isFinite, bounds.width > 0, bounds.height > 0,

@@ -20,6 +20,7 @@ public final class LYGlyphTextLabel: UIView {
         didSet {
             guard !isTearingDown else { return }
             if oldValue !== document {
+                if selectedRange != nil { setSelection(nil, presentsMenu: false) }
                 documentRevision &+= 1
                 cancelActionInteraction()
                 invalidateText()
@@ -57,6 +58,27 @@ public final class LYGlyphTextLabel: UIView {
         pendingPreparedLayout = prepared
     }
 
+    /// 是否允许长按选择文字并通过系统编辑菜单拷贝；默认 false。
+    ///
+    /// 长按非动作文字选中所在单词并显示菜单，拖动两端拖柄调整范围；动作范围仍优先发送动作。
+    /// 点按选区外、替换文档、移出 window 或关闭此属性会清除选区。
+    public var isSelectable = false {
+        didSet {
+            guard oldValue != isSelectable else { return }
+            if !isSelectable { setSelection(nil, presentsMenu: false) }
+            updateSelectionGestures()
+        }
+    }
+
+    /// 当前选中的原文 UTF-16 范围；设置时扩展到完整组合字符，空、越界或不可选时为 nil。
+    public var selectedRange: NSRange? {
+        get { selectionStorage }
+        set { setSelection(newValue, presentsMenu: false) }
+    }
+
+    /// 选区变化回调，参数为新的原文 UTF-16 范围或 nil。
+    public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
+
     /// 显式丢弃附件实例与本次可见期间的失败记录，下次展示布局重新调用工厂。
     public func reloadAttachments() {
         guard !isTearingDown else { return }
@@ -84,6 +106,14 @@ public final class LYGlyphTextLabel: UIView {
             }
         }
     }
+
+    var selectionStorage: NSRange?
+    var isUpdatingSelection = false
+    var selectionLongPress: UILongPressGestureRecognizer?
+    var selectionTap: UITapGestureRecognizer?
+    var editMenu: UIEditMenuInteraction?
+    var selectionHandles: (start: SelectionHandleView, end: SelectionHandleView)?
+    lazy var selectionGestureDelegate = SelectionGestureDelegate(owner: self)
 
     var hostAccessibilityElements: [Any]?
     var preparedAccessibilityElements: [Any] = []
@@ -258,13 +288,17 @@ public final class LYGlyphTextLabel: UIView {
         let revision = accessibilityRevision
         reconcileAttachments()
         prepareAccessibility(revision: revision)
+        if selectedRange != nil { updateSelectionHandles() }
     }
 
     /// 离开 window 即卸载，重新进入后在展示布局重建。
     override public func didMoveToWindow() {
         super.didMoveToWindow()
         cancelActionInteraction()
-        if window == nil { resetAttachments() } else { setNeedsLayout() }
+        if window == nil {
+            if selectedRange != nil { setSelection(nil, presentsMenu: false) }
+            resetAttachments()
+        } else { setNeedsLayout() }
     }
 
     /// 层级变化会使祖先滚动观察和触摸归属失效。
@@ -283,6 +317,13 @@ public final class LYGlyphTextLabel: UIView {
         context.clip(to: bounds)
         context.clip(to: geometry.contentClip)
         context.translateBy(x: geometry.translation.x, y: geometry.translation.y)
+        if let range = selectedRange, let source = document?.string {
+            // 选区背景在文字下方绘制，使用宿主 tintColor 的半透明色。
+            context.setFillColor(tintColor.withAlphaComponent(0.25).resolvedColor(with: traitCollection).cgColor)
+            for rect in SelectionGeometry(layout: layout, source: source).rects(for: range) {
+                context.fill(rect)
+            }
+        }
         layout.draw(in: context, pressedActionIndex: pressedActionIndex)
         context.restoreGState()
     }

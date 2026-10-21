@@ -32,7 +32,7 @@ final class DemoHomeController: UITableViewController {
     }
 
     override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        13
+        14
     }
 
     override func tableView(_: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -40,7 +40,7 @@ final class DemoHomeController: UITableViewController {
         cell.textLabel?.text = [
             "UIKit 示例", "SwiftUI 示例", "UIView 列表复用", "UIKit 样式与垂直对齐", "SwiftUI 样式与垂直对齐",
             "UIKit 文字交互", "SwiftUI 文字交互", "文字交互与列表选择", "UIKit 宿主矩阵", "SwiftUI 宿主矩阵",
-            "UIKit 环境与无障碍", "SwiftUI 环境与无障碍", "固定负载与性能列表"
+            "UIKit 环境与无障碍", "SwiftUI 环境与无障碍", "固定负载与性能列表", "2.x：截断 token、网络图片、选择拷贝"
         ][indexPath.row]
         cell.detailTextLabel?.text = "切换文本、宽度，查看富文本自动撑高"
         cell
@@ -57,7 +57,8 @@ final class DemoHomeController: UITableViewController {
                 "openSwiftUIHostMatrix",
                 "openUIKitEnvironment",
                 "openSwiftUIEnvironment",
-                "openPerformance"
+                "openPerformance",
+                "openFeatures"
             ][indexPath.row]
         cell.accessoryType = .disclosureIndicator
         return cell
@@ -66,7 +67,9 @@ final class DemoHomeController: UITableViewController {
     override func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let controller: UIViewController
-        if indexPath.row == 12 {
+        if indexPath.row == 13 {
+            controller = FeatureDemoController()
+        } else if indexPath.row == 12 {
             do {
                 controller = try PerformanceListController()
             } catch {
