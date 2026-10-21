@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "template": "Time Profiler",
+  "traceDurationSeconds": 35.61477,
+  "sampleRows": 31269,
+  "mainThreadSampleRows": 31255,
+  "sampleWeightNanoseconds": 31269000000,
+  "mainThreadSampleWeightNanoseconds": 31255000000,
+  "scope": "Simulator statistical samples including UIKit and Demo diagnostics; not FPS or device performance",
+  "topLeafSamples": [
+    {
+      "symbol": "pthread_getspecific",
+      "weightNanoseconds": 830000000
+    },
+    {
+      "symbol": "madvise",
+      "weightNanoseconds": 791000000
+    },
+    {
+      "symbol": "swift_release",
+      "weightNanoseconds": 678000000
+    },
+    {
+      "symbol": "_CFRelease",
+      "weightNanoseconds": 657000000
+    },
+    {
+      "symbol": "__getattrlist",
+      "weightNanoseconds": 604000000
+    },
+    {
+      "symbol": "objc_msgSend",
+      "weightNanoseconds": 602000000
+    },
+    {
+      "symbol": "_platform_memset",
+      "weightNanoseconds": 551000000
+    },
+    {
+      "symbol": "__CFStringGetLineOrParagraphBounds",
+      "weightNanoseconds": 422000000
+    },
+    {
+      "symbol": "_CFRetain",
+      "weightNanoseconds": 415000000
+    },
+    {
+      "symbol": "_platform_memmove",
+      "weightNanoseconds": 384000000
+    },
+    {
+      "symbol": "path_element_bounding_box(unsigned char, CGPoint const*, double&, double&, double&, double&, CGPoint*, unsigned long&)",
+      "weightNanoseconds": 374000000
+    },
+    {
+      "symbol": "swift_retain",
+      "weightNanoseconds": 368000000
+    },
+    {
+      "symbol": "_xzm_xzone_malloc_freelist_outlined",
+      "weightNanoseconds": 357000000
+    },
+    {
+      "symbol": "String.UTF16View._nativeGetIndex(for:)",
+      "weightNanoseconds": 353000000
+    },
+    {
+      "symbol": "<deduplicated_symbol>",
+      "weightNanoseconds": 347000000
+    }
+  ],
+  "topMatchingAppStackFramesInclusive": [
+    {
+      "symbol": "LYGlyphTextLabel.intrinsicContentSize.getter",
+      "weightNanoseconds": 27198000000
+    },
+    {
+      "symbol": "@objc LYGlyphTextLabel.intrinsicContentSize.getter",
+      "weightNanoseconds": 27198000000
+    },
+    {
+      "symbol": "LYGlyphTextLabel.measuredLayout(width:)",
+      "weightNanoseconds": 27197000000
+    },
+    {
+      "symbol": "specialized ResolvedText.layout(width:insets:scale:numberOfLines:observe:)",
+      "weightNanoseconds": 22588000000
+    },
+    {
+      "symbol": "LYGlyphTextLayout.init(size:lines:attachments:viewAttachments:decorations:traits:source:actions:observe:)",
+      "weightNanoseconds": 11468000000
+    },
+    {
+      "symbol": "ResolvedText.truncatedLines(_:width:insets:scale:)",
+      "weightNanoseconds": 7043000000
+    },
+    {
+      "symbol": "SourceGeometry.init(source:lines:attachments:viewAttachments:)",
+      "weightNanoseconds": 6163000000
+    },
+    {
+      "symbol": "closure #1 in LYGlyphTextLayout.init(size:lines:attachments:viewAttachments:decorations:traits:source:actions:observe:)",
+      "weightNanoseconds": 6163000000
+    },
+    {
+      "symbol": "specialized SourceGeometry.init(source:lines:attachments:viewAttachments:)",
+      "weightNanoseconds": 6066000000
+    },
+    {
+      "symbol": "ResolvedText.init(document:traits:wrapping:discardMetrics:)",
+      "weightNanoseconds": 4599000000
+    },
+    {
+      "symbol": "closure #5 in SourceGeometry.init(source:lines:attachments:viewAttachments:)",
+      "weightNanoseconds": 2270000000
+    },
+    {
+      "symbol": "closure #2 in LYGlyphTextLayout.init(size:lines:attachments:viewAttachments:decorations:traits:source:actions:observe:)",
+      "weightNanoseconds": 2209000000
+    },
+    {
+      "symbol": "PerformanceListController.refreshStatus()",
+      "weightNanoseconds": 1387000000
+    },
+    {
+      "symbol": "PerformanceRowState.changed()",
+      "weightNanoseconds": 1299000000
+    },
+    {
+      "symbol": "closure #1 in PerformanceListController.viewDidLoad()",
+      "weightNanoseconds": 1299000000
+    },
+    {
+      "symbol": "LYGlyphTextLabel.layoutSubviews()",
+      "weightNanoseconds": 951000000
+    },
+    {
+      "symbol": "@objc LYGlyphTextLabel.layoutSubviews()",
+      "weightNanoseconds": 951000000
+    },
+    {
+      "symbol": "PerformanceListController.tableView(_:cellForRowAt:)",
+      "weightNanoseconds": 914000000
+    },
+    {
+      "symbol": "@objc PerformanceListController.tableView(_:cellForRowAt:)",
+      "weightNanoseconds": 914000000
+    },
+    {
+      "symbol": "@objc PerformanceCell.prepareForReuse()",
+      "weightNanoseconds": 869000000
+    }
+  ]
+}

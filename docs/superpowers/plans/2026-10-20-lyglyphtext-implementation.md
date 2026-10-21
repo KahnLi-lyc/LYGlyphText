@@ -8,7 +8,7 @@
 
 **Tech Stack:** iOS 16+、Swift 6 language mode、UIKit、SwiftUI、Core Text、Core Graphics、XCTest、Swift Package Manager。
 
-**状态与日期：** 2026-10-21；已完成基础显示、行数限制／尾部省略、行内 UIImage／UIView、分段／动作描述与样式／完整已声明段落值、word／character、统一垂直展示及文字动作交互。I1 已交付基线 `003558c` 已合入并推送；I1 正式 docs／format／build／test 为 276 项宿主＋18 项 UI = 294／294，通过规格与质量审查，证据见 [I1 记录](../../verification/2026-10-20-interaction.md)。H1 功能验收完成，正式回归 298 项宿主＋21 项 UI＝319／319，已检查 12 张截图；最终规格及质量批准，以 `32ac04a` 合入推送并核远端 SHA 一致，见 [H1 宿主矩阵](2026-10-21-host-matrix.md)与[验证记录](../../verification/2026-10-21-host-matrix.md)；A1 已完成动态字体／颜色／RTL 与自动可见语义、动作激活，正式 359／359（336 宿主＋23 UI）；最终交付收尾中，人工 VoiceOver 仍未验证。证据另见 [基础显示记录](../../verification/2026-10-20-basic-display.md)、[行数限制记录](../../verification/2026-10-20-line-limits.md)、[图片附件记录](../../verification/2026-10-20-image-attachments.md)、[UIView 附件记录](../../verification/2026-10-20-view-attachments.md) 与 [样式记录](../../verification/2026-10-20-m1b-styles.md)。
+**状态与日期：** 2026-10-21；已完成基础显示、行数限制／尾部省略、行内 UIImage／UIView、分段／动作描述与样式／完整已声明段落值、word／character、统一垂直展示及文字动作交互。I1 已交付基线 `003558c` 已合入并推送；I1 正式 docs／format／build／test 为 276 项宿主＋18 项 UI = 294／294，通过规格与质量审查，证据见 [I1 记录](../../verification/2026-10-20-interaction.md)。H1 功能验收完成，正式回归 298 项宿主＋21 项 UI＝319／319，已检查 12 张截图；最终规格及质量批准，以 `32ac04a` 合入推送并核远端 SHA 一致，见 [H1 宿主矩阵](2026-10-21-host-matrix.md)与[验证记录](../../verification/2026-10-21-host-matrix.md)；A1 已完成动态字体／颜色／RTL 与自动可见语义、动作激活，正式 359／359（336 宿主＋23 UI）；已以 `b615c3e` 合入推送并核远端 SHA；人工 VoiceOver 仍未验证，P1独立可执行准备已验收：正式368／368、86 Swift冻结、Release九组和真实列表证据归档；发布补证仍保留。证据另见 [基础显示记录](../../verification/2026-10-20-basic-display.md)、[行数限制记录](../../verification/2026-10-20-line-limits.md)、[图片附件记录](../../verification/2026-10-20-image-attachments.md)、[UIView 附件记录](../../verification/2026-10-20-view-attachments.md) 与 [样式记录](../../verification/2026-10-20-m1b-styles.md)。
 
 ---
 
@@ -203,10 +203,10 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | M1b 样式／换行／统一展示几何 | 已完成 | M1a | 装饰、完整段落值、word／character、垂直对齐、最终可见片段与连字几何 | [M1 契约](2026-10-20-document-actions-styles.md) 与 [专项记录](../../verification/2026-10-20-m1b-styles.md)：215／215 Passed，10 张原图已检查；`6dbeaee` 已合入／推送，远端 SHA 一致 |
 | I1 文本点击／长按／高亮／取消 | 已完成 | M1b | 真实手势、空白／截断／RTL 命中、单次回调与取消零事件、附件优先级 | [I1 契约](2026-10-20-text-interaction.md)与[执行记录](../../verification/2026-10-20-interaction.md)：276 宿主＋18 UI = 294／294；`003558c` 已合入并推送，远端 SHA 一致 |
 | H1 宿主矩阵 | 已交付 `32ac04a` | I1 | StackView、UITableView／UICollectionView、.frame／HStack／VStack／List／LazyVStack、宽度切换与复用收敛 | [H1 契约](2026-10-21-host-matrix.md)与[执行记录](../../verification/2026-10-21-host-matrix.md)：319／319（298 宿主＋21 UI）、12 张截图；最终规格／质量批准，已集成推送并核远端 SHA |
-| A1 显示环境／无障碍 | 自动验收完成，交付收尾中 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | [A1 计划](2026-10-21-environment-accessibility.md)与[专项记录](../../verification/2026-10-21-environment-accessibility.md)：359／359、8 张截图；人工 VoiceOver 未验证 |
-| P1 回归／性能／发布准备 | 待执行 | A1；缺失环境不阻塞独立准备 | 完整回归、固定负载性能／释放、来源与 API／安装文档审查，列出发布阻塞项 | Swift 6.0／iOS 16／真机／性能仍未验证；PR／Tag／Release 未授权 |
+| A1 显示环境／无障碍 | 已交付 `b615c3e`，人工 VO 待验 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | [A1 计划](2026-10-21-environment-accessibility.md)与[专项记录](../../verification/2026-10-21-environment-accessibility.md)：359／359、8 张截图；人工 VoiceOver 未验证 |
+| P1 回归／性能／发布准备 | 独立准备验收完成，发布补证待验 | A1；缺失环境不阻塞独立准备 | 九组Release／缓存与释放／真实列表、CPU与RSS、来源及API／安装审查已归档 | [P1 计划](2026-10-21-performance-readiness.md)；Swift6.0／iOS16／真机／人工VoiceOver与专用分配／泄漏分析未验证；PR／Tag／Release未授权 |
 
-I1 已交付并保留 **294／294 Passed（276 宿主＋18 UI，0 failed／0 skipped／0 expected failures，`runtimeWarnings` 为空）** 的正式证据及 M1b 的 215 个基线测试方法。H1 功能验收完成，保留 **319／319 Passed（298 宿主＋21 UI，0 failed／skipped／expected failures，`runtimeWarnings` 为空）** 及 12 张截图；阶段 6 自动环境／AX 已验收，人工 VoiceOver 仍未勾选。H1 已完成最终审查和交付，当前实施 [A1 计划](2026-10-21-environment-accessibility.md)，A1 正式 359／359 已通过；自动环境与无障碍验收、人工 VoiceOver 分开记录。
+I1 已交付并保留 **294／294 Passed（276 宿主＋18 UI，0 failed／0 skipped／0 expected failures，`runtimeWarnings` 为空）** 的正式证据及 M1b 的 215 个基线测试方法。H1 功能验收完成，保留 **319／319 Passed（298 宿主＋21 UI，0 failed／skipped／expected failures，`runtimeWarnings` 为空）** 及 12 张截图；阶段 6 自动环境／AX 已验收，人工 VoiceOver 仍未勾选。H1 已完成最终审查和交付，[A1 计划](2026-10-21-environment-accessibility.md)以 `b615c3e` 完成交付，P1正式368／368与Release／滚动数据已验收，剩余按发布补证清单处理；A1 正式 359／359 已通过；自动环境与无障碍验收、人工 VoiceOver 分开记录。
 
 阶段内按“建立测试／复现 → 实现最小行为 → 验证 → 更新记录 → 提交”执行。低影响文档调整不添加镜像实现的测试；布局、Unicode、交互及所有权必须有有意义的验证。各阶段提交须可单独审阅，不以空壳声明代替完成。
 
@@ -315,10 +315,11 @@ I1 已交付并保留 **294／294 Passed（276 宿主＋18 UI，0 failed／0 ski
 **输入：** 前六阶段的实现与证据。**本轮输出：** 发布准备、文档与完整验证记录；缺失环境单列发布阻塞，不创建版本或发布。
 
 - [ ] 完成第 6 节矩阵；补齐最低 iOS 16 与最新可用系统的运行结果，最低系统无法获取时明确发布阻塞项，不伪造通过。
-- [ ] 在固定设备／模拟器和 Release 构建测量 100、1000、5000 个 UTF-16 单元，以及每条含 0／3／10 个附件的集合；记录冷排版、热缓存的 p50／p95、factory 次数、内存与滚动表现。
-- [ ] 用 Instruments 检查附件释放与持续滚动内存趋势；缓存占用必须符合“每 Label 最多两个布局”的约束，不先许诺未经测量的帧率。
-- [ ] 复核纯 Swift／零第三方运行依赖、来源与许可证、公开 API、README 安装和示例说明；只有验证完成后新增真实可用的安装指引。
-- [ ] 完成版本记录与首版发布说明草案，列出验证环境、已知限制和发布阻塞项；不创建 Tag 或 Release。
+- [x] 在固定设备／模拟器和 Release 构建测量 100、1000、5000 个 UTF-16 单元，以及每条含 0／3／10 个附件的集合；P1九组2655原始ns、p50／p95、factory=0、RSS和真实滚动已归档。“冷”只指新Label首次测量，非进程冷启动。
+- [x] 缓存最多两份、600轮真实窗口释放5400／5400、weak=0与三轮45秒滚动已验证；Time Profiler 35.61秒／31269样本已导出，RSS初／峰／末独立记录，不先许诺帧率。
+- [ ] 补齐Allocations／Leaks专用统计结果解释：模板实际执行且trace已保存，但当前CLI未暴露专用表，Allocations录制器最终退出还存在控制器超时；不能由weak=0或RSS推导无泄漏。
+- [x] 复核纯 Swift／零第三方运行依赖、来源与许可证、公开 API、README 本地Package安装和示例说明；见P1静态准备记录。
+- [x] 完成CHANGELOG未发布草案和RELEASE_READINESS，列出验证环境、已知限制和发布阻塞项；未创建Tag或Release。
 - [ ] 后续另行授权：达到发布门槛后创建首个版本 Tag／Release；此项不属于本轮连续开发执行范围，也不因发布准备完成而勾选。
 
 **完成标准：** 无未说明的功能缺口；本地构建、设备运行、无障碍和性能证据分别列出；发布操作只在届时获得发布授权后执行，本文不代表立即发布组件。
@@ -404,10 +405,10 @@ Apple 原始资料：
 | 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
 | Package、组件源码、Demo | 基础显示、行数限制／尾部省略、UIImage／UIView 附件及文字动作已实现；宿主矩阵已完成红绿、完整回归和截图验收；自动无障碍与显示环境已完成；人工 VoiceOver 和发布准备仍独立验收 |
-| Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和 359／359 宿主／UI 测试，见 A1 验证记录；Swift 6.0 编译器仍未验证 |
+| Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和 P1 368／368 宿主／UI 测试，见 P1 验证记录；Swift 6.0 编译器仍未验证 |
 | Auto Layout／布局优先级／SwiftUI 基础尺寸 | H1 覆盖 StackView／列表／五种 SwiftUI 容器；完整回归及 12 张截图通过，首／末文字基线未承诺 |
 | iOS 16／当前系统运行 | iOS 16 未验证；本轮 iOS 27.0 专用 Simulator 运行，见基础显示验证记录 |
-| 自动 AX／人工 VoiceOver、性能、真实设备行为 | 自动可见语义／激活与真实 UI 通过；人工 VoiceOver、性能与真机仍未验证 |
+| 自动 AX／人工 VoiceOver、性能、真实设备行为 | 自动可见语义／激活与真实 UI 通过；P1 Release／CPU／RSS已归档；人工VoiceOver、真机和专用分配／泄漏分析仍未验证 |
 
 行数限制专项与截图见 [行数限制验证记录](../../verification/2026-10-20-line-limits.md)，图片专项见 [图片附件验证记录](../../verification/2026-10-20-image-attachments.md)，UIView 工厂与生命周期见 [专项验证记录](../../verification/2026-10-20-view-attachments.md)，装饰与动作几何、绘制及真实手势见 [I1 验证记录](../../verification/2026-10-20-interaction.md)。完整 VoiceOver 行内语义未验收。
 

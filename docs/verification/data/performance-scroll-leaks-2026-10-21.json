@@ -1,0 +1,200 @@
+{
+  "clock": "DispatchTime.uptimeNanoseconds",
+  "completedRoundTrips": 0,
+  "contentWidthPoints": 320,
+  "directionChanges": 0,
+  "elapsedSeconds": 45.116326041,
+  "finalActions": 0,
+  "finalButtons": 0,
+  "finalFactory": 318,
+  "finalLiveWeakViews": 0,
+  "finalUnmount": 318,
+  "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+  "numberOfLines": 3,
+  "observations": [
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 0,
+      "factory": 12,
+      "liveWeakViews": 12,
+      "offsetPoints": 0,
+      "residentSizeBytes": 249217024,
+      "unmount": 0
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 1.010619916,
+      "factory": 42,
+      "liveWeakViews": 12,
+      "offsetPoints": 1762.6666666666667,
+      "residentSizeBytes": 303890432,
+      "unmount": 30
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 2.014430083,
+      "factory": 84,
+      "liveWeakViews": 17,
+      "offsetPoints": 3920,
+      "residentSizeBytes": 305807360,
+      "unmount": 67
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 3.047781833,
+      "factory": 120,
+      "liveWeakViews": 17,
+      "offsetPoints": 6160,
+      "residentSizeBytes": 306085888,
+      "unmount": 103
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 4.2479325,
+      "factory": 162,
+      "liveWeakViews": 17,
+      "offsetPoints": 8400,
+      "residentSizeBytes": 306102272,
+      "unmount": 145
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 7.397793541,
+      "factory": 180,
+      "liveWeakViews": 17,
+      "offsetPoints": 9379.666666666666,
+      "residentSizeBytes": 348618752,
+      "unmount": 163
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 8.764464583,
+      "factory": 187,
+      "liveWeakViews": 13,
+      "offsetPoints": 9939.666666666666,
+      "residentSizeBytes": 348700672,
+      "unmount": 174
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 19.364541791,
+      "factory": 193,
+      "liveWeakViews": 13,
+      "offsetPoints": 10219.666666666666,
+      "residentSizeBytes": 336805888,
+      "unmount": 180
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 21.464499458,
+      "factory": 198,
+      "liveWeakViews": 12,
+      "offsetPoints": 10499.666666666666,
+      "residentSizeBytes": 337002496,
+      "unmount": 186
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 24.897804625,
+      "factory": 210,
+      "liveWeakViews": 17,
+      "offsetPoints": 11059.666666666666,
+      "residentSizeBytes": 330301440,
+      "unmount": 193
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 30.331122041,
+      "factory": 216,
+      "liveWeakViews": 17,
+      "offsetPoints": 11339.666666666666,
+      "residentSizeBytes": 326385664,
+      "unmount": 199
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 31.731147333,
+      "factory": 223,
+      "liveWeakViews": 13,
+      "offsetPoints": 11899.666666666666,
+      "residentSizeBytes": 325156864,
+      "unmount": 210
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 35.864455791,
+      "factory": 229,
+      "liveWeakViews": 13,
+      "offsetPoints": 12179.666666666666,
+      "residentSizeBytes": 335151104,
+      "unmount": 216
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 38.033941416,
+      "factory": 234,
+      "liveWeakViews": 12,
+      "offsetPoints": 12459.666666666666,
+      "residentSizeBytes": 332185600,
+      "unmount": 222
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 41.997806916,
+      "factory": 246,
+      "liveWeakViews": 17,
+      "offsetPoints": 13019.666666666666,
+      "residentSizeBytes": 298991616,
+      "unmount": 229
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 43.232127375,
+      "factory": 271,
+      "liveWeakViews": 13,
+      "offsetPoints": 14466.333333333334,
+      "residentSizeBytes": 312672256,
+      "unmount": 258
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 44.247801208,
+      "factory": 300,
+      "liveWeakViews": 18,
+      "offsetPoints": 15864.333333333334,
+      "residentSizeBytes": 313425920,
+      "unmount": 282
+    },
+    {
+      "direction": 1,
+      "directionChanges": 0,
+      "elapsedSeconds": 45.116326041,
+      "factory": 318,
+      "liveWeakViews": 0,
+      "offsetPoints": 0,
+      "residentSizeBytes": 302252032,
+      "unmount": 318
+    }
+  ],
+  "rowCount": 180,
+  "schemaVersion": 1,
+  "speedPointsPerSecond": 2800,
+  "stopSynchronousLiveWeakViews": 0
+}

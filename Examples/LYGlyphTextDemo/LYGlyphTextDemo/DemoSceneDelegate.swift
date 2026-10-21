@@ -12,9 +12,15 @@ final class DemoSceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         do {
-            try window
-                .rootViewController =
-                UINavigationController(rootViewController: DemoHomeController(samples: DemoSamples()))
+            if ProcessInfo.processInfo.arguments.contains("--performance-profile") {
+                window.rootViewController = try UINavigationController(
+                    rootViewController: PerformanceListController(profile: true)
+                )
+            } else {
+                try window.rootViewController = UINavigationController(
+                    rootViewController: DemoHomeController(samples: DemoSamples())
+                )
+            }
         } catch {
             let controller = UIViewController()
             controller.view.backgroundColor = .systemBackground

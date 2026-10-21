@@ -1,6 +1,6 @@
 # A1 显示环境与无障碍验证记录
 
-日期：2026-10-21。基线 `32ac04a11ee39b2ba5c863b5abedfef0c247cd4e`，分支 `codex/environment-accessibility`。A1a 环境定向测试及最终规格／质量复审已批准；A1b 已完成实现、81 项定向回归及规格／质量审查；A1c 最终定向 5／5 及规格／质量双审通过；A1d 正式完整回归 359／359 已通过，最终规格／质量审查均批准，交付收尾中。实施契约见 [A1 计划](../superpowers/plans/2026-10-21-environment-accessibility.md)。
+日期：2026-10-21。基线 `32ac04a11ee39b2ba5c863b5abedfef0c247cd4e`，分支 `codex/environment-accessibility`。A1a 环境定向测试及最终规格／质量复审已批准；A1b 已完成实现、81 项定向回归及规格／质量审查；A1c 最终定向 5／5 及规格／质量双审通过；A1d 正式完整回归 359／359 已通过，最终规格／质量审查均批准，已以 `b615c3e036a9816fda9191f52c46915482bd5d1b` 完成提交、锁内快进 main、普通推送并核远端 SHA 一致。实施契约见 [A1 计划](../superpowers/plans/2026-10-21-environment-accessibility.md)。
 
 ## 环境
 
@@ -85,7 +85,7 @@ Xcode 27.1／Apple Swift 6.4／Swift 6 language mode，iPhone 17 Pro iOS 27 Simu
 | AX5 滚动至尾部 | [截图](images/environment-UIKit-ax5-scrolled.png) | [截图](images/environment-SwiftUI-ax5-scrolled.png) |
 | RTL | [截图](images/environment-UIKit-rtl.png) | [截图](images/environment-SwiftUI-rtl.png) |
 
-最终跨块规格审查批准，随后独立质量审查批准，无遗留阻断。两位审查者分别核对当前源码、冻结、正式测试和证据边界；根逐张复核截图。提交／集成／推送状态在下一阶段记录准确 SHA，不提前声称远端交付。
+最终跨块规格审查批准，随后独立质量审查批准，无遗留阻断。两位审查者分别核对当前源码、冻结、正式测试和证据边界；根逐张复核截图。交付提交 `b615c3e036a9816fda9191f52c46915482bd5d1b` 已在独占集成锁内核当前基线、clean、81 文件冻结与正式成功摘要，快进 main 后普通 push 成功，ls-remote 确认远端相同 SHA；临时分支已安全删除。推送有旧 credential helper 路径失效警告，未修改全局配置。
 
 ## 未验证项
 

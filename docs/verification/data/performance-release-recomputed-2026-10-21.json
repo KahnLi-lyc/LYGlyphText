@@ -1,0 +1,1703 @@
+{
+  "groups": 9,
+  "phases": 45,
+  "totalSamples": 2655,
+  "independentlyRecomputed": true,
+  "results": [
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 14542,
+      "p95ns": 28875
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 1640959,
+      "p95ns": 2195667
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 1622792
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 352875,
+      "p95ns": 416042
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 15458,
+      "p95ns": 19500
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 1732709,
+      "p95ns": 1923959
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 1703959
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 446959,
+      "p95ns": 473541
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 19292,
+      "p95ns": 23167
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 1808459,
+      "p95ns": 1844292
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 1793917
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-100-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 100,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 586500,
+      "p95ns": 709792
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 97083,
+      "p95ns": 106708
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 11420959,
+      "p95ns": 11831666
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 11823166
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 1033541,
+      "p95ns": 1152292
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 99500,
+      "p95ns": 104458
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 11719041,
+      "p95ns": 12763875
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 11708375
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 1096125,
+      "p95ns": 1123542
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 101125,
+      "p95ns": 109792
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 11965625,
+      "p95ns": 13332875
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 11888708
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-1000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 1000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 1203000,
+      "p95ns": 1267500
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 478084,
+      "p95ns": 511458
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 58998750,
+      "p95ns": 62154750
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 61005333
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 250,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 0,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-0",
+        "imageLocations": [],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 2584666,
+      "p95ns": 2664750
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 488250,
+      "p95ns": 517792
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 60672666,
+      "p95ns": 64710750
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 64130416
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 250,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 3,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-3",
+        "imageLocations": [
+          4,
+          5
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 2652166,
+      "p95ns": 2789625
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "documentConstruction",
+      "count": 30,
+      "p50ns": 498166,
+      "p95ns": 542000
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "newLabelFirstSizeThatFits",
+      "count": 30,
+      "p50ns": 60243167,
+      "p95ns": 61955291
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelWarmupSizeThatFits",
+      "count": 5,
+      "p50ns": 250,
+      "p95ns": 61765166
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "sameLabelHotSizeThatFits",
+      "count": 200,
+      "p50ns": 209,
+      "p95ns": 250
+    },
+    {
+      "input": {
+        "attachmentCount": 10,
+        "attachmentSide": 24,
+        "fontName": ".SFUI-Regular",
+        "fontPointSize": 20,
+        "id": "utf16-5000-attachments-10",
+        "imageLocations": [
+          4,
+          6,
+          8,
+          10,
+          12
+        ],
+        "numberOfLines": 0,
+        "scripts": [
+          "Chinese",
+          "emoji",
+          "Arabic",
+          "Latin"
+        ],
+        "textContainerInsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "utf16Length": 5000,
+        "verticalAlignment": "top",
+        "viewLocations": [
+          3,
+          5,
+          7,
+          9,
+          11
+        ],
+        "width": 320,
+        "wrapping": "word"
+      },
+      "phase": "labelDrawCachedBitmap",
+      "count": 30,
+      "p50ns": 2597583,
+      "p95ns": 2796834
+    }
+  ]
+}

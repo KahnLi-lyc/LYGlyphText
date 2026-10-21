@@ -1,0 +1,22 @@
+[
+  {
+    "file": "docs/verification/images/performance-actions-native-button.png",
+    "sha256": "6a26f8700ad1b1eb9ac94cd4bcdeaa874065c18e74a22df9143f240e9643f75c",
+    "visualInspection": "complete visible rows retain three lines; viewport boundary clipping expected"
+  },
+  {
+    "file": "docs/verification/images/performance-reused-scrolled.png",
+    "sha256": "8772e1d3bf18ddd6fe10c4c222049c7385ea53cd2f3517e5c292f59211fc57c5",
+    "visualInspection": "complete visible rows retain three lines; viewport boundary clipping expected"
+  },
+  {
+    "file": "docs/verification/images/performance-return-state.png",
+    "sha256": "11b893dccb510eb45f53fbcc232d4b8deb02669dbaf5240e92d4666e17efcd22",
+    "visualInspection": "complete visible rows retain three lines; viewport boundary clipping expected"
+  },
+  {
+    "file": "docs/verification/images/performance-stopped-cleared.png",
+    "sha256": "6e8c4eb4742e0d3113247aee5a0201eb073b5f758f2af0af48d46483d33c6102",
+    "visualInspection": "complete visible rows retain three lines; viewport boundary clipping expected"
+  }
+]

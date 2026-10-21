@@ -82,5 +82,7 @@ xcodebuild test -project Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj -sch
 - [x] 执行 `scripts/verify.sh docs`、固定版本 `format`、`build`、`test 5260ADE6-ADC2-44AA-9EEB-CDEC90196D08`；保留 319 既有回归，报告实际新增 host/UI 数量、零失败／跳过与 runtimeWarnings。测试前冻结全部 Swift，测试后核哈希。
 - [x] 更新 README、总计划、连续计划及专项记录。自动化环境和 AX 已验证项单独勾选；人工朗读／重复朗读／焦点体验、旧编译器、iOS16、真机均保留未验证，不将整项人工 VO 勾选。
 - [x] 最终跨块规格审查后质量审查；有问题返回原实施者修复，Swift 改动后按风险重跑并冻结。
-- [ ] 中文 Conventional Commit，按 CONTRIBUTING 独占锁核基线／clean／候选，快进 main，普通 push 一次并核远端 SHA，只清理安全合入的临时分支。不创建 PR／Tag／Release，不 pull／rebase／强推。
-- [ ] 自动进入 P1 固定负载、释放／性能及发布准备；缺失环境列发布阻塞，不冒领发布资格。
+- [x] 中文 Conventional Commit，按 CONTRIBUTING 独占锁核基线／clean／候选，快进 main，普通 push 一次并核远端 SHA，只清理安全合入的临时分支。不创建 PR／Tag／Release，不 pull／rebase／强推。
+- [x] 自动进入 P1 固定负载、释放／性能及发布准备；缺失环境列发布阻塞，不冒领发布资格。
+
+A1 已以 `b615c3e036a9816fda9191f52c46915482bd5d1b` 完成锁内集成、普通推送及远端 SHA 核对，临时分支清理；自动进入 [P1 固定负载与发布准备](2026-10-21-performance-readiness.md)。

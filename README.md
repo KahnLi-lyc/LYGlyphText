@@ -236,6 +236,8 @@ build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Pa
 
 test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测试视为失败。Package 单测源码也由 Demo 宿主执行，避免用 macOS `swift test` 代替 UIKit 验证。
 
+固定负载页面提供 180 行（九组输入各 20 行）的真实 UITableView，文字动作、原生附件按钮及停止清空控制用于观察复用；性能数据及其构建配置以 [P1 验证记录](docs/verification/2026-10-21-performance-readiness.md)为准。模拟器观测不代表真机性能，首版仍未发布。
+
 ## 后续能力
 
 尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
@@ -250,6 +252,8 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 - [文字交互验证记录](docs/verification/2026-10-20-interaction.md)
 - [宿主矩阵验证记录](docs/verification/2026-10-21-host-matrix.md)
 - [显示环境与无障碍验证记录](docs/verification/2026-10-21-environment-accessibility.md)
+- [固定负载与性能验证记录](docs/verification/2026-10-21-performance-readiness.md)
+- [发布准备与未验证门槛](docs/RELEASE_READINESS.md)、[未发布变更草案](CHANGELOG.md)
 - [UIView 附件与生命周期验证记录](docs/verification/2026-10-20-view-attachments.md)
 - [行内图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)
 - [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)
@@ -258,3 +262,5 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 - [参考库来源、校验与借鉴边界](docs/REFERENCES.md)
 
 技术路线采用 Core Text，首版不使用 TextKit 2。研究参考 [YYText](https://github.com/ibireme/YYText)、[BSText](https://github.com/nova286/BSText) 等；第三方源码留在仓库外，不作为运行依赖。本轮实现未移植第三方代码。原创内容采用 [MIT License](LICENSE)。
+
+P1正式回归为368／368（344宿主＋24UI），保留全部既有覆盖；86个Swift文件前后冻结一致。发布环境与人工补证状态见[发布准备](docs/RELEASE_READINESS.md)，尚无版本Tag或Release。
