@@ -1,0 +1,580 @@
+{
+  "date": "2026-10-21",
+  "baseline": "1e787fbfb349f60b35a3d68e1f5c68041012b588",
+  "branch": "codex/minimum-compatibility",
+  "outcome": "Independent checks complete; Swift 6.0 compiler and iOS 16 runtime acceptance unverified",
+  "environment": {
+    "host": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "architecture": "arm64",
+    "developerDirectory": "/Applications/Xcode_27.1.app/Contents/Developer",
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "swiftc": "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+    "swiftcPath": "/Applications/Xcode_27.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+    "simulatorSDK": {
+      "path": "/Applications/Xcode_27.1.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk",
+      "version": "27.1"
+    },
+    "toolchains": [
+      {
+        "path": "/Applications/Xcode27.app",
+        "resolvedPath": "/Applications/Xcode27.app",
+        "compilerExists": true,
+        "version": "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+        "exitCode": 0
+      },
+      {
+        "path": "/Applications/Xcode_27.1.app",
+        "resolvedPath": "/Applications/Xcode_27.1.app",
+        "compilerExists": true,
+        "version": "swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+        "exitCode": 0
+      },
+      {
+        "path": "/Library/Developer/Toolchains/swift-5.10-DEVELOPMENT-SNAPSHOT-2024-05-30-a.xctoolchain",
+        "resolvedPath": "/Library/Developer/Toolchains/swift-5.10-DEVELOPMENT-SNAPSHOT-2024-05-30-a.xctoolchain",
+        "compilerExists": true,
+        "version": "Apple Swift version 5.10-dev (LLVM e98989b1092ff3a, Swift 959f0c7f8e9bb58)\nTarget: arm64-apple-macosx18.0",
+        "exitCode": 0
+      },
+      {
+        "path": "/Library/Developer/Toolchains/swift-5.10-DEVELOPMENT-SNAPSHOT-2024-05-31-a.xctoolchain",
+        "resolvedPath": "/Library/Developer/Toolchains/swift-5.10-DEVELOPMENT-SNAPSHOT-2024-05-31-a.xctoolchain",
+        "compilerExists": false
+      },
+      {
+        "path": "/Library/Developer/Toolchains/swift-latest.xctoolchain",
+        "resolvedPath": "/Library/Developer/Toolchains/swift-5.10-DEVELOPMENT-SNAPSHOT-2024-05-30-a.xctoolchain",
+        "compilerExists": true,
+        "version": "Apple Swift version 5.10-dev (LLVM e98989b1092ff3a, Swift 959f0c7f8e9bb58)\nTarget: arm64-apple-macosx18.0",
+        "exitCode": 0
+      }
+    ],
+    "availableRuntimes": [
+      {
+        "name": "iOS 18.0",
+        "version": "18.0",
+        "buildversion": "22A5346a",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-0",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 18.0",
+        "version": "18.0",
+        "buildversion": "22A3351",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-0",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 18.1",
+        "version": "18.1",
+        "buildversion": "22B81",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-1",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 18.2",
+        "version": "18.2",
+        "buildversion": "22C150",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-2",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 18.5",
+        "version": "18.5",
+        "buildversion": "22F77",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-5",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 27.0",
+        "version": "27.0",
+        "buildversion": "24A434",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 27.1",
+        "version": "27.1",
+        "buildversion": "24A94232",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-1",
+        "isAvailable": true
+      },
+      {
+        "name": "iOS 27.1",
+        "version": "27.1",
+        "buildversion": "24A94401",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-1",
+        "isAvailable": true
+      },
+      {
+        "name": "visionOS 2.0",
+        "version": "2.0",
+        "buildversion": "22N5314a",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.xrOS-2-0",
+        "isAvailable": true
+      },
+      {
+        "name": "visionOS 2.0",
+        "version": "2.0",
+        "buildversion": "22N318",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.xrOS-2-0",
+        "isAvailable": true
+      },
+      {
+        "name": "visionOS 2.1",
+        "version": "2.1",
+        "buildversion": "22N580",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.xrOS-2-1",
+        "isAvailable": true
+      },
+      {
+        "name": "visionOS 2.2",
+        "version": "2.2",
+        "buildversion": "22N840",
+        "identifier": "com.apple.CoreSimulator.SimRuntime.xrOS-2-2",
+        "isAvailable": true
+      }
+    ],
+    "physicalDevices": {
+      "connected": 0,
+      "offlineOSVersions": [
+        "26.6.2",
+        "27.0.1"
+      ],
+      "iOS16DeviceAvailable": false
+    },
+    "tools": {
+      "xcodegen": "2.46.0",
+      "swiftformat": "0.59.1 (availability check only; no new repository lint run)"
+    },
+    "globalDeveloperEnvironmentChanged": false,
+    "downloadsOrInstalls": 0,
+    "recordedAtUTC": "2026-10-21T09:21:23.843297+00:00"
+  },
+  "gates": {
+    "swift60Compiler": {
+      "result": "Unverified",
+      "reason": "No real Swift 6.0.x compiler found in installed Xcode or user/system toolchain directories",
+      "buildsExecutedWithSwift60": 0
+    },
+    "iOS16Runtime": {
+      "result": "Unverified",
+      "reason": "No iOS 16 runtime registered and no available iOS 16 physical device",
+      "hostTestsExecuted": 0,
+      "uiTestsExecuted": 0,
+      "screenshotsCaptured": 0
+    }
+  },
+  "currentRun": {
+    "hostTestsExecuted": 0,
+    "uiTestsExecuted": 0,
+    "simulatorBoots": 0,
+    "deviceLaunches": 0,
+    "productSourceChanges": false,
+    "testSourceChanges": false,
+    "toolScriptChanges": false,
+    "compatibilityFailuresReproduced": 0
+  },
+  "consumer": {
+    "result": "Build succeeded",
+    "configuration": "Debug",
+    "runtimeExecution": "Not run",
+    "sdk": "iPhoneSimulator27.1.sdk",
+    "deploymentTarget": "16.0",
+    "languageMode": "6",
+    "actualCompilerVersion": "6.4",
+    "strictConcurrency": "complete",
+    "thirdPartyDependencies": 0,
+    "usesTestableImport": false,
+    "buildExitCode": 0,
+    "compilerProof": [
+      {
+        "module": "LYGlyphText",
+        "target": "arm64-apple-ios16.0-simulator",
+        "swiftLanguageMode": "6",
+        "compiler": "/Applications/Xcode_27.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+        "matchingInvocations": 3
+      },
+      {
+        "module": "LYGlyphText",
+        "target": "x86_64-apple-ios16.0-simulator",
+        "swiftLanguageMode": "6",
+        "compiler": "/Applications/Xcode_27.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+        "matchingInvocations": 3
+      },
+      {
+        "module": "R1PublicConsumer",
+        "target": "arm64-apple-ios16.0-simulator",
+        "swiftLanguageMode": "6",
+        "compiler": "/Applications/Xcode_27.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+        "matchingInvocations": 3
+      },
+      {
+        "module": "R1PublicConsumer",
+        "target": "x86_64-apple-ios16.0-simulator",
+        "swiftLanguageMode": "6",
+        "compiler": "/Applications/Xcode_27.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+        "matchingInvocations": 3
+      }
+    ],
+    "warningLines": [
+      "2026-10-21 17:22:58.547 appintentsmetadataprocessor[19804:1106693] warning: Metadata extraction skipped, no AppIntents.framework dependency found"
+    ],
+    "fixture": {
+      "Consumer.swift": {
+        "source": "import LYGlyphText\nimport SwiftUI\nimport UIKit\n\n/// 仅使用组件公开接口的独立接入样例；本轮只构建，不作为运行验收。\n@MainActor\nfinal class ConsumerSample {\n    let document: LYGlyphTextDocument\n    let attributedDocument: LYGlyphTextDocument\n    let provider: LYGlyphTextAttachmentViewProvider\n    private(set) var lastEvent: LYGlyphTextActionEvent?\n\n    init() throws {\n        let image = UIGraphicsImageRenderer(size: CGSize(width: 20, height: 20)).image { context in\n            UIColor.systemBlue.setFill()\n            context.fill(CGRect(x: 0, y: 0, width: 20, height: 20))\n        }\n        let attachment = LYGlyphTextAttachment(\n            id: \"image\", image: image, size: CGSize(width: 20, height: 20),\n            alignment: .center, alternativeText: \"图片\"\n        )\n        let view = LYGlyphTextViewAttachment(\n            id: \"button\", viewID: \"native-button\", size: CGSize(width: 72, height: 28),\n            alignment: .bottom, alternativeText: \"按钮\", isInteractive: true\n        )\n        document = try LYGlyphTextDocument(segments: [\n            .text(NSAttributedString(string: \"公开接口 👨‍👩‍👧‍👦 العربية\"), actionID: \"text\"),\n            .image(attachment),\n            .view(view)\n        ])\n        attributedDocument = try LYGlyphTextDocument(\n            attributedText: NSAttributedString(string: \"Legacy\"),\n            actions: [LYGlyphTextAction(actionID: \"legacy\", range: NSRange(location: 0, length: 6))]\n        )\n        provider = LYGlyphTextAttachmentViewProvider(\n            makeView: { description in\n                guard description.viewID == \"native-button\" else { return nil }\n                let button = UIButton(type: .system)\n                button.setTitle(\"原生按钮\", for: .normal)\n                return button\n            },\n            onUnmount: { _, view in view.accessibilityIdentifier = nil }\n        )\n    }\n\n    func record(_ event: LYGlyphTextActionEvent) {\n        lastEvent = event\n    }\n}\n\n@MainActor\nfinal class ConsumerUIKitController: UIViewController {\n    private let sample: ConsumerSample\n\n    init(sample: ConsumerSample) {\n        self.sample = sample\n        super.init(nibName: nil, bundle: nil)\n    }\n\n    @available(*, unavailable)\n    required init?(coder: NSCoder) { fatalError(\"请使用 init(sample:)\") }\n\n    override func viewDidLoad() {\n        super.viewDidLoad()\n        view.backgroundColor = .systemBackground\n        let label = LYGlyphTextLabel(frame: .zero)\n        label.document = sample.document\n        label.viewProvider = sample.provider\n        label.configuration.numberOfLines = 3\n        label.preferredMaxLayoutWidth = 280\n        label.onAction = { [weak sample] event in sample?.record(event) }\n        label.reloadAttachments()\n        let attributedLabel = LYGlyphTextLabel(frame: .zero)\n        attributedLabel.document = sample.attributedDocument\n        let stack = UIStackView(arrangedSubviews: [label, attributedLabel])\n        stack.axis = .vertical\n        stack.translatesAutoresizingMaskIntoConstraints = false\n        view.addSubview(stack)\n        NSLayoutConstraint.activate([\n            stack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),\n            stack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),\n            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20)\n        ])\n    }\n}\n\n@MainActor\nstruct ConsumerSwiftUIView: View {\n    let sample: ConsumerSample\n\n    var body: some View {\n        LYGlyphTextView(\n            document: sample.document, configuration: .init(), viewProvider: sample.provider,\n            displayHeight: nil, onAction: { sample.record($0) }\n        )\n        .frame(width: 280)\n    }\n}\n\n@main\n@MainActor\nfinal class ConsumerAppDelegate: UIResponder, UIApplicationDelegate {\n    var window: UIWindow?\n\n    func application(\n        _ application: UIApplication,\n        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil\n    ) -> Bool {\n        do {\n            let sample = try ConsumerSample()\n            let tabs = UITabBarController()\n            tabs.viewControllers = [\n                ConsumerUIKitController(sample: sample),\n                UIHostingController(rootView: ConsumerSwiftUIView(sample: sample))\n            ]\n            let window = UIWindow(frame: UIScreen.main.bounds)\n            window.rootViewController = tabs\n            window.makeKeyAndVisible()\n            self.window = window\n            return true\n        } catch {\n            return false\n        }\n    }\n}\n",
+        "sha256": "819f007a0c8113de128f6931a76eab56c55b5a64767ece8b942c29efa0125d6d"
+      },
+      "project.yml": {
+        "source": "name: R1PublicConsumer\noptions:\n  minimumXcodeGenVersion: 2.46.0\n  deploymentTarget:\n    iOS: '16.0'\nsettings:\n  base:\n    SWIFT_VERSION: '6.0'\n    SWIFT_STRICT_CONCURRENCY: complete\n    IPHONEOS_DEPLOYMENT_TARGET: '16.0'\n    GENERATE_INFOPLIST_FILE: YES\n    CODE_SIGNING_ALLOWED: NO\npackages:\n  LYGlyphText:\n    path: ../../../..\ntargets:\n  R1PublicConsumer:\n    type: application\n    platform: iOS\n    sources: [Consumer.swift]\n    settings:\n      base:\n        PRODUCT_BUNDLE_IDENTIFIER: dev.lyglyphtext.r1consumer\n        TARGETED_DEVICE_FAMILY: '1,2'\n        INFOPLIST_KEY_UILaunchScreen_Generation: YES\n    dependencies:\n      - package: LYGlyphText\nschemes:\n  R1PublicConsumer:\n    build:\n      targets:\n        R1PublicConsumer: all\n",
+        "sha256": "d8dc8bc93384f4fcf3db856f966cac08fb7392d2ec8a3995659d2fb183d101c1"
+      }
+    },
+    "evidenceDirectory": ".build/verification/r1-20261021-minimum-compatibility/",
+    "buildLog": "consumer-build.log",
+    "resultBundle": "ConsumerBuild.xcresult",
+    "executableSHA256": "0b5b6957f84c6a65b06f4c7836b7fe534ee0138dbc86022efe6f9e795e84fb78"
+  },
+  "baselineRetention": {
+    "swiftFileCount": 86,
+    "beforeEqualsAfterEqualsP1": true,
+    "swiftSHA256": {
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/ActionDemoDiagnostics.swift": "6ecd3a3e68193910131289db73a125ca9999c9c94ff97110e82b89c2d90a8496",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/ActionDemoState.swift": "963db4b52722fc7ca8359f555c3d49c518aec8b5ae3a0b5a0b4c7c417f9ad142",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/ActionSelectionDemoController.swift": "b425afc97e64670e95b46c43a03e2605b889043c0900a63402b82085d663242e",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/DemoAppDelegate.swift": "98624fb49f7f4e9177320a0c5b1f58ffb8bb9374bb7760caaef71beb3cd4c9d5",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/DemoAttachmentState.swift": "f832f45b71f7d4cbe6bb063923d496c5b5eabd64bd1b8c7c6d316c9ed3481091",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/DemoSamples.swift": "cc27ee5169d1d45cfacb466b45562134ffea4363be800a2c5c8cc631cdad8b20",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/DemoSceneDelegate.swift": "93cef943e001382a8cbd7006feb40a96906785c292451fc94eb1fcd94602c71e",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/EnvironmentSamples.swift": "46a2fcefc8810e2d40c3c4a7b4992789c52a3cd24ffeefa34542ff38a9267f9d",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/HostMatrixCollectionController.swift": "36eaa0cf94b7ef1c7367c2d66586294c0fc0f8a1607b295a02193925462ff879",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/HostMatrixSamples.swift": "45dc48b932f9cdce3dec9406dec557c992e6a6ef159355925ad6d2da7fc6f2fb",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/HostMatrixTableController.swift": "e7b1c19f99e86437919fe672574fd9e1d91f9c39e1d72c758f42e8873f23f4ee",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/PerformanceListController.swift": "16cc9697154b41f71df4b655a17920037545e351aacba45f52266d44cfee50b2",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/PerformanceSamples.swift": "bfc681196cabb573ae47008bd5e1727e56df026c89033d81781805941feaf70c",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/ReuseDemoController.swift": "da52a09c0937d556ad81bf77a446d22e307e32ac2e6093ec4f6b002a69a1bc57",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/StyleDemoSamples.swift": "a4187500d3d76c90acc1cc1d964832efefbf6f147360e05e6690756810fb6f26",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/SwiftUIActionDemoView.swift": "f1f614011a7b85ff1b64a8e424dbeee73fb1efda70175a85cf2c2f7d2de22a3f",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/SwiftUIDemoView.swift": "620fc2c34edcadaf1a193ec9e0f77d0c2b9c3cf065ddfbc7e30a6c491657a6a0",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/SwiftUIEnvironmentView.swift": "aaa56b62fbcc32273c3e6cbaa7a3185fe5a7c283f5a95eea16c7bf78dfa5379e",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/SwiftUIHostMatrixView.swift": "431a60f59623acd122ab1e4ecf900063bad5e64efbb0349afccb1d2084c94277",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/SwiftUIStyleDemoView.swift": "7a370bb6c70fe177bc73eee00955ba3fb7020ad1a9c4e64d5fffc67ce810f3fe",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/UIKitActionDemoController.swift": "dbf2dd5c40f74d319fb294ada537747c4f19eccbfe452e2744b99eb0a801ab27",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/UIKitDemoController.swift": "567f422a73e91aa6397e7ed3129223fac8ed0f01119f969b066a921a11febcb3",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/UIKitEnvironmentController.swift": "ffa04bf52e851fb2340e0a70675eabd8821b9301149569c5c08aeaf1e344b9cd",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/UIKitHostMatrixController.swift": "5983ca7eff21187d582b7e451e70e348ca89bd2b654cf2015cc8ce564aa411fd",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemo/UIKitStyleDemoController.swift": "932a2140c38f11573c13795667ee5173169f3a7fedea1bf868ab158ee65a0646",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/ActionDemoHostTests.swift": "93c5cf5820cc99fbd06564885ac065a133e5311b13587c97c88cbf54270d03c8",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/DemoHostTests.swift": "5344ad15e7686b9df8779c8ef3b5c0c451b26ddce4396e4cc27603c356cedddd",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/EnvironmentDemoHostTests.swift": "5dfe7ac81159904a02786f4e160886fbed72d3f6ebd5958004bbdc416376aa74",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/HostMatrixDemoHostTests.swift": "1e709f45fc1a466c5f907f5646f9707ded50d0fd1258cca1b9db5818dffb1821",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/PerformanceBehaviorTests.swift": "aa3040f53c20988412cba8c2f396ceff22ef36a499c835efd02c44b7690fd712",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/PerformanceMeasurementTests.swift": "af2a7a983300eb5a288fd074c1506a423c3eb526fc7b9700ea9298dddb6263d0",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoTests/StyleDemoHostTests.swift": "ac82f76f48569478d3d159109201fbf0f59898ecb58cde2b6bf906314b28e00b",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoUITests/ActionDemoUITests.swift": "ba26aec0b3be6b8b2266292d6e9dabcfc321f6bb8efc703e8b1bca234195d3fa",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoUITests/DemoUITests.swift": "b1c67fde25c532477c51293449d8f4f1d0dd52303a1781539d5a3e8050433116",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoUITests/EnvironmentUITests.swift": "290f1dd74d13d56473da03db5bda219e151022a497744636fb78470b6b0d3fb7",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoUITests/HostMatrixUITests.swift": "9db49e57ee7ae0b825e674e2f40ccd08a535eb70ac4f932013d2eca0e561b52a",
+      "Examples/LYGlyphTextDemo/LYGlyphTextDemoUITests/PerformanceUITests.swift": "5567385fe2514258bb44a5b00f29696d2e086dc47470bdc8fbd8c54983a7ae8a",
+      "Package.swift": "eacab181523534fdefb2e1d2e14e6a0e47039f9a5cad565bc7e2d9ee8dde853e",
+      "Sources/LYGlyphText/Document/LYGlyphTextAction.swift": "a41e4dbc8527433e28e4773f3f746f5aa1bc5e68e13f4fea8337bbf8637db4d1",
+      "Sources/LYGlyphText/Document/LYGlyphTextActionEvent.swift": "fa3350226e578b905a327e80b1dd34ebf186598d9f47e1334bd4d8f389e131b9",
+      "Sources/LYGlyphText/Document/LYGlyphTextAttachment.swift": "fa0de650d7948412aa2148db43af65be121afccb037fa97cf516fdbf2eac1c3c",
+      "Sources/LYGlyphText/Document/LYGlyphTextConfiguration.swift": "9819402e05b1d31f57df087d45b0365cf729e7c171b9d7b731182181f2afffd4",
+      "Sources/LYGlyphText/Document/LYGlyphTextDocument.swift": "878816101d5fe18b0f6bb3c09a055ccacb52f72b88b754582ce34a7b5b1b7ad4",
+      "Sources/LYGlyphText/Document/LYGlyphTextPressedStyle.swift": "c4f499e80ce56f33baa28a8e9bd1ca06867556add13888815b7af47c741b6e28",
+      "Sources/LYGlyphText/Document/LYGlyphTextSegment.swift": "7f4ae25d3421a9b8b18049bde377651a2cffaf9fe62da3ade6bd9c06489ba172",
+      "Sources/LYGlyphText/Document/LYGlyphTextViewAttachment.swift": "59e923a32d6d9c6021624b225965436134f5b6e6d2ec73c995718207a77841bd",
+      "Sources/LYGlyphText/Document/ParagraphStyle.swift": "fa5f3a2d66f99566a6c8d29d459e0a6b3e03d56788570680e4d73e98e9ae392b",
+      "Sources/LYGlyphText/Layout/AttachmentMetrics.swift": "74d168e839b213ab6ba453e9a30c2641af3ad7c1b1e55fa9be683dd1ad6c7b36",
+      "Sources/LYGlyphText/Layout/LYGlyphTextLayout.swift": "d783783af8455719bf77bf0117e101913baf3df9393d1bdb5be137eabea49c2e",
+      "Sources/LYGlyphText/Layout/PressedTextDrawing.swift": "eb9bc86c2b7a35b79a54980a13fcdb9e787f49060f34bc81e34b1fd5ca07f615",
+      "Sources/LYGlyphText/Layout/ResolvedParagraphStyle.swift": "00cb3b20e0c6631433859d53bdcb81669a7dcfa147c54bc2e02b31498a06ea1c",
+      "Sources/LYGlyphText/Layout/TailTruncation.swift": "e5b64ef809f367394c47827fd0d56c4b7cf46cc19d08a38901c2516d46450dae",
+      "Sources/LYGlyphText/Layout/TextDecorations.swift": "3ef611261dc0dcff4c808758bca3bb636751fdc3b252a3d0fabc53ce1d927c09",
+      "Sources/LYGlyphText/Layout/VisibleTextFragments.swift": "5953470229fb3c7039551346de335cb09fe7179806b6a560f7da8fd80cebd254",
+      "Sources/LYGlyphText/SwiftUI/LYGlyphTextView.swift": "0590e1e4f67ae5e870203a0a1dfa3e12699791dc304a67c2063243a628403163",
+      "Sources/LYGlyphText/UIKit/ActionGeometry.swift": "78a6e463e2a32961d6850b7e9558765d96df9976c3a1468e748bf11b36f38aa1",
+      "Sources/LYGlyphText/UIKit/ActionGestureRecognizer.swift": "89d0e9c0c4646deeafbe7eb341aa47b6137e04846c663a91b4dc2fa9ea62ef85",
+      "Sources/LYGlyphText/UIKit/DisplayGeometry.swift": "06deb30ea2f6a815e7c6c94cc6b9647c51258869cf066afa631cf16ebe951799",
+      "Sources/LYGlyphText/UIKit/LYGlyphTextAttachmentViewProvider.swift": "50a285afe5b056768a57aa4dcb4a2eab602ab8eb836f2e3a07b5d2957a696194",
+      "Sources/LYGlyphText/UIKit/LYGlyphTextLabel.swift": "42e915e92a15dc4c4e5169a9a64e914f7b81a8d9b8d39e596db4e00879da4ad5",
+      "Sources/LYGlyphText/UIKit/LayoutMeasurementDiagnostics.swift": "c9af11b15b198d9469125a2301f0b6bf2c9ce5a712eb1a40956a5e631731df59",
+      "Sources/LYGlyphText/UIKit/TextAccessibility.swift": "8e877c3836cd18b6317178dbe3c429f8268f25427cc2ab565d46716df1cd7332",
+      "Tests/LYGlyphTextTests/AccessibilityTests.swift": "141d8ea062a448fb62eb7f418f5d92d81f4512c3592100f9fb007ab051f2a282",
+      "Tests/LYGlyphTextTests/ActionGeometryTests.swift": "d4f74f86971ec89e30ffba153384e63d02ac1cc823c4f6998819aa7f20c13064",
+      "Tests/LYGlyphTextTests/ActionInteractionTests.swift": "5eef9ec61f2179ed121c5b789f36716337a63c9d10bba92c2d460a14bd3fc98a",
+      "Tests/LYGlyphTextTests/ActionTests.swift": "7d0f0c7dd3c8098b5de8b637660924c74cb9cf3a5680a4c502b35ca6d02cc5e0",
+      "Tests/LYGlyphTextTests/AttachmentDrawingTests.swift": "00e4b105e41c6cbb3d9d3e4b8386aaa3224aae5c15a3b55eb80124b560161c1c",
+      "Tests/LYGlyphTextTests/AttachmentMigrationBaseline.swift": "c71311bfcbcf5507c7890cc89e83810a59d229d9cd390a9ebb69ead027c95bc9",
+      "Tests/LYGlyphTextTests/AttachmentMigrationTests.swift": "c85dd5f176f989726e98f04342b77335fc10656825184d9d0d78e96bff3d8500",
+      "Tests/LYGlyphTextTests/AttachmentTests.swift": "327a56b038671fa2a3411b404d85948f1516b87020d6c2183f63f1b9ba70baf8",
+      "Tests/LYGlyphTextTests/AutoLayoutTests.swift": "cc8dc90056a1b105918b516a309e530d84257402ab1fb0dfa06e86de8fb4f6ca",
+      "Tests/LYGlyphTextTests/DecorationDrawingTests.swift": "2e2f3a022a55608de1fe2f7c4b93ced660ca95f7dd84a9ec6be66c3143fa0671",
+      "Tests/LYGlyphTextTests/DocumentTests.swift": "757f48039f39ce2d57dbd01200a2218f3a9bc942e53e526912122b24361ba9cf",
+      "Tests/LYGlyphTextTests/EnvironmentTests.swift": "a0b45875de42a1f02f57e6b2df71659c7bddde7fc91fd1d9027a2e7adc20e3e5",
+      "Tests/LYGlyphTextTests/HostLayoutTests.swift": "026b1674d3d3cf58301de9cf995277d14d3dc817a85609d0fdc2f93a3af757cc",
+      "Tests/LYGlyphTextTests/HostListTests.swift": "3a566291b1edc405c02da76a88d844185990a290139a96a710b305feae0cbf2f",
+      "Tests/LYGlyphTextTests/LayoutTests.swift": "276849c61bedbcbedf4e2e191db469dd86b199512e1e6660b7d44ae187b669bb",
+      "Tests/LYGlyphTextTests/PressedDrawingTests.swift": "3fd639605c8839a68651885840e98871b9310c5d47dd87f96fcb005edeea74c5",
+      "Tests/LYGlyphTextTests/PressedMigrationBaseline.swift": "fe1f3184164b3ab1892f845aba6bf9c4d5ee78b6f2554041b4ad674019e699f0",
+      "Tests/LYGlyphTextTests/SegmentTests.swift": "4b8a31382a6b9ff148ad56d84a21e3eb8c4e9148474f2db59b98bf854592094c",
+      "Tests/LYGlyphTextTests/StyleTests.swift": "2a2e748369fcc16b1dd02afc1a6903bfce9e9a152fa50cbe83dd99a4b78155fd",
+      "Tests/LYGlyphTextTests/SwiftUIHostTests.swift": "f5c0dda1d299199d63bee2c92abf698733d2c29806a55e8b9347db8944800a1e",
+      "Tests/LYGlyphTextTests/TextGeometryTests.swift": "5ef9668bc81f6ed3229b632803f6bd4becc6c7e5c93accd7a4bc0886e430d550",
+      "Tests/LYGlyphTextTests/TruncationTests.swift": "97394e9d184af84fc71903c4c4be78c8f7a5649b6d3cac7dd0eb5d3161219852",
+      "Tests/LYGlyphTextTests/VerticalAlignmentTests.swift": "dcb9692b073be45543540a9d50e4bce77d8eb4ab9e3035db23681ff1ee2ea5f9",
+      "Tests/LYGlyphTextTests/ViewAttachmentTests.swift": "7dae72a0f02baf0781c2c15ca849d086cd14e1d7b57c1967000bb04965182499"
+    },
+    "baselineMethodsRetained": 368,
+    "hostMethods": 344,
+    "uiMethods": 24,
+    "allBaselineMethodsComparedAgainstGit": true,
+    "reusedP1Result": {
+      "executedThisRun": false,
+      "totalTests": 368,
+      "passed": 368,
+      "hostTests": 344,
+      "uiTests": 24,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [],
+      "consoleAppearanceWarnings": 61,
+      "environment": {
+        "mode": "test",
+        "xcodegen": "Version: 2.46.0",
+        "xcode": "Xcode 27.1\nBuild version 27A9275",
+        "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+        "simulator": {
+          "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+          "name": "LYGlyphText Images Handoff",
+          "udid": "5260ADE6-ADC2-44AA-9EEB-CDEC90196D08"
+        }
+      },
+      "data": "docs/verification/data/performance-regression-2026-10-21.json",
+      "buildEvidence": ".build/verification/20261021T064244Z-59342-build/",
+      "testEvidence": ".build/verification/20261021T064418Z-59586-test/Tests.xcresult"
+    },
+    "historicalScreenshotsRehashedThisRun": [
+      {
+        "file": "docs/verification/images/performance-actions-native-button.png",
+        "sha256": "6a26f8700ad1b1eb9ac94cd4bcdeaa874065c18e74a22df9143f240e9643f75c",
+        "capturedThisRun": false
+      },
+      {
+        "file": "docs/verification/images/performance-reused-scrolled.png",
+        "sha256": "8772e1d3bf18ddd6fe10c4c222049c7385ea53cd2f3517e5c292f59211fc57c5",
+        "capturedThisRun": false
+      },
+      {
+        "file": "docs/verification/images/performance-return-state.png",
+        "sha256": "11b893dccb510eb45f53fbcc232d4b8deb02669dbaf5240e92d4666e17efcd22",
+        "capturedThisRun": false
+      },
+      {
+        "file": "docs/verification/images/performance-stopped-cleared.png",
+        "sha256": "6e8c4eb4742e0d3113247aee5a0201eb073b5f758f2af0af48d46483d33c6102",
+        "capturedThisRun": false
+      }
+    ]
+  },
+  "commands": [
+    {
+      "name": "xcode",
+      "argv": [
+        "xcodebuild",
+        "-version"
+      ],
+      "exitCode": 0,
+      "log": "xcode.log"
+    },
+    {
+      "name": "swiftc-path",
+      "argv": [
+        "xcrun",
+        "--find",
+        "swiftc"
+      ],
+      "exitCode": 0,
+      "log": "swiftc-path.log"
+    },
+    {
+      "name": "swiftc",
+      "argv": [
+        "xcrun",
+        "swiftc",
+        "--version"
+      ],
+      "exitCode": 0,
+      "log": "swiftc.log"
+    },
+    {
+      "name": "sdk-path",
+      "argv": [
+        "xcrun",
+        "--sdk",
+        "iphonesimulator",
+        "--show-sdk-path"
+      ],
+      "exitCode": 0,
+      "log": "sdk-path.log"
+    },
+    {
+      "name": "sdk-version",
+      "argv": [
+        "xcrun",
+        "--sdk",
+        "iphonesimulator",
+        "--show-sdk-version"
+      ],
+      "exitCode": 0,
+      "log": "sdk-version.log"
+    },
+    {
+      "name": "runtimes",
+      "argv": [
+        "xcrun",
+        "simctl",
+        "list",
+        "runtimes",
+        "-j"
+      ],
+      "exitCode": 0,
+      "log": "runtimes.log"
+    },
+    {
+      "name": "devices",
+      "argv": [
+        "xcrun",
+        "simctl",
+        "list",
+        "devices",
+        "-j"
+      ],
+      "exitCode": 0,
+      "log": "devices.log"
+    },
+    {
+      "name": "device-connections",
+      "argv": [
+        "xcrun",
+        "devicectl",
+        "list",
+        "devices"
+      ],
+      "exitCode": 0,
+      "log": "device-connections.log"
+    },
+    {
+      "name": "device-os-inventory",
+      "argv": [
+        "xcrun",
+        "xctrace",
+        "list",
+        "devices"
+      ],
+      "exitCode": 0,
+      "log": "device-os-inventory.log"
+    },
+    {
+      "name": "xcodegen",
+      "argv": [
+        "xcodegen",
+        "--version"
+      ],
+      "exitCode": 0,
+      "log": "xcodegen.log"
+    },
+    {
+      "name": "swiftformat",
+      "argv": [
+        ".build/tools/swiftformat/0.59.1/build/release/swiftformat",
+        "--version"
+      ],
+      "exitCode": 0,
+      "log": "swiftformat.log"
+    },
+    {
+      "name": "consumer-generate",
+      "argv": [
+        "xcodegen",
+        "generate",
+        "--spec",
+        "./.build/verification/r1-20261021-minimum-compatibility/consumer/project.yml"
+      ],
+      "environment": {
+        "DEVELOPER_DIR": "/Applications/Xcode_27.1.app/Contents/Developer"
+      },
+      "exitCode": 0,
+      "log": "consumer-generate.log"
+    },
+    {
+      "name": "consumer-build",
+      "argv": [
+        "xcodebuild",
+        "-project",
+        "./.build/verification/r1-20261021-minimum-compatibility/consumer/R1PublicConsumer.xcodeproj",
+        "-scheme",
+        "R1PublicConsumer",
+        "-configuration",
+        "Debug",
+        "-destination",
+        "generic/platform=iOS Simulator",
+        "-derivedDataPath",
+        "./.build/verification/r1-20261021-minimum-compatibility/ConsumerDerivedData",
+        "-resultBundlePath",
+        "./.build/verification/r1-20261021-minimum-compatibility/ConsumerBuild.xcresult",
+        "build",
+        "SWIFT_VERSION=6",
+        "SWIFT_STRICT_CONCURRENCY=complete",
+        "IPHONEOS_DEPLOYMENT_TARGET=16.0",
+        "CODE_SIGNING_ALLOWED=NO"
+      ],
+      "environment": {
+        "DEVELOPER_DIR": "/Applications/Xcode_27.1.app/Contents/Developer"
+      },
+      "exitCode": 0,
+      "log": "consumer-build.log"
+    }
+  ],
+  "rawEvidenceDirectory": ".build/verification/r1-20261021-minimum-compatibility/",
+  "requiredEnvironment": [
+    "Real Swift 6.0.x compiler with matching iOS SDK and complete Xcode build tools; e.g. a suitable Xcode 16.0 installation on a supported host, confirmed by swiftc --version",
+    "Supported macOS/Xcode/CoreSimulator combination with an actual iOS 16 runtime, or an available signed iOS 16 physical-device test setup; prefer the oldest supported version and report exact minor/build",
+    "Use process-local developer/toolchain selection and separate build caches; installation or download requires a separately described request, with no global xcode-select changes"
+  ],
+  "remainingUnverified": [
+    "Swift 6.0.x compiler build acceptance",
+    "Actual iOS 16 hosted and UI execution",
+    "Physical device behavior",
+    "Manual VoiceOver",
+    "Allocations/Leaks dedicated analysis",
+    "Arbitrary native descendant AX frame partial clipping"
+  ],
+  "verification": {
+    "docsInitial": {
+      "exitCode": 0,
+      "log": ".build/verification/r1-20261021-minimum-compatibility/docs-initial.log"
+    },
+    "evidenceAudit": {
+      "exitCode": 0,
+      "log": ".build/verification/r1-20261021-minimum-compatibility/audit.log",
+      "swiftFiles": 86,
+      "hostMethodsRetained": 344,
+      "uiMethodsRetained": 24,
+      "historicalScreenshotsRehashed": 4
+    },
+    "specReview": {
+      "result": "Approved",
+      "requiredChanges": 0,
+      "scope": "Independent R1 evidence only; minimum compiler and runtime acceptance remain unverified"
+    },
+    "qualityReview": {
+      "result": "Approved",
+      "requiredChanges": 0,
+      "performedAfterSpecReview": true,
+      "scope": "Independent R1 evidence only; minimum compiler and runtime acceptance remain unverified"
+    }
+  }
+}

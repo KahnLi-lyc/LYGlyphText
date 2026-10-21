@@ -205,6 +205,21 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | H1 宿主矩阵 | 已交付 `32ac04a` | I1 | StackView、UITableView／UICollectionView、.frame／HStack／VStack／List／LazyVStack、宽度切换与复用收敛 | [H1 契约](2026-10-21-host-matrix.md)与[执行记录](../../verification/2026-10-21-host-matrix.md)：319／319（298 宿主＋21 UI）、12 张截图；最终规格／质量批准，已集成推送并核远端 SHA |
 | A1 显示环境／无障碍 | 已交付 `b615c3e`，人工 VO 待验 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | [A1 计划](2026-10-21-environment-accessibility.md)与[专项记录](../../verification/2026-10-21-environment-accessibility.md)：359／359、8 张截图；人工 VoiceOver 未验证 |
 | P1 回归／性能／发布准备 | 独立准备验收完成，发布补证待验 | A1；缺失环境不阻塞独立准备 | 九组Release／缓存与释放／真实列表、CPU与RSS、来源及API／安装审查已归档 | [P1 计划](2026-10-21-performance-readiness.md)；Swift6.0／iOS16／真机／人工VoiceOver与专用分配／泄漏分析未验证；PR／Tag／Release未授权 |
+| R1 最低工具链／最低系统兼容性 | 独立检查完成；两项兼容性待补证 | P1 `1e787fb`；缺失环境不阻塞独立工作 | 真实 Swift 6.0 编译 Package／Demo／直接消费者，真实 iOS 16 宿主与 UI 运行；保留 368 项基线 | [R1 专项记录](../../verification/2026-10-21-minimum-compatibility.md)：Swift6.0／iOS16均缺环境；当前Swift6.4独立消费者构建通过，86 Swift及368方法保留，历史回归未重跑 |
+
+### R1 实施契约（2026-10-21）
+
+本轮真实 Swift 6.0 与 iOS 16 均缺环境，相关两项不勾选；已完成当前 Swift6.4 的独立公开 API 消费者构建，Package／Demo 和368／368引用同源P1证据，不标为本轮重跑。
+
+- [x] 在 `codex/minimum-compatibility` 开始前核对 Git、worktree、集成锁、编译／测试进程和设备占用；不接管其他任务设备，不自动 pull／rebase。
+- [x] 记录实际 swiftc 路径／完整版本、Xcode build、SDK、runtime build、设备 UDID、命令与退出码。真实 Swift 6.0.x 编译和 iOS 16 运行是两个独立门槛，不能由语言模式／部署声明／新 SDK 或静态审查替代。
+- [ ] 在可用环境分别构建 Package、Demo 和仅使用公开 API 的独立 UIKit／SwiftUI 消费者；消费者不使用 `@testable`，覆盖文档、两类附件、provider 和动作回调，保存源码与哈希。不同工具链隔离构建缓存，不修改全局开发环境。
+- [ ] 在独占的真实 iOS 16 runtime／设备运行适用宿主与 UI 矩阵；记录实际版本、数量、失败／跳过／预期失败、警告和截图，不由后续 16.x 推导更早版本全部通过。
+- [x] 环境缺失时记录“未验证”、探测证据及具体所需环境，继续独立可做的检查；不循环重试，不自动下载或安装工具链／runtime。
+- [x] 先保存真实失败日志与源码哈希，再写行为复现并最小修复；本轮未复现兼容性失败，未改源码。保持 iOS 16+、Swift 6、纯 Swift、Core Text 唯一内核及零第三方运行依赖，不削减测试或并发检查。
+- [x] 保留全部 368 项（344 宿主＋24 UI）。源码变化后执行定向测试和 docs／固定 SwiftFormat 0.59.1／build／完整宿主与 UI 回归；同一已验证源码和环境不重复整套检查。仅文档／证据变化时核对 86 个 Swift 哈希及全部测试方法保留，引用而不冒充重跑 P1 结果。
+- [x] 更新本计划、发布补证清单及专项记录，先规格审查、后独立质量审查均批准，无必须修改项；缺失环境只能标为独立工作完成、兼容性待补证。
+- 交付约定：检查通过后中文 Conventional Commit，独占集成锁内重新核验候选、安全快进 main、普通 push 一次并核远端 SHA，安全清理本任务临时分支；实际结果以 `.build/verification/r1-20261021-minimum-compatibility/delivery.json` 和 Git 历史为准。不创建 PR／Tag／Release；真机、人工 VoiceOver、Allocations／Leaks 继续分别留证。
 
 I1 已交付并保留 **294／294 Passed（276 宿主＋18 UI，0 failed／0 skipped／0 expected failures，`runtimeWarnings` 为空）** 的正式证据及 M1b 的 215 个基线测试方法。H1 功能验收完成，保留 **319／319 Passed（298 宿主＋21 UI，0 failed／skipped／expected failures，`runtimeWarnings` 为空）** 及 12 张截图；阶段 6 自动环境／AX 已验收，人工 VoiceOver 仍未勾选。H1 已完成最终审查和交付，[A1 计划](2026-10-21-environment-accessibility.md)以 `b615c3e` 完成交付，P1正式368／368与Release／滚动数据已验收，剩余按发布补证清单处理；A1 正式 359／359 已通过；自动环境与无障碍验收、人工 VoiceOver 分开记录。
 
@@ -405,9 +420,9 @@ Apple 原始资料：
 | 阶段 0 工程工具 | 见 [工程验收记录](../../verification/2026-10-20-engineering.md)，不代表组件测试 |
 | 本机工具链探测 | Xcode 27.1（27A9275），Apple Swift 6.4；仅说明工具链存在 |
 | Package、组件源码、Demo | 基础显示、行数限制／尾部省略、UIImage／UIView 附件及文字动作已实现；宿主矩阵已完成红绿、完整回归和截图验收；自动无障碍与显示环境已完成；人工 VoiceOver 和发布准备仍独立验收 |
-| Swift 6 组件编译与测试 | Xcode 27.1／Swift 6.4 的 v6 模式构建和 P1 368／368 宿主／UI 测试，见 P1 验证记录；Swift 6.0 编译器仍未验证 |
+| Swift 6 组件编译与测试 | P1 368／368和Package／Demo构建；R1同源86 Swift／368方法保留并新增Swift6.4公开API消费者构建，未重跑全套；Swift6.0实际编译器缺环境仍未验证 |
 | Auto Layout／布局优先级／SwiftUI 基础尺寸 | H1 覆盖 StackView／列表／五种 SwiftUI 容器；完整回归及 12 张截图通过，首／末文字基线未承诺 |
-| iOS 16／当前系统运行 | iOS 16 未验证；本轮 iOS 27.0 专用 Simulator 运行，见基础显示验证记录 |
+| iOS 16／当前系统运行 | R1未发现iOS16 runtime／可用设备，仍未验证，0宿主＋0UI；P1 iOS27.0完整回归为历史同源证据，不能代替最低系统运行 |
 | 自动 AX／人工 VoiceOver、性能、真实设备行为 | 自动可见语义／激活与真实 UI 通过；P1 Release／CPU／RSS已归档；人工VoiceOver、真机和专用分配／泄漏分析仍未验证 |
 
 行数限制专项与截图见 [行数限制验证记录](../../verification/2026-10-20-line-limits.md)，图片专项见 [图片附件验证记录](../../verification/2026-10-20-image-attachments.md)，UIView 工厂与生命周期见 [专项验证记录](../../verification/2026-10-20-view-attachments.md)，装饰与动作几何、绘制及真实手势见 [I1 验证记录](../../verification/2026-10-20-interaction.md)。完整 VoiceOver 行内语义未验收。
