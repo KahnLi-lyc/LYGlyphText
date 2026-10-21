@@ -28,6 +28,16 @@
 | 固定负载Release与滚动／Instruments | 九组Release、缓存／weak释放与真实列表UI已验收；CPU采样及RSS已归档，分配／泄漏专用结果仍未验证，见[性能记录](verification/2026-10-21-performance-readiness.md) |
 | 发布动作 | 未授权，不创建Tag／Release |
 
+## 2.x Label 增量能力的独立门槛
+
+2.x 能力（截断 token、特效、网络图片、预排版、选择拷贝、解析器）按 [2.x 路线图](superpowers/plans/2026-10-21-label-roadmap.md) 逐阶段交付，自动检查结果见各阶段验证记录。以下与 1.0 门槛同样独立、仍未验证：
+
+- 真实网络：内置加载器只用本地 URLProtocol 桩与模拟加载器测试，未连接真实服务器；没有磁盘缓存。
+- Kingfisher 桥接：README 示例按其公开 API 编写，本仓不依赖 Kingfisher，未编译。
+- 选择拷贝：真实长按与系统菜单拷贝已有 UI 测试；人工 VoiceOver 下的选区与 token 朗读、iPad 指针与键盘、外接键盘全选未验证；没有放大镜。
+- 预排版：Release 计时为模拟器数据，不代表真机；后台线程上的 UIFont／动态颜色解析在 iOS 16 上未实际运行。
+- iOS 16 运行与 Swift 6.0 编译器同样覆盖 2.x 新代码，均未验证。
+
 ## 已知范围限制
 
 只读展示，未提供编辑器、选择复制、HTML／Markdown、竖排、绕排、后台排版／异步渲染、任意SwiftUI行内视图或网络图片加载。标准NSTextAttachment明确拒绝；附件尺寸只来自声明，不按factory intrinsicContentSize反算。StackView首／末文字基线与UILabel等价尚未承诺。

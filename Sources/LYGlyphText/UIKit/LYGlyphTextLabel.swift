@@ -369,6 +369,7 @@ public final class LYGlyphTextLabel: UIView {
         defer { isTearingDown = false }
         cancelActionInteraction()
         onAction = nil
+        onSelectionChange = nil
         document = nil
         viewProvider = nil
         imageLoader = nil

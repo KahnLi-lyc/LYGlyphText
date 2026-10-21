@@ -2,7 +2,7 @@
 
 面向 UIKit 与 SwiftUI 的只读富文本 Swift Package，使用纯 Swift 和 Core Text，零第三方运行依赖。最低部署目标 iOS 16，Swift tools 6.0／Swift 6 language mode。
 
-当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制／尾部省略、行内图片及 UIView 附件，以及文字点击／长按／按下反馈**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
+当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制与可点击截断 token、行内图片、网络图片及 UIView 附件、文字点击／长按／按下反馈、长按选择拷贝、后台预排版与文本解析**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
 
 ## 已实现
 
@@ -315,6 +315,8 @@ label.isSelectable = true
 label.onSelectionChange = { range in print(range as Any) }
 ```
 
+SwiftUI 使用 `LYGlyphTextView(document:configuration:viewProvider:imageLoader:displayHeight:isSelectable:onAction:onSelectionChange:)`，新增参数均有默认值；截断 token 通过 `configuration` 传入。
+
 长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。没有放大镜；不支持编辑。
 
 ## 文本解析
@@ -352,7 +354,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 
 ## 后续能力
 
-尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md)规划了 Label 的可自定义截断、阴影／描边、网络图片（加载协议＋系统框架默认加载器，可桥接 Kingfisher 等宿主库）、预排版／异步显示、选择复制与文本解析；这些能力均未实现，编辑器不在计划内。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
+[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md) G1—G7 已交付可点击截断 token、按下圆角、阴影／描边、`.link` 转动作、网络图片、后台预排版、选择拷贝、文本解析与对应 SwiftUI 参数，结果见各阶段验证记录。尚未实现：编辑器、头部／中间截断、整段点击回调、异步绘制、放大镜、HTML／Markdown 解析。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
 
 当前已处理动态 body、语义颜色与 RTL 的环境继承及自动 AX 语义；人工 VoiceOver 和最低系统验收继续独立留证。宿主适配范围和列表复用证据见 H1 记录，不推广为未测试容器或运行环境的保证。
 

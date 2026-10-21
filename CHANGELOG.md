@@ -13,4 +13,15 @@
 
 截至P1，Xcode27.1／Swift6.4 的Swift6模式、iOS27 Simulator正式368／368（344宿主＋24UI）通过；九组Release数据、缓存／释放和真实列表证据已归档。此记录不是发布资格证明；Swift6.0编译器、iOS16实际运行、真机、人工VoiceOver及性能结果独立留证。完整门槛与限制见[发布准备](docs/RELEASE_READINESS.md)。
 
-后续 2.x 只增加 Label 能力，范围与顺序见[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md)；在对应阶段交付前不属于本记录的已实现内容。
+## 2.x Label 能力（未发布）
+
+按 [2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md) 增量交付，只增加 API；无版本 Tag 或 Release。
+
+- 可自定义截断 token（文字、字体、颜色，可点击，事件 `isTruncationToken`）；按下样式 `cornerRadius`；`.shadow`、`.strokeWidth`／`.strokeColor`；`linkPressedStyle` 把 `.link` 转为动作。
+- 远程图片附件 `LYGlyphTextRemoteImageAttachment`、加载协议 `LYGlyphTextImageLoading` 与系统框架默认加载器 `LYGlyphTextURLSessionImageLoader`（内存缓存、请求合并、降采样、GIF）；可桥接 Kingfisher 等宿主图片库。
+- 后台预排版 `LYGlyphTextPreparedLayout` 与 `LYGlyphTextLabel.apply(_:)`；内部 Layout 层改为非隔离，Swift 6 下无并发逃生标记。
+- 长按选择与系统菜单拷贝：`isSelectable`、`selectedRange`、`selectedText`、`onSelectionChange`。
+- 文本解析器 `LYGlyphTextParser`：链接、@提及、#话题#、自定义正则与表情短码图片。
+- SwiftUI `LYGlyphTextView` 新增 `imageLoader`、`isSelectable`、`onSelectionChange` 参数。
+
+源码兼容说明：`LYGlyphTextSegment` 新增 `.remoteImage` case，对穷举 switch 的宿主代码需要补充分支；其余均为新增可选参数或类型。未提供：编辑器、头部／中间截断、整段点击回调、异步绘制、放大镜。验证结果见各阶段记录。

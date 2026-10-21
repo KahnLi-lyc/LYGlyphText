@@ -60,7 +60,7 @@
 | G4 预排版与异步显示（预排版已完成，见[记录](../../verification/2026-10-21-g4-prepared-layout.md)；异步绘制未交付） | G2、G3 | 先 spike：不使用并发逃生标记能否在后台由不可变快照排版。可行则提供列表预排版与 `displaysAsynchronously`（修订号丢弃过期结果）；不可行记录原因，改为主线程预计算 | Release 前后对比 5000 UTF-16 首帧主线程耗时；取消与复用测试；无 `@unchecked Sendable`／`nonisolated(unsafe)` |
 | G5 选择与复制（已完成，见[记录](../../verification/2026-10-21-g5-selection.md)；基于 Core Text 几何与 UIEditMenuInteraction，未采用 UITextInput，无放大镜） | G4 | `isSelectable`；Core Text 选区几何（多行、bidi、附件、截断边界）；非编辑 `UITextInput` 接入 `UITextInteraction(for: .nonEditable)` 与 `UIEditMenuInteraction`；复制纯文本／富文本，附件输出替代文本；与动作手势的优先级 | 选区几何单测（中文、emoji、RTL、截断）；真实长按／拖柄／复制 UI 测试与剪贴板断言；列表滚动不误选 |
 | G6 文本解析器（已完成，见[记录](../../verification/2026-10-21-g6-parser.md)） | G2 | `LYGlyphTextParser` 协议：NSDataDetector URL、@、#、表情短码转图片附件，输出 segments 与 actions | UTF-16、组合字符和重叠范围单测 |
-| G7 SwiftUI、AX 与 2.0 准备 | G5、G6 | SwiftUI 新参数、选区 AX、README／CHANGELOG、全量回归与性能对比 | 完整宿主＋UI 回归；最低系统与最新系统分开留证 |
+| G7 SwiftUI、AX 与 2.0 准备（已完成，见[记录](../../verification/2026-10-21-g7-swiftui-release.md)；发布仍需补证与授权） | G5、G6 | SwiftUI 新参数、选区 AX、README／CHANGELOG、全量回归与性能对比 | 完整宿主＋UI 回归；最低系统与最新系统分开留证 |
 
 G2 与 G3 可在独立 worktree 并行，但不得同时修改同一文件；冲突时串行。每项新增公开 API 必须有中文 DocC、默认值、MainActor／取消语义，并扩展到 UIKit 与 SwiftUI 直接消费者。
 

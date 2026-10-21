@@ -21,6 +21,12 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 动作完成回调；每次更新都使用最新闭包。
     public var onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)?
 
+    /// 是否允许长按选择与拷贝，默认 false；行为与 `LYGlyphTextLabel.isSelectable` 相同。
+    public var isSelectable: Bool
+
+    /// 选区变化回调；每次更新都使用最新闭包。
+    public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
+
     /// 创建富文本展示。SwiftUI 的 layoutPriority 由宿主管理。
     public init(
         document: LYGlyphTextDocument?,
@@ -28,7 +34,9 @@ public struct LYGlyphTextView: UIViewRepresentable {
         viewProvider: LYGlyphTextAttachmentViewProvider? = nil,
         imageLoader: (any LYGlyphTextImageLoading)? = nil,
         displayHeight: CGFloat? = nil,
-        onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil
+        isSelectable: Bool = false,
+        onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil,
+        onSelectionChange: (@MainActor (NSRange?) -> Void)? = nil
     ) {
         self.document = document
         self.configuration = configuration
@@ -36,6 +44,8 @@ public struct LYGlyphTextView: UIViewRepresentable {
         self.imageLoader = imageLoader
         self.displayHeight = displayHeight
         self.onAction = onAction
+        self.isSelectable = isSelectable
+        self.onSelectionChange = onSelectionChange
     }
 
     /// 创建底层 UIKit 视图。
@@ -80,5 +90,7 @@ public struct LYGlyphTextView: UIViewRepresentable {
         label.document = document
         label.viewProvider = viewProvider
         label.imageLoader = imageLoader
+        label.onSelectionChange = onSelectionChange
+        label.isSelectable = isSelectable
     }
 }
