@@ -291,6 +291,23 @@ final class KingfisherImageLoader: LYGlyphTextImageLoading {
 
 取消后组件会忽略迟到的回调。内置加载器没有磁盘缓存；动图最多保留 300 帧。本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
 
+## 列表预排版
+
+长文本首次测量的主要成本在 Core Text 排版。数据到达时可在后台预排版，拿到行高后再交给 cell：
+
+```swift
+let prepared = await LYGlyphTextPreparedLayout.prepare(
+    document: document, configuration: configuration, width: tableWidth,
+    traitCollection: tableView.traitCollection
+)
+rowHeights[id] = prepared.size.height   // 文字部分高度，含内边距
+
+// cellForRow 中
+cell.label.apply(prepared)               // 环境一致时主线程不再排版
+```
+
+结果只对相同文档对象、配置、宽度和显示环境有效；字号类别、明暗或显示比例变化后 Label 自动按普通路径重新排版。预排版不创建附件视图、不调用工厂或图片加载器。
+
 ## 运行 Demo 和检查
 
 需要 Xcode（含 iOS Simulator）、**XcodeGen 2.46.0**、Python 3；SwiftFormat 固定 **0.59.1**，安装或指定已有工具的方法见 [参与开发](CONTRIBUTING.md)。

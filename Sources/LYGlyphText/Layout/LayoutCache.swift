@@ -38,6 +38,12 @@ struct LayoutCache {
         return layout
     }
 
+    /// 采用预排版结果作为当前解析输入与唯一缓存项；不增加构建计数。
+    mutating func adopt(width: CGFloat?, layout: LYGlyphTextLayout, resolvedText: ResolvedText) {
+        self.resolvedText = resolvedText
+        entries = [(width, layout)]
+    }
+
     /// 丢弃解析输入与全部布局，不重置构建计数。
     mutating func invalidate() {
         resolvedText = nil

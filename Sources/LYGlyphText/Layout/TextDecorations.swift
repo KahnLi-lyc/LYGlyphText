@@ -2,7 +2,6 @@ import CoreText
 import UIKit
 
 /// 已解析颜色的源样式，不写入 Core Text 属性，避免背景／删除线切断 shaping。
-@MainActor
 struct TextDecorations {
     enum PreparationEvent: Hashable {
         case drawCachedContent

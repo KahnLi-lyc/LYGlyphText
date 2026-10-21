@@ -33,7 +33,6 @@ enum LayoutNumber {
 }
 
 /// 值指针仅在 CTParagraphStyleCreate 的同步调用内有效；截断和普通排版共用同一映射。
-@MainActor
 enum ResolvedParagraphStyle {
     static func create(
         _ style: ParagraphStyle, wrapping: LYGlyphTextConfiguration.Wrapping,

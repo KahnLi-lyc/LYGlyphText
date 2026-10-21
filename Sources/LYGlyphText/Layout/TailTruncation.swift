@@ -2,7 +2,6 @@ import CoreText
 import UIKit
 
 /// 固定原段落方向，在组合字符边界收缩逻辑尾部，再由 Core Text 重新 shaping。
-@MainActor
 struct TailTruncation {
     /// 生成 token 的标记属性，使 token 独立成 run，便于命中、着色并与原文区分。
     static let tokenKey = NSAttributedString.Key("LYGlyphText.truncationToken")
@@ -151,7 +150,6 @@ struct TailTruncation {
 }
 
 /// 用完整原段落解析 natural 方向，避免强方向字符被截断后改变省略号位置。
-@MainActor
 private struct ResolvedParagraph {
     let style: CTParagraphStyle
     let flush: CGFloat

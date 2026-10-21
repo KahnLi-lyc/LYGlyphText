@@ -1,9 +1,9 @@
 import UIKit
 
 /// 显示配置。使用单词换行和顶部对齐，支持行数限制及尾部省略。
-public struct LYGlyphTextConfiguration: Equatable {
+public struct LYGlyphTextConfiguration: Equatable, Sendable {
     /// 文本换行策略，覆盖输入段落的 lineBreakMode。
-    public enum Wrapping: Equatable {
+    public enum Wrapping: Equatable, Sendable {
         /// 优先在单词边界换行。
         case word
         /// 按字符换行。
@@ -11,7 +11,7 @@ public struct LYGlyphTextConfiguration: Equatable {
     }
 
     /// 文本在可用展示高度中的对齐方式。
-    public enum VerticalAlignment: Equatable {
+    public enum VerticalAlignment: Equatable, Sendable {
         /// 顶部对齐。
         case top
         /// 居中对齐。

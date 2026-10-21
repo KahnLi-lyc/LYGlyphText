@@ -5,7 +5,7 @@
 - Swift tools 6.0、Swift 6 language mode、iOS 16+；首版仅 iOS／UIKit，SwiftUI 复用 UIKit 内核，零第三方运行依赖。
 - `LYGlyphTextDocument` 是经过校验的快照，不持有 UIView 或业务回调；`LYGlyphTextLayout` 为 internal，保存统一布局和原文映射。
 - `LYGlyphTextLabel` 负责展示、Auto Layout、附件与交互；`LYGlyphTextView` 负责 SwiftUI 更新、测量和拆卸，不另建排版或状态源。
-- Core Text 是唯一排版引擎，不使用 TextKit 2 反算点击位置；首版 MainActor 同步排版，每 Label 最多保留两个布局结果。
+- Core Text 是唯一排版引擎，不使用 TextKit 2 反算点击位置；Label 在 MainActor 同步排版，每 Label 最多保留两个布局结果。内部 Layout 层非隔离，只能经 `LYGlyphTextPreparedLayout` 在后台构造并一次性转移回 MainActor；输入只读取 Sendable 的 `let` 值。
 
 ## 命名、访问级别与文件
 

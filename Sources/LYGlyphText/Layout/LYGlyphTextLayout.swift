@@ -2,7 +2,6 @@ import CoreText
 import UIKit
 
 /// 所有基线均为 UIKit 本地坐标；原文范围使用 UTF-16，不包含补齐末尾空行的字符。
-@MainActor
 struct LYGlyphTextLayout {
     struct Line {
         let text: CTLine
@@ -197,7 +196,6 @@ struct LYGlyphTextLayout {
 }
 
 /// 解析动态字体和颜色后的本次显示输入。仅在 MainActor 使用。
-@MainActor
 final class ResolvedText {
     let framesetter: CTFramesetter
     let sourceLength: Int
@@ -382,7 +380,8 @@ final class ResolvedText {
         }
         if isEmpty || (finiteWidth != nil && available <= 0) {
             return LYGlyphTextLayout(
-                size: CGSize(width: min(outerWidth, pixelCeil(horizontal)), height: pixelCeil(vertical)), lines: []
+                size: CGSize(width: min(outerWidth, pixelCeil(horizontal)), height: pixelCeil(vertical)), lines: [],
+                traits: traits
             )
         }
         // 理想宽度向上对齐像素，避免浮点误差换行；纯换行仍需正宽路径保留行高。
@@ -406,7 +405,9 @@ final class ResolvedText {
                         truncationToken: truncationToken
                     )
             }
-            return LYGlyphTextLayout(size: CGSize(width: pixelCeil(horizontal), height: pixelCeil(vertical)), lines: [])
+            return LYGlyphTextLayout(
+                size: CGSize(width: pixelCeil(horizontal), height: pixelCeil(vertical)), lines: [], traits: traits
+            )
         }
         guard frame.isValid else { return fallback() }
         let lines = zip(frame.lines, frame.origins).compactMap { line, origin -> LYGlyphTextLayout.Line? in
@@ -597,7 +598,6 @@ final class ResolvedText {
 }
 
 /// Core Text 的帧度量与行原点，保持系统行高规则；坐标尚未转换为 UIKit。
-@MainActor
 struct TextFrame {
     let contentHeight: CGFloat
     let height: CGFloat

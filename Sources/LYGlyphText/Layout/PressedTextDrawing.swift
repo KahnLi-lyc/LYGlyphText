@@ -2,7 +2,6 @@ import CoreText
 import UIKit
 
 /// 最终排版的一次性绘制计划；按动作 ordinal 保存稀疏引用，不持有文档或建立新 CTLine。
-@MainActor
 struct PressedTextDrawing {
     struct Run {
         let run: CTRun
@@ -439,7 +438,6 @@ struct PressedTextDrawing {
 
 /// 仅分区动作覆盖的局部区域。每区先完成真实源 stack，再对区域 coverage 合成一次。
 /// 共享树查询保留全文外的原批次，避免 A 个不相交动作各自复制或分区 N 个全文成员。
-@MainActor
 struct SourcePaintPlan {
     struct Member {
         let color: CGColor?
@@ -621,7 +619,6 @@ struct SourcePaintPlan {
 }
 
 /// 所有动作共享源空间与颜色摘要树；查询只构造动作覆盖的局部区域，不复制全文装饰。
-@MainActor
 final class DrawingPathTree {
     let path: CGPath
     let bounds: CGRect
@@ -692,7 +689,6 @@ final class DrawingPathTree {
 }
 
 /// 先对矩形求真正的 union，再建立互斥的 inside/complement，重叠部分不会变成 even-odd 洞。
-@MainActor
 struct DrawingClip {
     let inside: CGPath
     let outside: CGPath

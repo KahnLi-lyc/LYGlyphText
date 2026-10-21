@@ -2,7 +2,6 @@ import CoreText
 import UIKit
 
 /// 原文查询的视觉片段；坐标属于 Layout，不包含展示层裁切和偏移。
-@MainActor
 struct VisibleTextFragment {
     struct RunPiece {
         let sourceRange: NSRange
@@ -47,7 +46,6 @@ extension LYGlyphTextLayout {
 }
 
 /// 在最终行、token 映射与附件 placement 确定后构造一次；后续查询只过滤已有 pieces。
-@MainActor
 struct SourceGeometry {
     struct Cell {
         let range: NSRange
@@ -161,7 +159,6 @@ private enum GeometryRange {
     }
 }
 
-@MainActor
 private struct VisibleRunGeometry {
     let run: CTRun
     let line: LYGlyphTextLayout.Line
@@ -355,7 +352,6 @@ private struct VisibleRunGeometry {
         }
     }
 
-    @MainActor
     private struct FragmentAccumulator {
         var sourceRange: NSRange
         var rect: CGRect

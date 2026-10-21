@@ -4,7 +4,7 @@ import UIKit
 ///
 /// token 与可保留的末行前缀共同排版，宽度不足时先回退原文组合字符，再整体省略 token。
 /// 换行符按空格显示；空字符串表示截断但不追加内容。
-public struct LYGlyphTextTruncationToken: Equatable {
+public struct LYGlyphTextTruncationToken: Equatable, Sendable {
     /// token 文字，默认 `…`。
     public var text: String
     /// token 字体；nil 时继承最后一条可见行起点的字体（包括动态 body）。

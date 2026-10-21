@@ -1,7 +1,7 @@
 import UIKit
 
 /// 附件相对于占位字符字体 ascender／descender 区域的垂直对齐。
-public enum LYGlyphTextAttachmentAlignment: Equatable {
+public enum LYGlyphTextAttachmentAlignment: Equatable, Sendable {
     /// 附件顶部对齐字体区域顶部。
     case top
     /// 附件中心对齐字体区域中心。

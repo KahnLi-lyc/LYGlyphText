@@ -45,6 +45,18 @@ public final class LYGlyphTextLabel: UIView {
         }
     }
 
+    /// 设置预排版结果的文档与配置，并在之后首次测量相同宽度且显示环境一致时直接采用其布局，不在主线程重新排版。
+    ///
+    /// 列表 cell 常在加入 window 之前调用；环境在加入后才确定，因此采用推迟到测量时判断。
+    /// 文档或配置随后被替换时放弃该结果；环境始终不一致（例如字号类别已变化）时按普通路径排版。
+    /// 回调、附件工厂与图片加载器保持不变。
+    public func apply(_ prepared: LYGlyphTextPreparedLayout) {
+        guard !isTearingDown else { return }
+        configuration = prepared.configuration
+        document = prepared.document
+        pendingPreparedLayout = prepared
+    }
+
     /// 显式丢弃附件实例与本次可见期间的失败记录，下次展示布局重新调用工厂。
     public func reloadAttachments() {
         guard !isTearingDown else { return }
@@ -95,6 +107,7 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     private var layoutCache = LayoutCache()
+    private var pendingPreparedLayout: LYGlyphTextPreparedLayout?
     private var intrinsicInvalidationCount = 0
     private var previousLayoutWidth: CGFloat?
     struct MountedAttachment {
@@ -327,7 +340,17 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     func measuredLayout(width: CGFloat?) -> LYGlyphTextLayout {
-        layoutCache.layout(
+        if let prepared = pendingPreparedLayout {
+            if prepared.document !== document || prepared.configuration != configuration {
+                pendingPreparedLayout = nil
+            } else if prepared.width == width.flatMap(normalizedWidth),
+                      LayoutEnvironment(traitCollection) == prepared.environment
+            {
+                pendingPreparedLayout = nil
+                layoutCache.adopt(width: prepared.width, layout: prepared.layout, resolvedText: prepared.resolvedText)
+            }
+        }
+        return layoutCache.layout(
             width: width.flatMap(normalizedWidth), document: document, configuration: configuration,
             traits: traitCollection
         )
