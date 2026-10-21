@@ -28,6 +28,8 @@
 
 编辑器、输入法、文本选择复制、竖排、任意排版路径与绕排、HTML／Markdown 解析、文本阴影／描边等扩展特效、动画排版、后台排版与异步渲染、内嵌任意 SwiftUI View、网络图片下载器。网络图片由宿主加载到附件视图；改变排版尺寸必须显式更新文档。
 
+2026-10-21 起，选择复制、网络图片、可自定义截断、阴影／描边、预排版／异步显示与文本解析作为 Label 的 2.x 增量能力，按 [2.x Label 路线图](2026-10-21-label-roadmap.md) G0—G7 执行；1.0 只读范围与发布门槛不变。编辑器、输入法与 TextKit 2 仍不在计划内。
+
 ### 1.3 发布完成定义
 
 阶段 0 的规范／工具与阶段 1—7 的组件实现分别验收；后七阶段均须有对应代码、自动检查和验收记录。最低系统真实运行结果与最新可用系统结果分别记录。所有未实际运行的环境标记为“未验证”，不能由新 SDK 编译、静态阅读或模拟回调推导通过。
@@ -206,6 +208,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | A1 显示环境／无障碍 | 已交付 `b615c3e`，人工 VO 待验 | H1 | Dynamic Type、明暗、RTL、可见元素语义与 VoiceOver；缺失环境独立标记 | [A1 计划](2026-10-21-environment-accessibility.md)与[专项记录](../../verification/2026-10-21-environment-accessibility.md)：359／359、8 张截图；人工 VoiceOver 未验证 |
 | P1 回归／性能／发布准备 | 独立准备验收完成，发布补证待验 | A1；缺失环境不阻塞独立准备 | 九组Release／缓存与释放／真实列表、CPU与RSS、来源及API／安装审查已归档 | [P1 计划](2026-10-21-performance-readiness.md)；Swift6.0／iOS16／真机／人工VoiceOver与专用分配／泄漏分析未验证；PR／Tag／Release未授权 |
 | R1 最低工具链／最低系统兼容性 | 独立检查完成；两项兼容性待补证 | P1 `1e787fb`；缺失环境不阻塞独立工作 | 真实 Swift 6.0 编译 Package／Demo／直接消费者，真实 iOS 16 宿主与 UI 运行；保留 368 项基线 | [R1 专项记录](../../verification/2026-10-21-minimum-compatibility.md)：Swift6.0／iOS16均缺环境；当前Swift6.4独立消费者构建通过，86 Swift及368方法保留，历史回归未重跑 |
+| G0 2.x Label 路线图 | 本轮交付 | R1 `43dc0c9` | 对照 YYLabel／BSLabel 的能力与代码审查、范围决定、G1—G7 队列与验收；只改文档 | [2.x 路线图](2026-10-21-label-roadmap.md)；docs 检查 |
+| G1—G7 Label 2.x 能力 | 待执行 | G0；阶段依赖见路线图 | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
 
 ### R1 实施契约（2026-10-21）
 
@@ -397,7 +401,7 @@ git diff --check
 - 借鉴 YYLabel 的“容器 → 布局 → 绘制 → 主线程附件”分层和高亮属性思路，不逐行移植旧线程模型或历史系统补丁。
 - BSText 是 Swift 实现参考，不是 Swift 6 兼容性或最小系统行为的既有验证证据；SwiftyText 包含 Objective-C 渲染实现，且本次快照未发现明确开源许可证，不直接移植。
 - ActiveLabel／Atributika 主要参考文本识别与交互；AttributedString 的 UIView 附件能力依赖 UITextView，不能直接代替本设计。
-- TextKit 2 的官方附件支持可作为未来编辑／选择需求的重新评估路线；首版不同时维护第二套排版引擎。
+- TextKit 2 的官方附件支持可作为未来编辑／选择需求的重新评估路线；首版不同时维护第二套排版引擎。2026-10-21 用户确认 2.x 只做 Label、不做编辑器，选择复制基于 Core Text 几何实现，仍不引入 TextKit 2。
 
 Apple 原始资料：
 

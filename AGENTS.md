@@ -12,8 +12,8 @@
 ## 工程与代码边界
 
 - iOS 16+，Swift tools 6.0，Swift 6 语言模式；纯 Swift、零第三方运行依赖。Apple 系统框架可用。
-- Core Text 是唯一排版内核；Document 描述输入，内部 Layout 统一测量／绘制／截断／几何，Label 管理 UIKit，View 包装 SwiftUI。首版不使用 TextKit 2。
-- 公开顶层类型使用 `LYGlyphText` 前缀；内部类型使用职责名。最小公开接口，不引入 App 品牌、账号、业务路由、TCA、网络加载器或全局单例。
+- Core Text 是唯一排版内核；Document 描述输入，内部 Layout 统一测量／绘制／截断／几何，Label 管理 UIKit，View 包装 SwiftUI。不使用 TextKit 2；[2.x 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md)只扩展 Label，不含编辑器。
+- 公开顶层类型使用 `LYGlyphText` 前缀；内部类型使用职责名。最小公开接口，不引入 App 品牌、账号、业务路由、TCA 或全局单例。网络图片仅按 2.x 路线图提供公开加载协议与只用系统框架的默认加载器，不依赖第三方图片库。
 - 文档构造、UI、附件工厂、动作回调与清理遵守 MainActor 隔离。不可变不等于 Sendable；不使用并发逃生标记掩盖设计问题。
 - Auto Layout 使用系统接口；不引入 SnapKit。不能覆盖宿主设置的 Hugging／Compression Resistance，不能在测量中创建附件或修改自身约束。
 - 保留 Dynamic Type、Dark Mode、RTL、VoiceOver 和容器尺寸适配；不照搬业务 App 的固定字号策略。

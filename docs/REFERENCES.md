@@ -122,6 +122,13 @@ AttributedString 的 [README](https://github.com/lixiang1994/AttributedString/bl
 - 研究原理、独立实现；如未来复制或改写第三方代码，在相关文件及分发材料保留原版权与许可，并记录来源提交。
 - SwiftyText 当前未发现明确开源许可证，先限定为阅读研究；如确需移植，应取得许可或改为独立实现。
 - 资料归档阶段仅完成文档与参考快照；后续组件实现已在本仓独立的 Swift target 中建立。当前没有第三方源码移植登记，也没有第三方运行依赖；新增移植必须按上述规则记录来源与许可，不能以参考研究代替登记。
+- YYText-master 与 BSText-master 的 LICENSE 均为 MIT（版权分别为 ibireme、Bruce.Liu）。[2.x Label 路线图](superpowers/plans/2026-10-21-label-roadmap.md)只借鉴其截断 token、高亮、特效与异步显示的设计；其效果窗口、键盘私有层级、静态 CGColor 等做法明确不采用。
+
+### 移植登记
+
+| 本仓文件 | 来源项目／文件 | 来源提交或校验 | 许可 | 改写说明 |
+|---|---|---|---|---|
+| 无 | — | — | — | 截至 G0 没有复制或改写第三方源码 |
 
 ## 官方 API 资料
 

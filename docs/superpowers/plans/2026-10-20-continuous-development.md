@@ -19,7 +19,7 @@
 
 只有必须由用户决定的真实阻塞、改动冲突或反复验证失败才暂停相关任务，保留现场并说明需要的决定。不可用的 iOS 16、Swift 6.0 编译器、真机或人工 VoiceOver 环境标为“未验证”，继续独立工作；发布门槛不会因此视为通过。普通 push 失败保留提交和本地集成、记录原因，不强推／自动 pull／rebase；不依赖远端交付的任务继续。
 
-执行队列为 D0 → V1 → M1a → M1b → I1 → H1 → A1 → P1；状态、依赖、验收与证据由总计划唯一维护。D0—I1 已交付，[H1 宿主矩阵](2026-10-21-host-matrix.md)已完成 319／319 正式回归（298 宿主＋21 UI）与 12 张截图检查，见 [H1 记录](../../verification/2026-10-21-host-matrix.md)；最终规格／质量审查批准，`32ac04a` 已锁内合入 main、普通推送并核远端 SHA 一致。[A1 显示环境与无障碍](2026-10-21-environment-accessibility.md)正式完整 359／359 及 8 张截图已通过，已以 `b615c3e` 完成锁内集成、普通推送和远端 SHA 核对；[P1 固定负载与发布准备](2026-10-21-performance-readiness.md)已完成独立实现和368／368正式验收；剩余仅为发布环境／人工补证，见[发布门槛](../../RELEASE_READINESS.md)；人工 VoiceOver 保留未验证，不等待用户再次规划。本文件细化 V1，[M1 分段／动作／样式契约](2026-10-20-document-actions-styles.md)与[I1 契约](2026-10-20-text-interaction.md)保留各自历史设计和证据；[早期 UIView 提案](2026-10-20-uiview-attachments-next.md)仅作为设计背景。
+执行队列为 D0 → V1 → M1a → M1b → I1 → H1 → A1 → P1 → R1，之后按 [2.x Label 路线图](2026-10-21-label-roadmap.md) 执行 G0 → G7；状态、依赖、验收与证据由总计划唯一维护。D0—I1 已交付，[H1 宿主矩阵](2026-10-21-host-matrix.md)已完成 319／319 正式回归（298 宿主＋21 UI）与 12 张截图检查，见 [H1 记录](../../verification/2026-10-21-host-matrix.md)；最终规格／质量审查批准，`32ac04a` 已锁内合入 main、普通推送并核远端 SHA 一致。[A1 显示环境与无障碍](2026-10-21-environment-accessibility.md)正式完整 359／359 及 8 张截图已通过，已以 `b615c3e` 完成锁内集成、普通推送和远端 SHA 核对；[P1 固定负载与发布准备](2026-10-21-performance-readiness.md)已完成独立实现和368／368正式验收；剩余仅为发布环境／人工补证，见[发布门槛](../../RELEASE_READINESS.md)；人工 VoiceOver 保留未验证，不等待用户再次规划。本文件细化 V1，[M1 分段／动作／样式契约](2026-10-20-document-actions-styles.md)与[I1 契约](2026-10-20-text-interaction.md)保留各自历史设计和证据；[早期 UIView 提案](2026-10-20-uiview-attachments-next.md)仅作为设计背景。
 
 ## V1：接口契约
 

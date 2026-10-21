@@ -12,3 +12,5 @@
 - 固定负载、Release测量及发布准备按[P1计划](docs/superpowers/plans/2026-10-21-performance-readiness.md)执行，结果见[验证记录](docs/verification/2026-10-21-performance-readiness.md)。
 
 截至P1，Xcode27.1／Swift6.4 的Swift6模式、iOS27 Simulator正式368／368（344宿主＋24UI）通过；九组Release数据、缓存／释放和真实列表证据已归档。此记录不是发布资格证明；Swift6.0编译器、iOS16实际运行、真机、人工VoiceOver及性能结果独立留证。完整门槛与限制见[发布准备](docs/RELEASE_READINESS.md)。
+
+后续 2.x 只增加 Label 能力，范围与顺序见[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md)；在对应阶段交付前不属于本记录的已实现内容。

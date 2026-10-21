@@ -31,7 +31,7 @@
 - UIKit 相关对象、文档构造、附件工厂、动作回调与清理在 MainActor；含 UIKit 属性的不可变文档不因此获得 Sendable。
 - 不通过 @unchecked Sendable、nonisolated(unsafe)、关闭并发检查或普遍添加 @preconcurrency 换取编译通过。
 - 文档替换、滚动接管、视图移除和 SwiftUI dismantle 均有取消与幂等清理路径；取消不发送 tap。deinit 不访问 UI。
-- 组件不接管宿主代理、不做全局方法交换、不引入业务状态和网络服务；诊断不输出完整宿主文本或凭据。
+- 组件不接管宿主代理、不做全局方法交换、不引入业务状态和网络服务；网络图片只经可替换的加载协议请求，测量不发请求。诊断不输出完整宿主文本、URL 查询参数或凭据。
 
 ## Auto Layout、附件与环境
 
