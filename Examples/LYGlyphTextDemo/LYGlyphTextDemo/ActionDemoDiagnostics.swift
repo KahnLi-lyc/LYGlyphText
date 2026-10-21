@@ -78,16 +78,19 @@
     @MainActor
     struct ActionDiagnosticProbe: UIViewRepresentable {
         let document: LYGlyphTextDocument
+        var identifier = "actionPreview"
 
         func makeUIView(context _: Context) -> ActionDiagnosticOverlay {
             let view = ActionDiagnosticOverlay(frame: .zero)
             view.sourceDocument = document
+            view.accessibilityIdentifier = identifier
             return view
         }
 
         func updateUIView(_ uiView: ActionDiagnosticOverlay, context _: Context) {
             uiView.sourceDocument = document
             uiView.sourceLabel = nil
+            uiView.accessibilityIdentifier = identifier
             uiView.refreshAfterLayout()
         }
     }

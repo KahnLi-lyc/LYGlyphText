@@ -57,12 +57,16 @@ public final class LYGlyphTextLabel: UIView {
     /// 实际绘制始终使用 bounds.width。负值或非有限值视为自动模式。
     public var preferredMaxLayoutWidth: CGFloat = 0 {
         didSet {
-            if positiveWidth(oldValue) != positiveWidth(preferredMaxLayoutWidth) { invalidateIntrinsicContentSize() }
+            if positiveWidth(oldValue) != positiveWidth(preferredMaxLayoutWidth) {
+                requestIntrinsicSizeInvalidation()
+            }
         }
     }
 
     private var resolvedText: ResolvedText?
     private var cachedLayouts: [(width: CGFloat?, layout: LYGlyphTextLayout)] = []
+    private var layoutBuildCount = 0
+    private var intrinsicInvalidationCount = 0
     private var previousLayoutWidth: CGFloat?
     private struct MountedAttachment {
         let descriptor: LYGlyphTextViewAttachment
@@ -110,6 +114,19 @@ public final class LYGlyphTextLabel: UIView {
 
     var observedScrollViewCount: Int {
         observedScrollViews.count
+    }
+
+    var layoutMeasurementSnapshot: LayoutMeasurementSnapshot {
+        LayoutMeasurementSnapshot(
+            layoutBuildCount: layoutBuildCount,
+            intrinsicInvalidationCount: intrinsicInvalidationCount,
+            cachedLayoutCount: cachedLayouts.count
+        )
+    }
+
+    func resetLayoutMeasurementCounts() {
+        layoutBuildCount = 0
+        intrinsicInvalidationCount = 0
     }
 
     /// bounds 原点也参与附件裁切；几何变化不重建持续可见的视图。
@@ -190,7 +207,7 @@ public final class LYGlyphTextLabel: UIView {
         let width = positiveWidth(bounds.width)
         if width != previousLayoutWidth {
             previousLayoutWidth = width
-            if explicitWidth == nil { invalidateIntrinsicContentSize() }
+            if explicitWidth == nil { requestIntrinsicSizeInvalidation() }
             setNeedsDisplay()
         }
         reconcileAttachments()
@@ -247,9 +264,14 @@ public final class LYGlyphTextLabel: UIView {
         attachmentRevision &+= 1
         resolvedText = nil
         cachedLayouts.removeAll(keepingCapacity: true)
-        invalidateIntrinsicContentSize()
+        requestIntrinsicSizeInvalidation()
         setNeedsLayout()
         setNeedsDisplay()
+    }
+
+    private func requestIntrinsicSizeInvalidation() {
+        intrinsicInvalidationCount &+= 1
+        invalidateIntrinsicContentSize()
     }
 
     /// SwiftUI 拆卸是终止事务；业务清理回调的同步赋值不能恢复被拆卸的输入。
@@ -372,6 +394,7 @@ public final class LYGlyphTextLabel: UIView {
         )
         resolvedText = text
         let scale = traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
+        layoutBuildCount &+= 1
         let layout = text.layout(
             width: width, insets: configuration.insets, scale: scale, numberOfLines: max(0, configuration.numberOfLines)
         )

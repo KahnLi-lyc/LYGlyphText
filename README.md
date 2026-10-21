@@ -18,6 +18,7 @@
 - 标准 Content Hugging／Compression Resistance，内容更新不会重置宿主设置；外部限制高度时裁切。
 - `LYGlyphTextLabel.onAction` 和 SwiftUI `onAction` 返回 tap／longPress、动作 ID、完整原文 UTF-16 范围及最终可见矩形；取消不发送事件。
 - `LYGlyphTextView` 通过 UIViewRepresentable 复用 UIKit；直接使用 SwiftUI 宽度提议并在更新时使用最新动作回调。
+- UIKit 横／纵向 StackView、UITableView 自动行高、UICollectionView self-sizing，以及 SwiftUI `.frame`／HStack／VStack／List／LazyVStack 的宿主矩阵；完整宿主／UI 验收见 [H1 记录](docs/verification/2026-10-21-host-matrix.md)。
 - UIKit／SwiftUI 可操作示例、组件行为测试、宿主测试和 UI 测试。
 
 ## 本地接入
@@ -89,7 +90,7 @@ struct Example: View {
 
 显式换行（含末尾空行）计入行数；刚好容纳时不省略。生成的省略号继承最后可见行起点的字体和前景色。正宽度仅够省略号时只显示省略号，连省略号也放不下时保留该行高度但不绘制文字。外部高度裁切不触发额外省略号。
 
-SwiftUI nil／无限宽度使用理想尺寸，有限非负宽度决定底层 Label 的实际宽度，0 返回安全的零宽结果。默认忽略高度提议并按内容撑高。SwiftUI `layoutPriority` 由宿主管理，不映射为 UIKit 优先级。当前不保证与 UILabel 首／末文字基线对齐等价。
+SwiftUI nil／无限宽度使用理想尺寸，有限非负宽度决定底层 Label 的实际宽度，0 返回安全的零宽结果。默认忽略高度提议并按内容撑高。SwiftUI `layoutPriority` 由宿主管理，不映射为 UIKit 优先级。当前不保证与 UILabel 首／末文字基线对齐等价；StackView 的 `.firstBaseline`／`.lastBaseline` 不在已验收矩阵内。
 
 `configuration.verticalAlignment` 默认为 `.top`，可设 `.center`／`.bottom`。宿主外框比自然内容高时，文字、装饰及附件共用偏移；高度受压时偏移为 0，超出部分裁切。自然尺寸测量保持不变。
 
@@ -105,6 +106,10 @@ LYGlyphTextView(
 ```
 
 `displayHeight` 单位为 point；nil／非有限／负值回退自然高度，有限非负值（含 0）指定展示高度。它不改变文本或附件的排版尺寸。
+
+列表宿主应给出明确测量宽度和 cell `contentView` 的完整四边约束：UITableView 使用 `automaticDimension`，UICollectionView 使用 estimated size 并按 layout attributes 宽度进行 required 横向 fitting。宽度变化由宿主正常通知列表失效；组件不接管列表 delegate 或 layout。重绑先清旧回调、文档和 provider，再安装当前行输入。
+
+H1 宿主测试覆盖 0→320→600→240→320 宽度往返、稳定布局收敛和最多两份布局缓存。两端使用相同文档、配置、有效宽度及 display scale 时，自然高度差不超过一个物理像素。此结论来自宿主行为测试，不代表首／末基线等价或所有系统版本均已验收。
 
 ## 字符样式与段落
 
@@ -216,15 +221,15 @@ scripts/verify.sh test <可用的独立模拟器UDID>
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -v
 ```
 
-build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；动作示例覆盖 tap、长按、滚动取消、回调替换、截断与短高度裁切；首页另有可选择的 UITableView 动作夹具和附件复用示例。两端共用本地生成的方向箭头图片与文档，无网络依赖。工程生成物、构建日志和 xcresult 留在忽略目录内。
+build 会生成 `Examples/LYGlyphTextDemo/LYGlyphTextDemo.xcodeproj`，构建 Package 和 Simulator 应用。打开该工程，选择 shared scheme **LYGlyphTextDemo**，运行后进入 UIKit 或 SwiftUI，切换短文／多行／混合样式／显式换行、文字／图片混排／UIView、三种附件对齐、展示宽度及无限行／1 行／2 行／3 行。UIView 模式包含 UIImageView、原生按钮、自定义徽章和 nil 工厂占位，提供清空／重载；动作示例覆盖 tap、长按、滚动取消、回调替换、截断与短高度裁切；首页另有可选择的 UITableView 动作夹具和附件复用示例；UIKit／SwiftUI 宿主矩阵页提供 StackView／五种 SwiftUI 容器、Table／Collection、宽度往返、附件尺寸、按钮与回调切换。两端共用本地生成的方向箭头图片与文档，无网络依赖。工程生成物、构建日志和 xcresult 留在忽略目录内。
 
 test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测试视为失败。Package 单测源码也由 Demo 宿主执行，避免用 macOS `swift test` 代替 UIKit 验证。
 
 ## 后续能力
 
-尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。完整宿主矩阵与动作 VoiceOver 元素分别留待 H1／A1。
+尚未实现：编辑、选择复制、HTML／Markdown 解析及异步渲染不属于首版范围。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；动作 VoiceOver 元素留待 A1。
 
-当前已处理默认字体和语义颜色的 trait 更新；完整 Dynamic Type、RTL、VoiceOver、列表复用和最低系统验收继续按阶段推进。原生约束与 SwiftUI 基础尺寸适配已实现，不等于所有宿主组合均已验证。
+当前已处理默认字体和语义颜色的 trait 更新；完整 Dynamic Type、环境 RTL、VoiceOver 和最低系统验收继续按阶段推进。宿主适配范围和列表复用证据见 H1 记录，不推广为未测试容器或运行环境的保证。
 
 ## 文档与许可
 
@@ -232,6 +237,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 - [连续开发规则与执行契约](docs/superpowers/plans/2026-10-20-continuous-development.md)
 - [分段与动作描述验证记录](docs/verification/2026-10-20-m1a-document.md)
 - [文字交互验证记录](docs/verification/2026-10-20-interaction.md)
+- [宿主矩阵验证记录](docs/verification/2026-10-21-host-matrix.md)
 - [UIView 附件与生命周期验证记录](docs/verification/2026-10-20-view-attachments.md)
 - [行内图片附件验证记录](docs/verification/2026-10-20-image-attachments.md)
 - [行数限制与尾部省略验证记录](docs/verification/2026-10-20-line-limits.md)

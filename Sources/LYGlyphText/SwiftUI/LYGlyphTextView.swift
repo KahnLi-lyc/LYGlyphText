@@ -48,8 +48,18 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 有限宽度提议决定实际展示宽度，nil／无限宽度为理想尺寸；负宽度安全归零。
     /// 高度提议不限制自然测量；仅显式 displayHeight 决定额外或受压的展示高度。
     public func sizeThatFits(_ proposal: ProposedViewSize, uiView: LYGlyphTextLabel, context: Context) -> CGSize? {
-        var size = uiView.sizeThatFits(CGSize(width: proposal.width ?? .infinity, height: .infinity))
-        if let width = proposal.width, width.isFinite { size.width = max(0, width) }
+        Self.measuredSize(proposal: proposal, displayHeight: displayHeight, label: uiView)
+    }
+
+    static func measuredSize(
+        proposal: ProposedViewSize,
+        displayHeight: CGFloat?,
+        label: LYGlyphTextLabel
+    ) -> CGSize {
+        let proposedWidth = proposal.width
+        let measurementWidth = proposedWidth?.isFinite == true ? max(0, proposedWidth ?? 0) : .infinity
+        var size = label.sizeThatFits(CGSize(width: measurementWidth, height: .infinity))
+        if measurementWidth.isFinite { size.width = measurementWidth }
         if let displayHeight, displayHeight.isFinite, displayHeight >= 0 { size.height = displayHeight }
         return size
     }

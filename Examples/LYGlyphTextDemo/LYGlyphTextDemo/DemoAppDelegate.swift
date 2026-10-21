@@ -31,14 +31,14 @@ final class DemoHomeController: UITableViewController {
     }
 
     override func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        8
+        10
     }
 
     override func tableView(_: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = [
             "UIKit 示例", "SwiftUI 示例", "UIView 列表复用", "UIKit 样式与垂直对齐", "SwiftUI 样式与垂直对齐",
-            "UIKit 文字交互", "SwiftUI 文字交互", "文字交互与列表选择"
+            "UIKit 文字交互", "SwiftUI 文字交互", "文字交互与列表选择", "UIKit 宿主矩阵", "SwiftUI 宿主矩阵"
         ][indexPath.row]
         cell.detailTextLabel?.text = "切换文本、宽度，查看富文本自动撑高"
         cell
@@ -50,7 +50,9 @@ final class DemoHomeController: UITableViewController {
                 "openSwiftUIStyles",
                 "openUIKitActions",
                 "openSwiftUIActions",
-                "openActionList"
+                "openActionList",
+                "openUIKitHostMatrix",
+                "openSwiftUIHostMatrix"
             ][indexPath.row]
         cell.accessoryType = .disclosureIndicator
         return cell
@@ -75,6 +77,18 @@ final class DemoHomeController: UITableViewController {
             controller.title = "SwiftUI 文字交互"
         } else if indexPath.row == 7 {
             controller = ActionSelectionDemoController(documents: samples.actionListDocuments)
+        } else if indexPath.row == 8 {
+            do {
+                controller = try UIKitHostMatrixController(samples: HostMatrixSamples())
+            } catch {
+                fatalError("无法创建 UIKit 宿主矩阵：\(error)")
+            }
+        } else if indexPath.row == 9 {
+            do {
+                controller = try UIHostingController(rootView: SwiftUIHostMatrixView(samples: HostMatrixSamples()))
+            } catch {
+                fatalError("无法创建 SwiftUI 宿主矩阵：\(error)")
+            }
         } else {
             controller = UIHostingController(rootView: SwiftUIDemoView(samples: samples))
             controller.title = "SwiftUI"
