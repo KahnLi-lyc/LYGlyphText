@@ -70,7 +70,8 @@ final class SegmentTests: XCTestCase {
             switch segment {
             case let .text(_, actionID, pressedStyle),
                  let .image(_, _, actionID, pressedStyle),
-                 let .view(_, _, actionID, pressedStyle):
+                 let .view(_, _, actionID, pressedStyle),
+                 let .remoteImage(_, _, actionID, pressedStyle):
                 XCTAssertNil(actionID)
                 XCTAssertEqual(pressedStyle.foregroundColor, .systemRed)
                 XCTAssertNil(pressedStyle.backgroundColor)

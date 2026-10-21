@@ -236,6 +236,61 @@ func installButtonAttachment(on label: LYGlyphTextLabel) throws {
 
 SwiftUI 使用 `LYGlyphTextView(document: document, viewProvider: provider)`，将 provider 保存在稳定的宿主状态中，避免在 body 每次求值时创建新工厂对象。两个 Label 使用同一文档时，工厂必须分别返回独立视图。默认 isInteractive 为 false；true 允许附件自身控件／手势优先响应，父文字动作不重复发送。
 
+## 网络图片
+
+`LYGlyphTextRemoteImageAttachment` 以声明尺寸参与排版，附件可见并挂载后才通过 `imageLoader` 请求；离屏、复用、替换文档或移出 window 时取消。加载结果不改变排版，需要按真实宽高排版时用获得的尺寸重建文档。组件没有全局加载器实例，宿主创建并共享：
+
+```swift
+let loader = LYGlyphTextURLSessionImageLoader() // URLSession＋NSCache＋ImageIO，支持 GIF
+
+@MainActor
+func showAuthor(on label: LYGlyphTextLabel, avatar: URL) throws {
+    label.imageLoader = loader
+    label.document = try LYGlyphTextDocument(segments: [
+        .remoteImage(.init(
+            id: "avatar", url: avatar, size: CGSize(width: 20, height: 20),
+            alignment: .center, placeholder: UIImage(systemName: "person.circle"), alternativeText: "作者头像"
+        )),
+        .text(NSAttributedString(string: " 作者名"))
+    ])
+}
+```
+
+已经使用 Kingfisher 的项目可以把下面的桥接复制到自己的工程，复用 Kingfisher 的磁盘／内存缓存（组件本身不依赖 Kingfisher）：
+
+```swift
+import Kingfisher
+import LYGlyphText
+
+@MainActor
+final class KingfisherImageLoader: LYGlyphTextImageLoading {
+    private final class Task: LYGlyphTextImageLoadingTask {
+        let task: DownloadTask?
+        init(_ task: DownloadTask?) { self.task = task }
+        func cancel() { task?.cancel() }
+    }
+
+    func loadImage(
+        from url: URL, targetSize: CGSize, scale: CGFloat,
+        completion: @escaping @MainActor (Result<UIImage, any Error>) -> Void
+    ) -> any LYGlyphTextImageLoadingTask {
+        let options: KingfisherOptionsInfo = [
+            .processor(DownsamplingImageProcessor(size: targetSize)),
+            .scaleFactor(scale),
+            .callbackQueue(.mainCurrentOrAsync)
+        ]
+        let task = KingfisherManager.shared.retrieveImage(with: url, options: options) { result in
+            MainActor.assumeIsolated {
+                completion(result.map(\.image).mapError { $0 as any Error })
+            }
+        }
+        return Task(task)
+    }
+}
+```
+
+取消后组件会忽略迟到的回调。内置加载器没有磁盘缓存；动图最多保留 300 帧。本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
+
 ## 运行 Demo 和检查
 
 需要 Xcode（含 iOS Simulator）、**XcodeGen 2.46.0**、Python 3；SwiftFormat 固定 **0.59.1**，安装或指定已有工具的方法见 [参与开发](CONTRIBUTING.md)。

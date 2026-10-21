@@ -23,6 +23,12 @@ public enum LYGlyphTextSegment {
         LYGlyphTextViewAttachment, attributes: [NSAttributedString.Key: Any] = [:],
         actionID: String? = nil, pressedStyle: LYGlyphTextPressedStyle
     )
+    /// 追加一个 U+FFFC 远程图片占位符；仅保存描述，不发起请求。
+    /// 显式传入按下样式；省略样式时使用同名 MainActor 便利方法。
+    case remoteImage(
+        LYGlyphTextRemoteImageAttachment, attributes: [NSAttributedString.Key: Any] = [:],
+        actionID: String? = nil, pressedStyle: LYGlyphTextPressedStyle
+    )
 
     /// Swift 6 的枚举 case 默认值不继承全局 actor，故在 MainActor 方法内创建默认样式。
     /// 追加使用默认按下样式的富文本片段。
@@ -44,5 +50,13 @@ public enum LYGlyphTextSegment {
         actionID: String? = nil
     ) -> Self {
         .view(attachment, attributes: attributes, actionID: actionID, pressedStyle: .init())
+    }
+
+    /// 追加使用默认按下样式的远程图片片段；仅保存描述，不发起请求。
+    public static func remoteImage(
+        _ attachment: LYGlyphTextRemoteImageAttachment, attributes: [NSAttributedString.Key: Any] = [:],
+        actionID: String? = nil
+    ) -> Self {
+        .remoteImage(attachment, attributes: attributes, actionID: actionID, pressedStyle: .init())
     }
 }

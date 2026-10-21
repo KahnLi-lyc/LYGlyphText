@@ -13,10 +13,11 @@ extension LYGlyphTextLabel {
         // 一个旧批次全部清理完毕前，不允许新工厂重新取得尚未回调的旧实例。
         container?.removeFromSuperview()
         for attachment in removed {
+            (attachment.view as? RemoteImageView)?.cancel()
             attachment.view.removeFromSuperview()
         }
         for attachment in removed {
-            attachment.provider.onUnmount?(attachment.descriptor, attachment.view)
+            attachment.provider?.onUnmount?(attachment.descriptor, attachment.view)
         }
     }
 
@@ -52,7 +53,10 @@ extension LYGlyphTextLabel {
         if !hiddenIDs.isEmpty { cancelActionInteraction() }
         let removed = hiddenIDs.compactMap { mountedAttachments.removeValue(forKey: $0) }
         unmount(removed)
-        guard revision == attachmentRevision, window != nil, let provider = viewProvider else { return }
+        guard revision == attachmentRevision, window != nil else { return }
+        let provider = viewProvider
+        let remoteImages = document?.remoteImages ?? [:]
+        guard provider != nil || !remoteImages.isEmpty else { return }
         attachmentContainer?.frame = contentRect
         for (placement, displayRect) in placements {
             guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
@@ -63,7 +67,14 @@ extension LYGlyphTextLabel {
                 continue
             }
             guard !failedAttachmentIDs.contains(descriptor.id) else { continue }
-            let candidate = provider.makeView(descriptor)
+            let remote = remoteImages[descriptor.id]
+            // 远程图片由组件内部视图承载，不调用宿主工厂；其他视图附件仍需要工厂。
+            guard remote != nil || provider != nil else { continue }
+            let candidate: UIView? = if let remote {
+                RemoteImageView(descriptor: remote)
+            } else {
+                provider?.makeView(descriptor)
+            }
             // 工厂可以同步替换文档、provider、reload 或移出 window；过期结果从未挂载。
             guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
             guard let candidate else {
@@ -91,9 +102,13 @@ extension LYGlyphTextLabel {
             guard revision == attachmentRevision, window != nil, viewProvider === provider else { return }
             cancelActionInteraction()
             mountedAttachments[descriptor.id] = MountedAttachment(
-                descriptor: descriptor, view: candidate, provider: provider
+                descriptor: descriptor, view: candidate, provider: remote == nil ? provider : nil
             )
             container.addSubview(candidate)
+            // 挂载完成后再请求；同步缓存结果直接显示，回调不会重新进入排版。
+            (candidate as? RemoteImageView)?.load(
+                using: imageLoader, scale: traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
+            )
         }
     }
 }

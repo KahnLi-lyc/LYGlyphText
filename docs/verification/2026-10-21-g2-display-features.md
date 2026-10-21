@@ -40,4 +40,4 @@
 | `scripts/verify.sh docs`／`build` | PASS；Package 与 Demo Swift 6 模式构建通过 |
 | `scripts/verify.sh test` | **386／386 Passed（362 宿主＋24 UI）**，0 失败／跳过／预期失败，`runtimeWarnings=[]` |
 
-G1 的 371 个测试方法全部保留，新增 15 项。证据在 G2 worktree 的 `.build/verification/20261021T103643Z-72012-test/` 与 `g2-test-tree.json`。按路线图验收项自查规格与质量（新增公开 API 均为可选、默认值保持原行为；无并发逃生标记；无新依赖）。Swift 6.0 编译器与 iOS 16 运行仍未验证。
+G1 的 371 个测试方法全部保留，新增 15 项。证据已从临时 worktree 移到主 checkout 的 `.build/verification/g2/`（含 `20261021T103643Z-72012-test/` 与 `g2-test-tree.json`）。按路线图验收项自查规格与质量（新增公开 API 均为可选、默认值保持原行为；无并发逃生标记；无新依赖）。Swift 6.0 编译器与 iOS 16 运行仍未验证。

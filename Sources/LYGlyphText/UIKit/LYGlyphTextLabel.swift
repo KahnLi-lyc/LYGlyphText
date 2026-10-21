@@ -36,6 +36,15 @@ public final class LYGlyphTextLabel: UIView {
         }
     }
 
+    /// 远程图片加载器，由宿主创建并可在多个 Label 间共享；默认 nil 时远程图片只显示占位图。
+    /// 更换加载器会卸载全部附件并在下次展示布局重新挂载和请求。
+    public var imageLoader: (any LYGlyphTextImageLoading)? {
+        didSet {
+            guard !isTearingDown else { return }
+            if oldValue !== imageLoader { resetAttachments() }
+        }
+    }
+
     /// 显式丢弃附件实例与本次可见期间的失败记录，下次展示布局重新调用工厂。
     public func reloadAttachments() {
         guard !isTearingDown else { return }
@@ -91,7 +100,8 @@ public final class LYGlyphTextLabel: UIView {
     struct MountedAttachment {
         let descriptor: LYGlyphTextViewAttachment
         let view: UIView
-        let provider: LYGlyphTextAttachmentViewProvider
+        /// 远程图片由组件内部创建，没有宿主工厂与卸载回调。
+        let provider: LYGlyphTextAttachmentViewProvider?
     }
 
     var attachmentContainer: AttachmentContainer?
@@ -307,10 +317,12 @@ public final class LYGlyphTextLabel: UIView {
         onAction = nil
         document = nil
         viewProvider = nil
+        imageLoader = nil
         resetAttachments()
         onAction = nil
         document = nil
         viewProvider = nil
+        imageLoader = nil
         invalidateText()
     }
 

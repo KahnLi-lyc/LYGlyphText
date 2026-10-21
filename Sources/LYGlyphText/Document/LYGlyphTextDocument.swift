@@ -59,21 +59,39 @@ public final class LYGlyphTextDocument {
     let styleRuns: [StyleRun]
     let attachments: [Int: LYGlyphTextAttachment]
     let viewAttachments: [Int: LYGlyphTextViewAttachment]
+    /// 远程图片按附件 ID 保存；其排版与挂载占位同时以不可交互视图描述存放在 viewAttachments。
+    let remoteImages: [String: LYGlyphTextRemoteImageAttachment]
     let actions: [LYGlyphTextAction]
+
+    /// 远程图片在内部视图描述中使用的保留种类标识；宿主工厂不会收到这些描述。
+    static let remoteImageViewID = "LYGlyphText.remoteImage"
 
     /// 复制文本与支持的样式，隔离调用方随后对可变字符串及段落样式的修改。
     /// - Parameter attachments: 以原文 UTF-16 位置关联单个 U+FFFC 的图片描述，默认无附件。
     /// - Parameter viewAttachments: 以原文 UTF-16 位置关联单个 U+FFFC 的视图描述，默认无附件。
+    /// - Parameter remoteImages: 以原文 UTF-16 位置关联单个 U+FFFC 的远程图片描述，默认无附件；
+    ///   与图片、视图附件共用位置、ID 与尺寸校验。
     /// - Parameter actions: 原文 UTF-16 动作范围；保持输入顺序，默认无动作。
     /// - Parameter linkPressedStyle: 非 nil 时把 `.link` 属性（URL 或非空 String）的最长连续范围
     ///   追加为动作，actionID 为 URL 的 absoluteString 或该字符串，使用此按下样式；默认 nil 忽略 `.link`。
     /// - Throws: 先校验附件，再按输入顺序校验动作标识与范围，最后拒绝重叠动作（包括链接与显式动作重叠）。
     public init(
         attributedText: NSAttributedString, attachments: [Int: LYGlyphTextAttachment] = [:],
-        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:], actions: [LYGlyphTextAction] = [],
+        viewAttachments: [Int: LYGlyphTextViewAttachment] = [:],
+        remoteImages: [Int: LYGlyphTextRemoteImageAttachment] = [:], actions: [LYGlyphTextAction] = [],
         linkPressedStyle: LYGlyphTextPressedStyle? = nil
     ) throws {
         var actions = actions
+        var viewAttachments = viewAttachments
+        for (location, remote) in remoteImages.sorted(by: { $0.key < $1.key }) {
+            guard viewAttachments[location] == nil else {
+                throw LYGlyphTextDocumentError.conflictingAttachmentLocation(location: location)
+            }
+            viewAttachments[location] = LYGlyphTextViewAttachment(
+                id: remote.id, viewID: Self.remoteImageViewID, size: remote.size, alignment: remote.alignment,
+                alternativeText: remote.alternativeText
+            )
+        }
         if let linkPressedStyle {
             attributedText.enumerateAttribute(
                 .link, in: NSRange(location: 0, length: attributedText.length), options: []
@@ -151,6 +169,11 @@ public final class LYGlyphTextDocument {
         }
         self.attachments = attachments
         self.viewAttachments = viewAttachments
+        var remoteByID: [String: LYGlyphTextRemoteImageAttachment] = [:]
+        for remote in remoteImages.values {
+            remoteByID[remote.id] = remote
+        }
+        self.remoteImages = remoteByID
         self.actions = actions
 
         // 不保留 NSParagraphStyle 对象。属性字符串可能合并相等的属性对象，
@@ -194,6 +217,7 @@ public final class LYGlyphTextDocument {
         let text = NSMutableAttributedString(string: "")
         var attachments: [Int: LYGlyphTextAttachment] = [:]
         var viewAttachments: [Int: LYGlyphTextViewAttachment] = [:]
+        var remoteImages: [Int: LYGlyphTextRemoteImageAttachment] = [:]
         var actions: [LYGlyphTextAction] = []
         for segment in segments {
             let location = text.length
@@ -214,6 +238,11 @@ public final class LYGlyphTextDocument {
                 text.append(NSAttributedString(string: "\u{FFFC}", attributes: attributes))
                 actionID = id
                 pressedStyle = style
+            case let .remoteImage(attachment, attributes, id, style):
+                remoteImages[location] = attachment
+                text.append(NSAttributedString(string: "\u{FFFC}", attributes: attributes))
+                actionID = id
+                pressedStyle = style
             }
             if let actionID {
                 actions.append(LYGlyphTextAction(
@@ -226,6 +255,7 @@ public final class LYGlyphTextDocument {
             attributedText: text,
             attachments: attachments,
             viewAttachments: viewAttachments,
+            remoteImages: remoteImages,
             actions: actions
         )
     }

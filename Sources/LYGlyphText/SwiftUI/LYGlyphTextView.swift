@@ -11,6 +11,9 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 主线程附件工厂；保持对象身份可复用持续可见的附件。
     public var viewProvider: LYGlyphTextAttachmentViewProvider?
 
+    /// 远程图片加载器；保持对象身份可避免重复请求，nil 时远程图片只显示占位图。
+    public var imageLoader: (any LYGlyphTextImageLoading)?
+
     /// 可选的实际展示高度，单位为 point；不改变文档的自然测量高度。
     /// 默认 nil 使用自然高度；有限非负值（包含 0）直接作为展示高度，其他值回退自然高度。
     public var displayHeight: CGFloat?
@@ -23,12 +26,14 @@ public struct LYGlyphTextView: UIViewRepresentable {
         document: LYGlyphTextDocument?,
         configuration: LYGlyphTextConfiguration = .init(),
         viewProvider: LYGlyphTextAttachmentViewProvider? = nil,
+        imageLoader: (any LYGlyphTextImageLoading)? = nil,
         displayHeight: CGFloat? = nil,
         onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil
     ) {
         self.document = document
         self.configuration = configuration
         self.viewProvider = viewProvider
+        self.imageLoader = imageLoader
         self.displayHeight = displayHeight
         self.onAction = onAction
     }
@@ -74,5 +79,6 @@ public struct LYGlyphTextView: UIViewRepresentable {
         label.configuration = configuration
         label.document = document
         label.viewProvider = viewProvider
+        label.imageLoader = imageLoader
     }
 }
