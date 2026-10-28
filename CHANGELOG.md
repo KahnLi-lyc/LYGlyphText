@@ -23,5 +23,6 @@
 - 长按选择与系统菜单拷贝：`isSelectable`、`selectedRange`、`selectedText`、`onSelectionChange`。
 - 文本解析器 `LYGlyphTextParser`：链接、@提及、#话题#、自定义正则与表情短码图片。
 - SwiftUI `LYGlyphTextView` 新增 `imageLoader`、`isSelectable`、`onSelectionChange` 参数。
+- L 批次：圆角背景／边框 `NSAttributedString.Key.lyGlyphTextBackground`；整段点击 `onTap`；拷贝同时写入纯文本与 RTF、iOS 17+ 放大镜、无障碍“拷贝”动作；`onRemoteImageLoad` 与 `replacingRemoteImageSize(id:size:)`；`truncationMode` 支持 `.head`／`.middle`；SwiftUI 对应新增 `onTap`、`onRemoteImageLoad`。Release 复测见 [L6 记录](docs/verification/2026-10-29-l6-performance-retest.md)。
 
-源码兼容说明：`LYGlyphTextSegment` 新增 `.remoteImage` case、`LYGlyphTextDocumentError` 新增 `.unknownAttachmentID`（L4），对穷举 switch 的宿主代码需要补充分支；其余均为新增可选参数或类型。未提供：编辑器、头部／中间截断、整段点击回调、异步绘制、放大镜。验证结果见各阶段记录。
+源码兼容说明：`LYGlyphTextSegment` 新增 `.remoteImage` case、`LYGlyphTextDocumentError` 新增 `.unknownAttachmentID`（L4），对穷举 switch 的宿主代码需要补充分支；其余均为新增可选参数或类型。未提供：编辑器、异步绘制；iOS 16 没有放大镜。验证结果见各阶段记录。
