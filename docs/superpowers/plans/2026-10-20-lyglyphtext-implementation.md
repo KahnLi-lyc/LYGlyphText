@@ -215,7 +215,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | G4 后台预排版 | 已完成 | G3 | LYGlyphTextPreparedLayout、Label.apply；Layout 层非隔离 | [G4 记录](../../verification/2026-10-21-g4-prepared-layout.md)：403／403（379 宿主＋24 UI），5000 UTF-16 主线程首次测量 p50 约 46ms→21µs（模拟器 Release） |
 | G5 选择与拷贝 | 已完成 | G4 | isSelectable、selectedRange、拖柄、系统编辑菜单拷贝／全选 | [G5 记录](../../verification/2026-10-21-g5-selection.md)：413／413（387 宿主＋26 UI） |
 | G6 文本解析器 | 已完成 | G5 | 链接、@提及、#话题#、自定义正则、表情短码图片 | [G6 记录](../../verification/2026-10-21-g6-parser.md)：418／418（392 宿主＋26 UI） |
-| G7 SwiftUI 参数与 2.x 准备 | 已完成 | G6 | SwiftUI isSelectable／onSelectionChange，README、CHANGELOG、发布门槛更新 | [G7 记录](../../verification/2026-10-21-g7-swiftui-release.md)：419／419（393 宿主＋26 UI）；2.x 路线图 G1—G7 全部交付 | 显示内核重构、截断 token／特效、网络图片、预排版／异步显示、选择复制、解析器、SwiftUI／AX 与 2.0 准备 | 各阶段契约与专项记录待建；不改变 1.0 发布门槛 |
+| G7 SwiftUI 参数与 2.x 准备 | 已完成 | G6 | SwiftUI isSelectable／onSelectionChange，README、CHANGELOG、发布门槛更新 | [G7 记录](../../verification/2026-10-21-g7-swiftui-release.md)：419／419（393 宿主＋26 UI）；2.x 路线图 G1—G7 全部交付 |
+| L0—L7 Label 后续完善 | L0 进行中 | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
 
 ### R1 实施契约（2026-10-21）
 

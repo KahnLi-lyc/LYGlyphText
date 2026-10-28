@@ -40,7 +40,7 @@
 
 ## 已知范围限制
 
-只读展示，未提供编辑器、选择复制、HTML／Markdown、竖排、绕排、后台排版／异步渲染、任意SwiftUI行内视图或网络图片加载。标准NSTextAttachment明确拒绝；附件尺寸只来自声明，不按factory intrinsicContentSize反算。StackView首／末文字基线与UILabel等价尚未承诺。
+只读展示（2.x 已提供选择拷贝、网络图片附件与后台预排版，见上节独立门槛），未提供编辑器、HTML／Markdown、竖排、绕排、异步绘制、放大镜、任意SwiftUI行内视图、内置磁盘图片缓存。标准NSTextAttachment明确拒绝；附件尺寸只来自声明，不按factory intrinsicContentSize反算。StackView首／末文字基线与UILabel等价尚未承诺。
 
 部分既有无scene测试窗口存在appearance控制台警告；A1完整回归61条，xcresult runtimeWarnings为空，已在[A1记录](verification/2026-10-21-environment-accessibility.md)单列，不声称已修复或生产必现。
 
