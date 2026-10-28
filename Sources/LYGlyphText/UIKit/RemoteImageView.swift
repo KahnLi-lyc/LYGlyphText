@@ -24,7 +24,11 @@ final class RemoteImageView: UIImageView {
     }
 
     /// 取消旧请求后开始新请求；同步完成的缓存结果立即显示，迟到或已取消的回调被忽略。
-    func load(using loader: (any LYGlyphTextImageLoading)?, scale: CGFloat) {
+    /// - Parameter onLoaded: 成功得到图片时在 MainActor 调用，参数为图片 point 尺寸；取消或失败不调用。
+    func load(
+        using loader: (any LYGlyphTextImageLoading)?, scale: CGFloat,
+        onLoaded: @escaping @MainActor (CGSize) -> Void = { _ in }
+    ) {
         cancel()
         image = descriptor.placeholder
         guard let loader else { return }
@@ -37,7 +41,9 @@ final class RemoteImageView: UIImageView {
                 activeGeneration = nil
                 self.task = nil
                 switch result {
-                case let .success(image): self.image = image
+                case let .success(image):
+                    self.image = image
+                    onLoaded(image.size)
                 case .failure: image = descriptor.failureImage ?? descriptor.placeholder
                 }
             }

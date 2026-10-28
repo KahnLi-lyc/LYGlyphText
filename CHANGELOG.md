@@ -24,4 +24,4 @@
 - 文本解析器 `LYGlyphTextParser`：链接、@提及、#话题#、自定义正则与表情短码图片。
 - SwiftUI `LYGlyphTextView` 新增 `imageLoader`、`isSelectable`、`onSelectionChange` 参数。
 
-源码兼容说明：`LYGlyphTextSegment` 新增 `.remoteImage` case，对穷举 switch 的宿主代码需要补充分支；其余均为新增可选参数或类型。未提供：编辑器、头部／中间截断、整段点击回调、异步绘制、放大镜。验证结果见各阶段记录。
+源码兼容说明：`LYGlyphTextSegment` 新增 `.remoteImage` case、`LYGlyphTextDocumentError` 新增 `.unknownAttachmentID`（L4），对穷举 switch 的宿主代码需要补充分支；其余均为新增可选参数或类型。未提供：编辑器、头部／中间截断、整段点击回调、异步绘制、放大镜。验证结果见各阶段记录。

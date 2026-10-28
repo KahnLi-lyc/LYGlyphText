@@ -310,7 +310,19 @@ final class KingfisherImageLoader: LYGlyphTextImageLoading {
 }
 ```
 
-取消后组件会忽略迟到的回调。内置加载器没有磁盘缓存；动图最多保留 300 帧。本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
+需要按图片真实宽高排版时：
+
+```swift
+label.onRemoteImageLoad = { [weak self] id, imageSize in
+    guard let self, let document = label.document else { return }
+    let width = min(imageSize.width, maxWidth)
+    let size = CGSize(width: width, height: width * imageSize.height / imageSize.width)
+    model.document = try? document.replacingRemoteImageSize(id: id, size: size)
+    // 刷新对应列表行高
+}
+```
+
+组件不会在加载后自行改变排版，保持测量稳定。取消后组件会忽略迟到的回调。内置加载器没有磁盘缓存；动图最多保留 300 帧。本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
 
 ## 列表预排版
 

@@ -22,6 +22,8 @@ public enum LYGlyphTextDocumentError: Error, Equatable {
     case actionRangeSplitsComposedCharacter(range: NSRange)
     /// 两个动作范围重叠；按原文位置排序，相同位置保留输入顺序。
     case overlappingActionRanges(first: NSRange, second: NSRange)
+    /// 文档中没有该 ID 的远程图片附件。
+    case unknownAttachmentID(id: String)
 }
 
 /// 在主线程构造的不可变富文本快照，不持有视图或业务回调。
@@ -211,6 +213,47 @@ public final class LYGlyphTextDocument {
             cursor = NSMaxRange(paragraphRange)
         }
         styleRuns = runs
+    }
+
+    private init(
+        string: String, styleRuns: [StyleRun], attachments: [Int: LYGlyphTextAttachment],
+        viewAttachments: [Int: LYGlyphTextViewAttachment], remoteImages: [String: LYGlyphTextRemoteImageAttachment],
+        actions: [LYGlyphTextAction]
+    ) {
+        self.string = string
+        self.styleRuns = styleRuns
+        self.attachments = attachments
+        self.viewAttachments = viewAttachments
+        self.remoteImages = remoteImages
+        self.actions = actions
+    }
+
+    /// 返回只把指定远程图片的排版尺寸替换为 size 的新文档；文字、样式、动作和其他附件保持不变，原文档不变。
+    ///
+    /// 典型用法：在 `onRemoteImageLoad` 得到图片真实尺寸后按比例计算新尺寸，替换文档并刷新列表行高。
+    /// - Throws: 没有该 ID 的远程图片时抛出 `unknownAttachmentID`；尺寸非有限或不大于 0 时抛出 `invalidAttachmentSize`。
+    public func replacingRemoteImageSize(id: String, size: CGSize) throws -> LYGlyphTextDocument {
+        guard let remote = remoteImages[id],
+              let location = viewAttachments.first(where: { $0.value.id == id })?.key
+        else { throw LYGlyphTextDocumentError.unknownAttachmentID(id: id) }
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else {
+            throw LYGlyphTextDocumentError.invalidAttachmentSize(id: id)
+        }
+        let resized = LYGlyphTextRemoteImageAttachment(
+            id: remote.id, url: remote.url, size: size, alignment: remote.alignment, contentMode: remote.contentMode,
+            placeholder: remote.placeholder, failureImage: remote.failureImage, alternativeText: remote.alternativeText
+        )
+        var views = viewAttachments
+        views[location] = LYGlyphTextViewAttachment(
+            id: id, viewID: Self.remoteImageViewID, size: size, alignment: remote.alignment,
+            alternativeText: remote.alternativeText
+        )
+        var remotes = remoteImages
+        remotes[id] = resized
+        return LYGlyphTextDocument(
+            string: string, styleRuns: styleRuns, attachments: attachments, viewAttachments: views,
+            remoteImages: remotes, actions: actions
+        )
     }
 
     /// 依次连接文本和附件，在初始化时建立快照并复用完整文档校验。

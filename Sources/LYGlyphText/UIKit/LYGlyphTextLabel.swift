@@ -90,6 +90,12 @@ public final class LYGlyphTextLabel: UIView {
         didSet { updateTapRecognizer() }
     }
 
+    /// 远程图片加载成功时回调附件 ID 与图片 point 尺寸（含同步缓存命中）；取消或失败不回调。
+    ///
+    /// 组件不会因此改变排版。需要按真实宽高显示时，宿主用 `LYGlyphTextDocument.replacingRemoteImageSize(id:size:)`
+    /// 重建文档并刷新行高。
+    public var onRemoteImageLoad: (@MainActor (_ attachmentID: String, _ imageSize: CGSize) -> Void)?
+
     /// 显式丢弃附件实例与本次可见期间的失败记录，下次展示布局重新调用工厂。
     public func reloadAttachments() {
         guard !isTearingDown else { return }
@@ -383,6 +389,7 @@ public final class LYGlyphTextLabel: UIView {
         onAction = nil
         onSelectionChange = nil
         onTap = nil
+        onRemoteImageLoad = nil
         document = nil
         viewProvider = nil
         imageLoader = nil

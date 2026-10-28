@@ -106,9 +106,12 @@ extension LYGlyphTextLabel {
             )
             container.addSubview(candidate)
             // 挂载完成后再请求；同步缓存结果直接显示，回调不会重新进入排版。
+            let id = descriptor.id
             (candidate as? RemoteImageView)?.load(
                 using: imageLoader, scale: traitCollection.displayScale > 0 ? traitCollection.displayScale : 1
-            )
+            ) { [weak self] size in
+                self?.onRemoteImageLoad?(id, size)
+            }
         }
     }
 }
