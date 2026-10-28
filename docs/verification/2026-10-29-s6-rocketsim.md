@@ -42,7 +42,7 @@
 
 ## 修复后的检查
 
-修复后定向运行 SelectionHandleAccessibility／DebugOverlay／Selection／SelectionCopy／Accessibility 共 45 项与 FeatureUITests 6 项通过。拖柄无障碍框变大后，XCUITest 用归一化坐标定位拖柄会偏离竖线，UI 测试改为按拖柄中心 x 与首行高度定位。完整回归结果见 S7 记录。
+修复后定向运行 SelectionHandleAccessibility／DebugOverlay／Selection／SelectionCopy／Accessibility 共 45 项与 FeatureUITests 6 项通过。拖柄无障碍框变大后，XCUITest 用归一化坐标定位拖柄会偏离竖线，UI 测试改为按拖柄中心 x 与首行高度定位。完整回归 457／457 通过，见 [S7 记录](2026-10-29-s7-release.md)。
 
 ## 未验证
 

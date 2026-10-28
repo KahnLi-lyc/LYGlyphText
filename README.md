@@ -2,7 +2,7 @@
 
 面向 UIKit 与 SwiftUI 的只读富文本 Swift Package，使用纯 Swift 和 Core Text，零第三方运行依赖。最低部署目标 iOS 16，Swift tools 6.0／Swift 6 language mode。
 
-当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制与可点击截断 token、行内图片、网络图片及 UIView 附件、文字点击／长按／按下反馈、长按选择拷贝、后台预排版与文本解析**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。尚未发布版本；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容和 iOS 16 实际运行仍未验证。
+当前提供富文本样式、段落度量、分段／动作描述、自动撑高、**行数限制与可点击截断 token、行内图片、网络图片及 UIView 附件、文字点击／长按／按下反馈、长按选择拷贝、后台预排版与文本解析**，支持单词／字符换行和垂直对齐：文档 → Core Text 排版与绘制 → UIKit／SwiftUI 展示。首个预发布版本为 `1.0.0-beta.1`；验证环境和边界见各专项验证记录。Swift 6.0 编译器兼容、iOS 16 实际运行、真机与人工 VoiceOver 仍未验证，因此为 beta。
 
 ## 已实现
 
@@ -22,9 +22,17 @@
 - 最终可见内容的自动无障碍容器、动作激活及原生交互附件子树；人工 VoiceOver 尚未验收。
 - UIKit／SwiftUI 可操作示例、组件行为测试、宿主测试和 UI 测试。
 
-## 本地接入
+## 接入
 
-在 Xcode 的 Add Local Package 中选择本仓库目录，将 **LYGlyphText** product 加到 iOS target。也可以在宿主 Package 中添加 `.package(path: "../LYGlyphText")`，并为宿主 target 添加 `.product(name: "LYGlyphText", package: "LYGlyphText")`。尚无可用的版本 Tag；不要使用版本号安装示例。
+Swift Package Manager 按版本接入（预发布版本需要写明确切版本号）：
+
+```swift
+.package(url: "https://github.com/KahnLi-lyc/LYGlyphText.git", exact: "1.0.0-beta.1")
+```
+
+并为宿主 target 添加 `.product(name: "LYGlyphText", package: "LYGlyphText")`。Xcode 中通过 File › Add Package Dependencies 输入同一地址，依赖规则选 Exact Version `1.0.0-beta.1`。
+
+本地开发时也可以用 Add Local Package 选择本仓库目录，或添加 `.package(path: "../LYGlyphText")`。
 
 UIKit 示例，在主线程调用可抛错的文档构造方法：
 
