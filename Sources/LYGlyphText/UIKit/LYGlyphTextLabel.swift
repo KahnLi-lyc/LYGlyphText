@@ -79,6 +79,13 @@ public final class LYGlyphTextLabel: UIView {
     /// 有选区时无障碍自定义拷贝动作的名称，默认“拷贝”；宿主可按本地化需要替换。
     public var selectionCopyAccessibilityName = "拷贝"
 
+    /// 调试叠加层，默认空；改变时只重绘，不重新排版。
+    public var debugOptions: LYGlyphTextDebugOptions = [] {
+        didSet {
+            if oldValue != debugOptions { setNeedsDisplay() }
+        }
+    }
+
     /// 选区开始拖柄的无障碍名称，默认“选区开始”；拖柄可用 VoiceOver 上下滑动逐字调节。
     public var selectionStartAccessibilityName = "选区开始"
 
@@ -353,6 +360,7 @@ public final class LYGlyphTextLabel: UIView {
             }
         }
         layout.draw(in: context, pressedActionIndex: pressedActionIndex)
+        layout.drawDebug(debugOptions, in: context)
         context.restoreGState()
     }
 

@@ -30,6 +30,9 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 点按普通文字或空白的回调，行为与 `LYGlyphTextLabel.onTap` 相同；nil 不处理单击。
     public var onTap: (@MainActor (CGPoint) -> Void)?
 
+    /// 调试叠加层，默认空。
+    public var debugOptions: LYGlyphTextDebugOptions = []
+
     /// 远程图片加载成功回调，行为与 `LYGlyphTextLabel.onRemoteImageLoad` 相同。
     public var onRemoteImageLoad: (@MainActor (String, CGSize) -> Void)?
 
@@ -44,7 +47,8 @@ public struct LYGlyphTextView: UIViewRepresentable {
         onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil,
         onSelectionChange: (@MainActor (NSRange?) -> Void)? = nil,
         onTap: (@MainActor (CGPoint) -> Void)? = nil,
-        onRemoteImageLoad: (@MainActor (String, CGSize) -> Void)? = nil
+        onRemoteImageLoad: (@MainActor (String, CGSize) -> Void)? = nil,
+        debugOptions: LYGlyphTextDebugOptions = []
     ) {
         self.document = document
         self.configuration = configuration
@@ -56,6 +60,7 @@ public struct LYGlyphTextView: UIViewRepresentable {
         self.onSelectionChange = onSelectionChange
         self.onTap = onTap
         self.onRemoteImageLoad = onRemoteImageLoad
+        self.debugOptions = debugOptions
     }
 
     /// 创建底层 UIKit 视图。
@@ -104,5 +109,6 @@ public struct LYGlyphTextView: UIViewRepresentable {
         label.isSelectable = isSelectable
         label.onTap = onTap
         label.onRemoteImageLoad = onRemoteImageLoad
+        label.debugOptions = debugOptions
     }
 }
