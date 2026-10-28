@@ -1,8 +1,8 @@
 import ImageIO
 import UIKit
 
-/// 只使用 URLSession、NSCache 与 ImageIO 的轻量加载器：内存缓存、同尺寸请求合并、按目标尺寸降采样，
-/// 多帧 GIF 生成动画图片。没有磁盘缓存；宿主需要磁盘缓存或其他格式时可桥接自己的图片库。
+/// 只使用 URLSession、NSCache、URLCache 与 ImageIO 的轻量加载器：内存缓存、遵循 HTTP 缓存头的专用磁盘缓存、
+/// 同尺寸请求合并、按目标尺寸降采样，多帧 GIF 生成动画图片。宿主需要更复杂的缓存策略或其他格式时可桥接自己的图片库。
 ///
 /// 实例由宿主创建并在多个 Label 间共享；释放加载器会取消其进行中的请求。
 @MainActor
@@ -36,6 +36,8 @@ public final class LYGlyphTextURLSessionImageLoader: LYGlyphTextImageLoading {
 
     private let session: URLSession
     private let cache = NSCache<NSString, UIImage>()
+    /// 专用磁盘缓存；容量为 0 时为 nil，不写入宿主的 `URLCache.shared`。
+    let urlCache: URLCache?
     private var requests: [String: Request] = [:]
     /// 同时最多解码的 GIF 帧数，超出部分不加载，避免异常大动图占满内存。
     private let maximumFrameCount: Int
@@ -50,10 +52,31 @@ public final class LYGlyphTextURLSessionImageLoader: LYGlyphTextImageLoading {
     ///   - configuration: URLSession 配置，默认 `.default`；测试可注入自定义 URLProtocol。
     ///   - memoryCacheCountLimit: 内存缓存的最大图片数，默认 100；0 表示不限制数量。
     ///   - maximumFrameCount: 动图最多保留的帧数，默认 300。
+    ///   - diskCacheCapacity: 专用磁盘缓存容量，单位字节，默认 50MB；0 或负值关闭磁盘缓存。缓存遵循服务器的 HTTP 缓存头。
+    ///   - diskCacheDirectory: 磁盘缓存目录；nil 使用 Caches 下的 `LYGlyphTextImages`。
     public init(
         configuration: URLSessionConfiguration = .default, memoryCacheCountLimit: Int = 100,
-        maximumFrameCount: Int = 300
+        maximumFrameCount: Int = 300, diskCacheCapacity: Int = 50 * 1024 * 1024, diskCacheDirectory: URL? = nil
     ) {
+        // 复制配置，不修改调用方对象；磁盘缓存独立于 URLCache.shared，可单独清理。
+        let configuration = (configuration.copy() as? URLSessionConfiguration) ?? configuration
+        if diskCacheCapacity > 0 {
+            let directory = diskCacheDirectory ?? FileManager.default
+                .urls(for: .cachesDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("LYGlyphTextImages", isDirectory: true)
+            // URLCache 不创建缺失目录，目录不存在时只能写入内存队列。
+            if let directory {
+                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            }
+            let cache = URLCache(memoryCapacity: 0, diskCapacity: diskCacheCapacity, directory: directory)
+            configuration.urlCache = cache
+            configuration.requestCachePolicy = .useProtocolCachePolicy
+            urlCache = cache
+        } else {
+            configuration.urlCache = nil
+            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+            urlCache = nil
+        }
         session = URLSession(configuration: configuration)
         cache.countLimit = max(0, memoryCacheCountLimit)
         self.maximumFrameCount = max(1, maximumFrameCount)
@@ -61,6 +84,17 @@ public final class LYGlyphTextURLSessionImageLoader: LYGlyphTextImageLoading {
 
     deinit {
         session.invalidateAndCancel()
+    }
+
+    /// 清空内存缓存与专用磁盘缓存；进行中的请求不受影响。
+    public func removeAllCachedImages() {
+        cache.removeAllObjects()
+        urlCache?.removeAllCachedResponses()
+    }
+
+    /// 只清空内存缓存，用于验证磁盘缓存命中。
+    func removeMemoryCachedImages() {
+        cache.removeAllObjects()
     }
 
     public func loadImage(
