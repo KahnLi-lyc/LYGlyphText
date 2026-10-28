@@ -72,7 +72,8 @@ public final class LYGlyphTextPreparedLayout {
             layout = text.layout(
                 width: width, insets: configuration.insets,
                 scale: traits.displayScale > 0 ? traits.displayScale : 1,
-                numberOfLines: max(0, configuration.numberOfLines), truncationToken: configuration.truncationToken
+                numberOfLines: max(0, configuration.numberOfLines), truncationToken: configuration.truncationToken,
+                truncationMode: configuration.truncationMode
             )
             wasOnMainThread = Thread.isMainThread
         }

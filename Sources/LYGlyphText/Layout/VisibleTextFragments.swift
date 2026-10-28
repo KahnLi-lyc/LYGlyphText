@@ -167,6 +167,11 @@ private struct VisibleRunGeometry {
     let sourceLength: Int
     let clusters: SourceClusterIndex
 
+    /// 本 run 所在片段的原文偏移；中间截断行的前后两段偏移不同。
+    private var runOffset: Int {
+        line.sourceOffset(forLineLocation: CTRunGetStringRange(run).location)
+    }
+
     func pieces(
         selected: Set<NSRange>, selectedRange: NSRange, placements: [Int: CGRect],
         glyphGroups: inout [SourceGeometry.GlyphGroup]
@@ -175,8 +180,8 @@ private struct VisibleRunGeometry {
         let range = CTRunGetStringRange(run)
         guard count > 0,
               let runEnd = GeometryRange.end(NSRange(location: range.location, length: range.length)),
-              let originalStart = GeometryRange.shifted(range.location, by: line.sourceOffset),
-              let originalEnd = GeometryRange.shifted(runEnd, by: line.sourceOffset),
+              let originalStart = GeometryRange.shifted(range.location, by: runOffset),
+              let originalEnd = GeometryRange.shifted(runEnd, by: runOffset),
               originalStart >= 0, originalEnd >= originalStart
         else { return [] }
         let attributes = CTRunGetAttributes(run) as NSDictionary
@@ -203,9 +208,9 @@ private struct VisibleRunGeometry {
         let lineRange = NSRange(location: finalLineRange.location, length: finalLineRange.length)
         var result: [VisibleTextFragment.RunPiece] = []
         for (offset, start) in starts.enumerated() {
-            guard let original = GeometryRange.shifted(start, by: line.sourceOffset),
+            guard let original = GeometryRange.shifted(start, by: runOffset),
                   let end = GeometryRange.shifted(
-                      offset + 1 < starts.count ? starts[offset + 1] : runEnd, by: line.sourceOffset
+                      offset + 1 < starts.count ? starts[offset + 1] : runEnd, by: runOffset
                   ), let members = groups[start] else { continue }
             let localEnd = offset + 1 < starts.count ? starts[offset + 1] : runEnd
             let localRange = NSRange(location: start, length: localEnd - start)
@@ -272,8 +277,8 @@ private struct VisibleRunGeometry {
     private func isZeroAdvanceControl(_ cluster: NSRange, glyphStarts: Set<CFIndex>) -> Bool {
         if clusters.isSeparator(cluster) { return true }
         guard clusters.isDefaultIgnorable(cluster) else { return false }
-        let start = cluster.location.subtractingReportingOverflow(line.sourceOffset)
-        let end = NSMaxRange(cluster).subtractingReportingOverflow(line.sourceOffset)
+        let start = cluster.location.subtractingReportingOverflow(runOffset)
+        let end = NSMaxRange(cluster).subtractingReportingOverflow(runOffset)
         guard !start.overflow, !end.overflow else { return true }
         // Core Text 可把忽略字符吞入前一个 glyph 的 coverage；缺失索引的 caret 可能返回整个 glyph。
         guard glyphStarts.contains(start.partialValue) else { return true }
@@ -293,7 +298,7 @@ private struct VisibleRunGeometry {
         // 双向交界可能有 primary/secondary 两个位置；只接受当前实际 glyph advance 内的 caret。
         var native = [rtl ? upper : lower]
         for cluster in clusters.dropFirst() {
-            let local = cluster.location.subtractingReportingOverflow(line.sourceOffset)
+            let local = cluster.location.subtractingReportingOverflow(runOffset)
             guard !local.overflow else { return fallback }
             var secondary: CGFloat = 0
             let primary = CTLineGetOffsetForStringIndex(line.text, local.partialValue, &secondary)

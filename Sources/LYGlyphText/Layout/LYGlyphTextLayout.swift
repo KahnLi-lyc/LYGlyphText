@@ -12,6 +12,19 @@ struct LYGlyphTextLayout {
         let sourceOffset: Int
         /// 生成的省略号在 CTLine 内的索引，与原文中的省略号字符区分。
         let truncationTokenRange: NSRange?
+        /// 中间截断时 token 之后的原文片段：从 CTLine 局部索引 lineStart 起改用 offset 映射原文。
+        var suffixSegment: SourceSegment?
+
+        struct SourceSegment: Equatable {
+            let lineStart: Int
+            let offset: Int
+        }
+
+        /// 某个 CTLine 局部索引所在片段的原文偏移；一个 CTRun 只属于 token 一侧的一个片段。
+        func sourceOffset(forLineLocation location: Int) -> Int {
+            if let suffixSegment, location >= suffixSegment.lineStart { return suffixSegment.offset }
+            return sourceOffset
+        }
     }
 
     struct Attachment {
@@ -448,6 +461,7 @@ final class ResolvedText {
     func layout(
         width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0,
         truncationToken: LYGlyphTextTruncationToken? = nil,
+        truncationMode: LYGlyphTextConfiguration.TruncationMode = .tail,
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) -> LYGlyphTextLayout {
         func inset(_ value: CGFloat) -> CGFloat {
@@ -492,7 +506,8 @@ final class ResolvedText {
                         insets: insets,
                         scale: scale,
                         numberOfLines: numberOfLines,
-                        truncationToken: truncationToken
+                        truncationToken: truncationToken,
+                        truncationMode: truncationMode
                     )
             }
             return LYGlyphTextLayout(
@@ -517,7 +532,7 @@ final class ResolvedText {
         if numberOfLines > 0, lines.count > numberOfLines {
             guard let visible = truncatedLines(
                 Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale,
-                token: truncationToken
+                token: truncationToken, mode: truncationMode
             ) else { return fallback() }
             return LYGlyphTextLayout(
                 size: CGSize(
@@ -576,7 +591,7 @@ final class ResolvedText {
                       line.visibleSourceRanges.contains(where: { NSLocationInRange(location, $0) })
                 else { return nil }
                 let runRange = CTRunGetStringRange(run)
-                guard runRange.location + line.sourceOffset == location,
+                guard runRange.location + line.sourceOffset(forLineLocation: runRange.location) == location,
                       line.truncationTokenRange.map({ !NSLocationInRange(runRange.location, $0) }) ?? true
                 else { return nil }
                 var position = CGPoint.zero
@@ -597,17 +612,42 @@ final class ResolvedText {
 
     private func truncatedLines(
         _ original: [LYGlyphTextLayout.Line], width: CGFloat, insets: UIEdgeInsets, scale: CGFloat,
-        token: LYGlyphTextTruncationToken?
+        token: LYGlyphTextTruncationToken?, mode: LYGlyphTextConfiguration.TruncationMode
     ) -> (lines: [LYGlyphTextLayout.Line], height: CGFloat, token: LYGlyphTextLayout.TruncationToken?)? {
         guard let last = original.last else { return ([], 0, nil) }
         let sourceRange = CTLineGetStringRange(last.text)
         let start = min(sourceLength, sourceRange.location)
         let end = min(sourceLength, sourceRange.location + sourceRange.length)
-        let truncation = TailTruncation(
-            text: attributedText, range: NSRange(location: start, length: end - start), width: width,
-            tokenString: token?.displayText ?? "…", tokenFont: token?.font,
-            tokenColor: token?.foregroundColor?.resolvedColor(with: traits).cgColor
+        let tokenString = token?.displayText ?? "…"
+        let tokenColor = token?.foregroundColor?.resolvedColor(with: traits).cgColor
+        let lineRange = NSRange(location: start, length: end - start)
+        let edge: EdgeTruncation? = switch mode {
+        case .tail: nil
+        case .head, .middle: EdgeTruncation(
+                text: attributedText, lineRange: lineRange, sourceLength: sourceLength, width: width,
+                mode: mode == .head ? .head : .middle, tokenString: tokenString, tokenFont: token?.font,
+                tokenColor: tokenColor
+            )
+        }
+        let truncation: (
+            text: NSAttributedString, line: CTLine, alignmentOffset: CGFloat, drawsToken: Bool, tokenRange: NSRange,
+            sourceOffset: Int, suffixSegment: LYGlyphTextLayout.Line.SourceSegment?, visibleRanges: [NSRange]
         )
+        if let edge {
+            truncation = (
+                edge.text, edge.line, edge.alignmentOffset, edge.drawsToken, edge.tokenRange, edge.prefixOffset,
+                edge.suffixSegment, edge.visibleSourceRanges
+            )
+        } else {
+            let tail = TailTruncation(
+                text: attributedText, range: lineRange, width: width, tokenString: tokenString,
+                tokenFont: token?.font, tokenColor: tokenColor
+            )
+            truncation = (
+                tail.text, tail.line, tail.alignmentOffset, tail.drawsToken, tail.tokenRange, tail.sourceOffset, nil,
+                tail.visibleSourceRanges(in: tail.line, source: attributedText.string as NSString)
+            )
+        }
         let finalText = truncation.text
         let metricsText = NSMutableAttributedString(string: "")
         // 用所有可见源行重建度量前缀；软换行保持同一段落，硬分隔符保留原值。
@@ -649,12 +689,10 @@ final class ResolvedText {
             text: truncation.drawsToken ? truncation
                 .line : CTLineCreateWithAttributedString(NSAttributedString(string: "")),
             baseline: CGPoint(x: x, y: y),
-            visibleSourceRanges: truncation.visibleSourceRanges(
-                in: truncation.line,
-                source: attributedText.string as NSString
-            ),
+            visibleSourceRanges: truncation.visibleRanges,
             sourceOffset: truncation.sourceOffset,
-            truncationTokenRange: truncation.drawsToken ? truncation.tokenRange : nil
+            truncationTokenRange: truncation.drawsToken ? truncation.tokenRange : nil,
+            suffixSegment: truncation.drawsToken ? truncation.suffixSegment : nil
         ))
         var tokenGeometry: LYGlyphTextLayout.TruncationToken?
         if truncation.drawsToken, truncation.tokenRange.length > 0 {

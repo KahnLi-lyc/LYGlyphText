@@ -20,32 +20,16 @@ struct TailTruncation {
         text: NSAttributedString, range: NSRange, width: CGFloat, tokenString: String = "…",
         tokenFont: UIFont? = nil, tokenColor: CGColor? = nil, usesEstimate: Bool = true
     ) {
-        let original = text.attributes(at: min(range.location, text.length - 1), effectiveRange: nil)
-        // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
-        var attributes = original.filter {
-            $0.key == .font || $0.key == NSAttributedString.Key(kCTFontAttributeName as String)
-                || $0.key == NSAttributedString.Key(kCTForegroundColorAttributeName as String)
-        }
-        let paragraph = ResolvedParagraph(text: text, at: range.location)
-        attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
-        if let tokenFont { attributes[NSAttributedString.Key(kCTFontAttributeName as String)] = tokenFont }
-        if let tokenColor { attributes[NSAttributedString.Key(kCTForegroundColorAttributeName as String)] = tokenColor }
-        attributes[Self.tokenKey] = true
-        // 与原文 run 相同从绘制上下文取填充色，使按下状态可以改色；未按下时上下文颜色即 token 颜色。
-        attributes[NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String)] = true
-        let token = NSAttributedString(string: tokenString, attributes: attributes)
-        let tokenLine = CTLineCreateWithAttributedString(token)
-        let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))
-        var leading: CGFloat = 0
-        var tail: CGFloat = 0
-        let indent: CTParagraphStyleSpecifier = range.location == paragraphRange
-            .location ? .firstLineHeadIndent : .headIndent
-        CTParagraphStyleGetValueForSpecifier(paragraph.style, indent, MemoryLayout<CGFloat>.size, &leading)
-        CTParagraphStyleGetValueForSpecifier(paragraph.style, .tailIndent, MemoryLayout<CGFloat>.size, &tail)
-        let areaEnd = tail > 0 ? tail : (LayoutNumber.add(width, tail) ?? width)
-        let capacity = max(0, LayoutNumber.add(areaEnd, -leading) ?? 0)
-        let physicalStart = paragraph.direction == .rightToLeft ? (LayoutNumber.add(width, -areaEnd) ?? 0) : leading
-        drawsToken = CGFloat(CTLineGetTypographicBounds(tokenLine, nil, nil, nil)) <= capacity
+        let setup = TruncationSetup(
+            text: text, location: range.location, width: width, tokenString: tokenString, tokenFont: tokenFont,
+            tokenColor: tokenColor
+        )
+        let token = setup.token
+        let tokenLine = setup.tokenLine
+        let paragraph = setup.paragraph
+        let capacity = setup.capacity
+        let physicalStart = setup.physicalStart
+        drawsToken = setup.drawsToken
         let source = text.string as NSString
         sourceOffset = range.location
         var end = NSMaxRange(range)
@@ -150,7 +134,7 @@ struct TailTruncation {
 }
 
 /// 用完整原段落解析 natural 方向，避免强方向字符被截断后改变省略号位置。
-private struct ResolvedParagraph {
+struct ResolvedParagraph {
     let style: CTParagraphStyle
     let flush: CGFloat
     let direction: CTWritingDirection
@@ -195,5 +179,71 @@ private struct ResolvedParagraph {
         case .natural: direction == .rightToLeft ? 1 : 0
         default: 0
         }
+    }
+}
+
+/// 截断行共用的 token、段落方向与可用宽度；首行与续行使用各自的缩进。
+struct TruncationSetup {
+    let token: NSAttributedString
+    let tokenLine: CTLine
+    let paragraph: ResolvedParagraph
+    let capacity: CGFloat
+    let physicalStart: CGFloat
+    let drawsToken: Bool
+
+    init(
+        text: NSAttributedString, location: Int, width: CGFloat, tokenString: String, tokenFont: UIFont?,
+        tokenColor: CGColor?
+    ) {
+        let range = NSRange(location: location, length: 0)
+        let original = text.attributes(at: min(location, text.length - 1), effectiveRange: nil)
+        // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
+        var attributes = original.filter {
+            $0.key == .font || $0.key == NSAttributedString.Key(kCTFontAttributeName as String)
+                || $0.key == NSAttributedString.Key(kCTForegroundColorAttributeName as String)
+        }
+        let paragraph = ResolvedParagraph(text: text, at: range.location)
+        attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
+        if let tokenFont { attributes[NSAttributedString.Key(kCTFontAttributeName as String)] = tokenFont }
+        if let tokenColor { attributes[NSAttributedString.Key(kCTForegroundColorAttributeName as String)] = tokenColor }
+        attributes[TailTruncation.tokenKey] = true
+        // 与原文 run 相同从绘制上下文取填充色，使按下状态可以改色；未按下时上下文颜色即 token 颜色。
+        attributes[NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String)] = true
+        let token = NSAttributedString(string: tokenString, attributes: attributes)
+        let tokenLine = CTLineCreateWithAttributedString(token)
+        let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))
+        var leading: CGFloat = 0
+        var tail: CGFloat = 0
+        let indent: CTParagraphStyleSpecifier = range.location == paragraphRange
+            .location ? .firstLineHeadIndent : .headIndent
+        CTParagraphStyleGetValueForSpecifier(paragraph.style, indent, MemoryLayout<CGFloat>.size, &leading)
+        CTParagraphStyleGetValueForSpecifier(paragraph.style, .tailIndent, MemoryLayout<CGFloat>.size, &tail)
+        let areaEnd = tail > 0 ? tail : (LayoutNumber.add(width, tail) ?? width)
+        let capacity = max(0, LayoutNumber.add(areaEnd, -leading) ?? 0)
+        let physicalStart = paragraph.direction == .rightToLeft ? (LayoutNumber.add(width, -areaEnd) ?? 0) : leading
+        drawsToken = CGFloat(CTLineGetTypographicBounds(tokenLine, nil, nil, nil)) <= capacity
+        self.token = token
+        self.tokenLine = tokenLine
+        self.paragraph = paragraph
+        self.capacity = capacity
+        self.physicalStart = physicalStart
+    }
+
+    /// 以当前段落样式组合候选行；返回文本、CTLine 与是否放得下。
+    func candidate(_ parts: [NSAttributedString]) -> (text: NSMutableAttributedString, line: CTLine, fits: Bool) {
+        let result = NSMutableAttributedString()
+        for part in parts {
+            result.append(part)
+        }
+        result.addAttribute(
+            NSAttributedString.Key(kCTParagraphStyleAttributeName as String), value: paragraph.style,
+            range: NSRange(location: 0, length: result.length)
+        )
+        let line = CTLineCreateWithAttributedString(result)
+        return (result, line, CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)) <= capacity)
+    }
+
+    func alignmentOffset(for line: CTLine) -> CGFloat {
+        physicalStart + CGFloat(CTLineGetPenOffsetForFlush(line, paragraph.flush, Double(capacity)))
     }
 }

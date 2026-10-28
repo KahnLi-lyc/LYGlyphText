@@ -36,6 +36,20 @@ public struct LYGlyphTextConfiguration: Equatable, Sendable {
     /// 行数限制生效时追加在最后一条可见行尾部的 token；默认 nil 使用继承末行样式的 `…`。
     public var truncationToken: LYGlyphTextTruncationToken?
 
+    /// 截断位置，只作用于最后一条可见行。
+    public enum TruncationMode: Equatable, Sendable {
+        /// 末行尾部显示 token（默认）。
+        case tail
+        /// 末行显示 token 加剩余原文的末尾。
+        case head
+        /// 末行显示本行开头、token 与剩余原文的末尾。
+        case middle
+    }
+
+    /// 截断位置，默认 `.tail`。head／middle 先去掉文档末尾的空白与空白段落，末尾文字只取最后一个
+    /// 有内容的逻辑段落；剩余原文没有可保留的末尾文字时按 `.tail` 处理。
+    public var truncationMode: TruncationMode = .tail
+
     /// 创建显示配置，默认没有内边距且不限制行数。
     public init(
         textContainerInset: UIEdgeInsets = .zero, numberOfLines: Int = 0,

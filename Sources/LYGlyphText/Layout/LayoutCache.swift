@@ -31,7 +31,7 @@ struct LayoutCache {
                 0,
                 configuration.numberOfLines
             ),
-            truncationToken: configuration.truncationToken
+            truncationToken: configuration.truncationToken, truncationMode: configuration.truncationMode
         )
         entries.insert((width, layout), at: 0)
         if entries.count > Self.capacity { entries.removeLast() }
