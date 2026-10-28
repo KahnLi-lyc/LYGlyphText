@@ -9,6 +9,8 @@ public struct LYGlyphTextParseRule {
             pressedStyle: LYGlyphTextPressedStyle, actionID: (String) -> String
         )
         case emoticons(images: [String: UIImage], size: CGSize, alignment: LYGlyphTextAttachmentAlignment)
+        case markdownLinks(attributes: [NSAttributedString.Key: Any], pressedStyle: LYGlyphTextPressedStyle)
+        case markdownEmphasis
     }
 
     let kind: Kind
@@ -63,6 +65,23 @@ public struct LYGlyphTextParseRule {
         }, attributes: attributes, pressedStyle: pressedStyle, actionID: actionID))
     }
 
+    /// 把 `[文字](链接)` 显示为“文字”并生成动作，actionID 为链接原文；文字为空、链接含空白或文字含附件时保留原样。
+    /// 在表情替换与强调处理之后、其他动作规则之前执行，识别出的范围不再参与其他规则。
+    public static func markdownLinks(
+        attributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.link],
+        pressedStyle: LYGlyphTextPressedStyle = .init()
+    ) -> Self {
+        .init(kind: .markdownLinks(attributes: attributes, pressedStyle: pressedStyle))
+    }
+
+    /// 处理 `**粗体**`、`*斜体*` 与 `` `代码` ``：去掉标记，按所在位置的字体派生粗体、斜体或等宽字体。
+    ///
+    /// 不支持嵌套、跨行与转义；没有配对的标记保留原样。所在位置没有字体时以 body 字体派生，
+    /// 派生后的字体为显式字体，不再随动态字号变化。
+    public static func markdownEmphasis() -> Self {
+        .init(kind: .markdownEmphasis)
+    }
+
     /// 把出现的短码（如 `[微笑]`）替换为图片附件，附件替代文本为短码本身；尺寸单位 point。
     public static func emoticons(
         _ images: [String: UIImage], size: CGSize, alignment: LYGlyphTextAttachmentAlignment = .center
@@ -91,9 +110,20 @@ public struct LYGlyphTextParser {
             guard case let .emoticons(images, size, alignment) = rule.kind else { continue }
             replaceEmoticons(in: output, images: images, size: size, alignment: alignment, into: &attachments)
         }
-        let source = output.string as NSString
+        if rules.contains(where: { if case .markdownEmphasis = $0.kind { true } else { false } }) {
+            applyEmphasis(in: output, attachments: &attachments)
+        }
         var taken: [NSRange] = []
         var actions: [LYGlyphTextAction] = []
+        for rule in rules {
+            guard case let .markdownLinks(attributes, pressedStyle) = rule.kind else { continue }
+            for link in replaceLinks(in: output, attachments: &attachments) {
+                output.addAttributes(attributes, range: link.range)
+                taken.append(link.range)
+                actions.append(LYGlyphTextAction(actionID: link.url, range: link.range, pressedStyle: pressedStyle))
+            }
+        }
+        let source = output.string as NSString
         for rule in rules {
             guard case let .actions(matcher, attributes, pressedStyle, makeID) = rule.kind else { continue }
             for match in matcher(source) where match.length > 0 && match.location != NSNotFound {
@@ -109,6 +139,74 @@ public struct LYGlyphTextParser {
         }
         actions.sort { $0.range.location < $1.range.location }
         return try LYGlyphTextDocument(attributedText: output, attachments: attachments, actions: actions)
+    }
+
+    /// 用新内容替换一个范围，并平移其后的附件位置；被替换范围内含附件时不应调用。
+    private func replace(
+        _ range: NSRange, with replacement: NSAttributedString, in text: NSMutableAttributedString,
+        attachments: inout [Int: LYGlyphTextAttachment]
+    ) {
+        let delta = replacement.length - range.length
+        attachments = Dictionary(uniqueKeysWithValues: attachments.map { location, attachment in
+            (location >= NSMaxRange(range) ? location + delta : location, attachment)
+        })
+        text.replaceCharacters(in: range, with: replacement)
+    }
+
+    private func applyEmphasis(in text: NSMutableAttributedString, attachments: inout [Int: LYGlyphTextAttachment]) {
+        let patterns: [(String, (UIFont) -> UIFont)] = [
+            ("\\*\\*([^*\\n]+?)\\*\\*", { Self.font($0, adding: .traitBold) }),
+            ("`([^`\\n]+)`", { UIFont.monospacedSystemFont(ofSize: $0.pointSize, weight: .regular) }),
+            ("(?<![*\\w])\\*([^*\\n]+?)\\*(?![*\\w])", { Self.font($0, adding: .traitItalic) })
+        ]
+        for (pattern, derive) in patterns {
+            guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
+            let matches = expression.matches(in: text.string, range: NSRange(location: 0, length: text.length))
+            for match in matches.reversed() {
+                let inner = match.range(at: 1)
+                guard !containsAttachment(text.string as NSString, match.range) else { continue }
+                let content = NSMutableAttributedString(attributedString: text.attributedSubstring(from: inner))
+                content.enumerateAttribute(.font, in: NSRange(location: 0, length: content.length)) { value, range, _ in
+                    let base = (value as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
+                    content.addAttribute(.font, value: derive(base), range: range)
+                }
+                replace(match.range, with: content, in: text, attachments: &attachments)
+            }
+        }
+    }
+
+    private static func font(_ font: UIFont, adding trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
+        guard let descriptor = font.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits.union(trait))
+        else { return font }
+        return UIFont(descriptor: descriptor, size: font.pointSize)
+    }
+
+    /// 从后向前替换链接；已记录的后方链接随前方替换平移，返回最终范围与链接原文。
+    private func replaceLinks(
+        in text: NSMutableAttributedString, attachments: inout [Int: LYGlyphTextAttachment]
+    ) -> [(range: NSRange, url: String)] {
+        guard let expression = try? NSRegularExpression(pattern: "\\[([^\\]\\n]+)\\]\\(([^)\\s]+)\\)")
+        else { return [] }
+        var links: [(range: NSRange, url: String)] = []
+        let matches = expression.matches(in: text.string, range: NSRange(location: 0, length: text.length))
+        for match in matches.reversed() {
+            let source = text.string as NSString
+            let label = match.range(at: 1)
+            let url = source.substring(with: match.range(at: 2))
+            guard !containsAttachment(source, match.range),
+                  !source.substring(with: label).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { continue }
+            let content = text.attributedSubstring(from: label)
+            let delta = content.length - match.range.length
+            replace(match.range, with: content, in: text, attachments: &attachments)
+            links = links.map { (
+                $0.range.location >= NSMaxRange(match.range)
+                    ? NSRange(location: $0.range.location + delta, length: $0.range.length) : $0.range,
+                $0.url
+            ) }
+            links.append((NSRange(location: match.range.location, length: content.length), url))
+        }
+        return links.sorted { $0.range.location < $1.range.location }
     }
 
     private func containsAttachment(_ source: NSString, _ range: NSRange) -> Bool {
