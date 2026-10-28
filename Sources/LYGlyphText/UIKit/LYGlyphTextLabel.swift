@@ -79,6 +79,14 @@ public final class LYGlyphTextLabel: UIView {
     /// 选区变化回调，参数为新的原文 UTF-16 范围或 nil。
     public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
 
+    /// 点按普通文字、行间空白或内边距时的回调，参数为 Label 本地坐标。
+    ///
+    /// 点在可发送事件的动作、可交互截断 token、交互附件或已有选区上时不触发；长按选择优先。
+    /// 默认 nil 时不安装识别器，宿主列表的选中与滚动行为完全不变；设置后单击由 Label 处理。
+    public var onTap: (@MainActor (CGPoint) -> Void)? {
+        didSet { updateTapRecognizer() }
+    }
+
     /// 显式丢弃附件实例与本次可见期间的失败记录，下次展示布局重新调用工厂。
     public func reloadAttachments() {
         guard !isTearingDown else { return }
@@ -114,6 +122,7 @@ public final class LYGlyphTextLabel: UIView {
     var editMenu: UIEditMenuInteraction?
     var selectionHandles: (start: SelectionHandleView, end: SelectionHandleView)?
     lazy var selectionGestureDelegate = SelectionGestureDelegate(owner: self)
+    var labelTapRecognizer: UITapGestureRecognizer?
 
     var hostAccessibilityElements: [Any]?
     var preparedAccessibilityElements: [Any] = []
@@ -370,6 +379,7 @@ public final class LYGlyphTextLabel: UIView {
         cancelActionInteraction()
         onAction = nil
         onSelectionChange = nil
+        onTap = nil
         document = nil
         viewProvider = nil
         imageLoader = nil

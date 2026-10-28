@@ -216,7 +216,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | G5 选择与拷贝 | 已完成 | G4 | isSelectable、selectedRange、拖柄、系统编辑菜单拷贝／全选 | [G5 记录](../../verification/2026-10-21-g5-selection.md)：413／413（387 宿主＋26 UI） |
 | G6 文本解析器 | 已完成 | G5 | 链接、@提及、#话题#、自定义正则、表情短码图片 | [G6 记录](../../verification/2026-10-21-g6-parser.md)：418／418（392 宿主＋26 UI） |
 | G7 SwiftUI 参数与 2.x 准备 | 已完成 | G6 | SwiftUI isSelectable／onSelectionChange，README、CHANGELOG、发布门槛更新 | [G7 记录](../../verification/2026-10-21-g7-swiftui-release.md)：419／419（393 宿主＋26 UI）；2.x 路线图 G1—G7 全部交付 |
-| L0—L7 Label 后续完善 | L0 `4d9575b`、L1 已交付，L2—L7 进行中 | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
+| L0—L7 Label 后续完善 | L0 `4d9575b`、L1 `983833e`、L2 已交付；L3—L5 已实现待合入，L6—L7 未开始 | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
 
 ### R1 实施契约（2026-10-21）
 

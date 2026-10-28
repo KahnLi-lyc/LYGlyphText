@@ -48,6 +48,9 @@ final class FeatureDemoController: UIViewController {
     private let tokenStatus = UILabel()
     private let remote = LYGlyphTextLabel(frame: .zero)
     private let remoteStatus = UILabel()
+    private let tappable = LYGlyphTextLabel(frame: .zero)
+    private let tapStatus = UILabel()
+    private var tapCount = 0
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -114,8 +117,25 @@ final class FeatureDemoController: UIViewController {
         remoteStatus.text = "加载中"
         remoteStatus.accessibilityIdentifier = "remoteStatus"
 
+        tappable.accessibilityIdentifier = "tapLabel"
+        if let document = try? LYGlyphTextDocument(
+            // 动作放在首行中间，避免跨行后无障碍框中心落在两行之间。
+            attributedText: NSAttributedString(string: "「作者」发布了这张卡片，点击任意文字打开详情", attributes: [.font: body]),
+            actions: [.init(actionID: "author", range: NSRange(location: 1, length: 2))]
+        ) {
+            tappable.document = document
+        }
+        tappable.onAction = { [weak self] event in self?.tapStatus.text = "动作：\(event.actionID)" }
+        tappable.onTap = { [weak self] _ in
+            guard let self else { return }
+            tapCount += 1
+            tapStatus.text = "整段点击 \(tapCount) 次"
+        }
+        tapStatus.text = "未点击"
+        tapStatus.accessibilityIdentifier = "tapStatus"
+
         let stack = UIStackView(arrangedSubviews: [
-            selectable, selectionStatus, truncated, tokenStatus, remote, remoteStatus
+            selectable, selectionStatus, truncated, tokenStatus, remote, remoteStatus, tappable, tapStatus
         ])
         stack.axis = .vertical
         stack.spacing = 12

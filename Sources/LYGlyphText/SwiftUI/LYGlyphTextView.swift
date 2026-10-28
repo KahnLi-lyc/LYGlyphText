@@ -27,6 +27,9 @@ public struct LYGlyphTextView: UIViewRepresentable {
     /// 选区变化回调；每次更新都使用最新闭包。
     public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
 
+    /// 点按普通文字或空白的回调，行为与 `LYGlyphTextLabel.onTap` 相同；nil 不处理单击。
+    public var onTap: (@MainActor (CGPoint) -> Void)?
+
     /// 创建富文本展示。SwiftUI 的 layoutPriority 由宿主管理。
     public init(
         document: LYGlyphTextDocument?,
@@ -36,7 +39,8 @@ public struct LYGlyphTextView: UIViewRepresentable {
         displayHeight: CGFloat? = nil,
         isSelectable: Bool = false,
         onAction: (@MainActor (LYGlyphTextActionEvent) -> Void)? = nil,
-        onSelectionChange: (@MainActor (NSRange?) -> Void)? = nil
+        onSelectionChange: (@MainActor (NSRange?) -> Void)? = nil,
+        onTap: (@MainActor (CGPoint) -> Void)? = nil
     ) {
         self.document = document
         self.configuration = configuration
@@ -46,6 +50,7 @@ public struct LYGlyphTextView: UIViewRepresentable {
         self.onAction = onAction
         self.isSelectable = isSelectable
         self.onSelectionChange = onSelectionChange
+        self.onTap = onTap
     }
 
     /// 创建底层 UIKit 视图。
@@ -92,5 +97,6 @@ public struct LYGlyphTextView: UIViewRepresentable {
         label.imageLoader = imageLoader
         label.onSelectionChange = onSelectionChange
         label.isSelectable = isSelectable
+        label.onTap = onTap
     }
 }

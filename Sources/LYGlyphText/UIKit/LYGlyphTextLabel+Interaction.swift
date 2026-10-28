@@ -131,7 +131,7 @@ extension LYGlyphTextLabel {
         return entry
     }
 
-    private func isInteractiveAttachmentTarget(_ view: UIView?) -> Bool {
+    func isInteractiveAttachmentTarget(_ view: UIView?) -> Bool {
         guard let view else { return false }
         return mountedAttachments.values.contains { mounted in
             mounted.descriptor.isInteractive && (view === mounted.view || view.isDescendant(of: mounted.view))

@@ -201,6 +201,14 @@ token 默认 nil 时仍为继承末行样式的 `…`；字体、颜色为 nil �
 
 文档额外读取 `.shadow`（NSShadow）、`.strokeWidth`／`.strokeColor`：阴影与描边只影响绘制，不改变测量；按下局部着色的字形部分不绘制阴影。`LYGlyphTextDocument(attributedText:..., linkPressedStyle:)` 可把 `.link` 范围转为动作，actionID 为 URL 字符串；默认 nil 时仍忽略 `.link`。未支持：头部／中间截断、整段点击回调（宿主可自行添加手势）。
 
+## 整段点击
+
+```swift
+cell.label.onTap = { _ in openDetail() }
+```
+
+点按普通文字、行间空白或内边距时回调；点在动作、可点击截断 token、交互附件或已有选区上时不回调。未设置时不安装识别器，列表 cell 的选中行为不变；设置后单击由 Label 处理。
+
 ## 圆角背景与边框
 
 ```swift

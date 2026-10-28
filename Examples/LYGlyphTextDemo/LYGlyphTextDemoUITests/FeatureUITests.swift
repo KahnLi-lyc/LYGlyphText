@@ -46,6 +46,19 @@ final class FeatureUITests: XCTestCase {
         add(shot)
     }
 
+    func testWholeLabelTapAndActionStaySeparate() {
+        let app = openFeatures()
+        let label = app.descendants(matching: .any)["tapLabel"]
+        XCTAssertTrue(label.waitForExistence(timeout: 5))
+        label.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.25)).tap()
+        let status = app.staticTexts["tapStatus"]
+        XCTAssertTrue(waitForLabel(status, prefix: "整段点击 1 次"), status.label)
+        let action = app.descendants(matching: .any)["作者"]
+        XCTAssertTrue(action.waitForExistence(timeout: 5))
+        action.tap()
+        XCTAssertTrue(waitForLabel(status, prefix: "动作：author"), status.label)
+    }
+
     private func waitForLabel(_ element: XCUIElement, prefix: String) -> Bool {
         let predicate = NSPredicate(format: "label BEGINSWITH %@", prefix)
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)

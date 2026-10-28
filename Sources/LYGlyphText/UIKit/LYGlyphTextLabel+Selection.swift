@@ -148,6 +148,7 @@ extension LYGlyphTextLabel {
             let menu = UIEditMenuInteraction(delegate: nil)
             addInteraction(menu)
             editMenu = menu
+            updateTapRecognizer()
         } else if !isSelectable, let press = selectionLongPress {
             removeGestureRecognizer(press)
             selectionTap.map(removeGestureRecognizer)
@@ -159,8 +160,9 @@ extension LYGlyphTextLabel {
     }
 
     func shouldBeginSelectionGesture(_ recognizer: UIGestureRecognizer) -> Bool {
-        guard isSelectable, window != nil else { return false }
         let point = recognizer.location(in: self)
+        if recognizer === labelTapRecognizer { return shouldSendTap(at: point, touchedView: nil) }
+        guard isSelectable, window != nil else { return false }
         if recognizer === selectionTap { return selectedRange != nil }
         return !isActionTarget(at: point)
     }
@@ -243,7 +245,12 @@ final class SelectionGestureDelegate: NSObject, UIGestureRecognizerDelegate {
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool {
-        gestureRecognizer is UITapGestureRecognizer
+        gestureRecognizer is UITapGestureRecognizer && gestureRecognizer !== owner?.labelTapRecognizer
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let owner, gestureRecognizer === owner.labelTapRecognizer else { return true }
+        return owner.shouldSendTap(at: touch.location(in: owner), touchedView: touch.view)
     }
 }
 
