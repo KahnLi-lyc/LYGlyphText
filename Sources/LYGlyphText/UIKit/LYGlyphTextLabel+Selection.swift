@@ -104,6 +104,27 @@ extension LYGlyphTextLabel {
         setSelection(updated, presentsMenu: false)
     }
 
+    /// 按一个组合字符移动选区的一端；不越过可见原文边界，选区至少保留一个组合字符。
+    func adjustSelection(_ handle: SelectionHandle, forward: Bool) {
+        guard let range = selectedRange, let document,
+              let visible = selectionGeometry()?.geometry.visibleRange else { return }
+        let source = document.string as NSString
+        var start = range.location
+        var end = NSMaxRange(range)
+        func step(_ boundary: Int) -> Int {
+            if forward {
+                guard boundary < NSMaxRange(visible) else { return boundary }
+                return NSMaxRange(source.rangeOfComposedCharacterSequence(at: boundary))
+            }
+            guard boundary > visible.location else { return boundary }
+            return source.rangeOfComposedCharacterSequence(at: boundary - 1).location
+        }
+        if handle == .start { start = min(step(start), source.rangeOfComposedCharacterSequence(at: end - 1).location) }
+        else { end = max(step(end), NSMaxRange(source.rangeOfComposedCharacterSequence(at: start))) }
+        setSelection(NSRange(location: start, length: end - start), presentsMenu: false)
+        UIAccessibility.post(notification: .layoutChanged, argument: nil)
+    }
+
     func setSelection(_ range: NSRange?, presentsMenu: Bool) {
         let validated = range.flatMap { range -> NSRange? in
             guard isSelectable, let document else { return nil }
@@ -303,8 +324,33 @@ final class SelectionHandleView: UIView {
         super.init(frame: .zero)
         isOpaque = false
         backgroundColor = .clear
-        isAccessibilityElement = false
+        isAccessibilityElement = true
+        accessibilityTraits = .adjustable
+        accessibilityIdentifier = handle == .start ? "LYGlyphText.selectionStart" : "LYGlyphText.selectionEnd"
         addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(panned(_:))))
+    }
+
+    override var accessibilityLabel: String? {
+        get {
+            guard let owner else { return nil }
+            return handle == .start ? owner.selectionStartAccessibilityName : owner.selectionEndAccessibilityName
+        }
+        set {}
+    }
+
+    override var accessibilityValue: String? {
+        get { owner?.selectedText }
+        set {}
+    }
+
+    /// 向后（原文索引增大方向）移动这一端一个组合字符。
+    override func accessibilityIncrement() {
+        owner?.adjustSelection(handle, forward: true)
+    }
+
+    /// 向前（原文索引减小方向）移动这一端一个组合字符。
+    override func accessibilityDecrement() {
+        owner?.adjustSelection(handle, forward: false)
     }
 
     @available(*, unavailable)

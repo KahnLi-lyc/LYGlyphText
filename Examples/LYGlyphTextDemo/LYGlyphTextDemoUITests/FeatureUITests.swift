@@ -33,6 +33,31 @@ final class FeatureUITests: XCTestCase {
         XCTAssertGreaterThan(status.label.count, "已拷贝：".count)
     }
 
+    func testDraggingEndHandleExtendsSelection() {
+        let app = openFeatures()
+        let label = app.descendants(matching: .any)["selectableLabel"]
+        label.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.3)).press(forDuration: 1.0)
+        let status = app.staticTexts["selectionStatus"]
+        XCTAssertTrue(waitForLabel(status, prefix: "已选："), status.label)
+        let before = status.label
+        let end = app.descendants(matching: .any)["LYGlyphText.selectionEnd"]
+        XCTAssertTrue(end.waitForExistence(timeout: 5))
+        // 编辑菜单可能显示在选区下方并盖住拖柄圆点，从文字行内的竖线部分开始拖。
+        let start = end.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+        let target = label.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.3))
+        start.press(forDuration: 0.3, thenDragTo: target)
+        let longer = NSPredicate(format: "label BEGINSWITH '已选：' AND label.length > %d", before.count)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: longer, object: status)], timeout: 5),
+            .completed,
+            status.label
+        )
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "selection-handle-dragged"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     func testTruncationTokenTapExpandsAndRemoteImageLoadsLocally() {
         let app = openFeatures()
         let token = app.descendants(matching: .any)["…展开全文"]

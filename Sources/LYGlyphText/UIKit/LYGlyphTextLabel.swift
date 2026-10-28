@@ -79,6 +79,12 @@ public final class LYGlyphTextLabel: UIView {
     /// 有选区时无障碍自定义拷贝动作的名称，默认“拷贝”；宿主可按本地化需要替换。
     public var selectionCopyAccessibilityName = "拷贝"
 
+    /// 选区开始拖柄的无障碍名称，默认“选区开始”；拖柄可用 VoiceOver 上下滑动逐字调节。
+    public var selectionStartAccessibilityName = "选区开始"
+
+    /// 选区结束拖柄的无障碍名称，默认“选区结束”。
+    public var selectionEndAccessibilityName = "选区结束"
+
     /// 选区变化回调，参数为新的原文 UTF-16 范围或 nil。
     public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
 
@@ -145,7 +151,11 @@ public final class LYGlyphTextLabel: UIView {
         get {
             if let hostAccessibilityElements { return hostAccessibilityElements }
             guard preparedAccessibilityRevision == accessibilityRevision, window != nil else { return [] }
-            return preparedAccessibilityElements
+            // 有选区时两端拖柄排在文字之后，可被 VoiceOver 与自动化定位。
+            guard let handles = selectionHandles, handles.start.superview === self else {
+                return preparedAccessibilityElements
+            }
+            return preparedAccessibilityElements + [handles.start, handles.end]
         }
         set { hostAccessibilityElements = newValue }
     }
