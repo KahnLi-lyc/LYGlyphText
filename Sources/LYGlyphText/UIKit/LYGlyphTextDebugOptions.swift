@@ -56,8 +56,12 @@ extension LYGlyphTextLayout {
         }
         if options.contains(.attachmentFrames) {
             context.setStrokeColor(UIColor.green.withAlphaComponent(0.8).cgColor)
-            for rect in attachments.map(\.rect) + viewAttachments.map(\.rect) {
+            for rect in attachments.map(\.rect) {
                 context.stroke(rect.insetBy(dx: 0.5, dy: 0.5))
+            }
+            // UIView 附件（含远程图片）盖在绘制内容之上，框描在视图外侧 1pt 才可见。
+            for rect in viewAttachments.map(\.rect) {
+                context.stroke(rect.insetBy(dx: -0.5, dy: -0.5))
             }
         }
         context.restoreGState()

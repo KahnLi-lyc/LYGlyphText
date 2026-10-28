@@ -392,7 +392,7 @@ let document = try parser.document(from: NSAttributedString(string: "**粗体**�
 label.debugOptions = .all // 或 [.lineFrames, .baselines, .attachmentFrames, .actionRegions]
 ```
 
-在文字之上用固定半透明颜色描出行框（红）、基线（蓝）、附件框（绿）和动作／token 区域（橙），用于排查排版与点击区域。默认为空，不影响测量、命中和无障碍；SwiftUI `LYGlyphTextView` 提供同名参数。只建议在调试构建中使用。
+在文字之上用固定半透明颜色描出行框（红）、基线（蓝）、附件框（绿；UIView 与远程图片附件描在视图外侧 1pt）和动作／token 区域（橙），用于排查排版与点击区域。默认为空，不影响测量、命中和无障碍；SwiftUI `LYGlyphTextView` 提供同名参数。只建议在调试构建中使用。
 
 ## 运行 Demo 和检查
 

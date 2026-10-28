@@ -190,6 +190,7 @@ final class FeatureDemoController: UIViewController {
         markdownStatus.accessibilityIdentifier = "markdownStatus"
 
         debugSwitch.accessibilityIdentifier = "debugSwitch"
+        debugSwitch.accessibilityLabel = "调试叠加"
         debugSwitch.addAction(UIAction { [weak self] _ in
             guard let self else { return }
             let options: LYGlyphTextDebugOptions = debugSwitch.isOn ? .all : []

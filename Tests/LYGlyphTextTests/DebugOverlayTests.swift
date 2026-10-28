@@ -87,6 +87,25 @@ final class DebugOverlayTests: XCTestCase {
         XCTAssertEqual(color(regions, 395, 195), [255, 255, 255])
     }
 
+    func testViewAttachmentFrameIsDrawnOutsideTheView() throws {
+        let descriptor = LYGlyphTextViewAttachment(id: "v", viewID: "badge", size: CGSize(width: 40, height: 30))
+        let doc = try LYGlyphTextDocument(
+            attributedText: NSAttributedString(
+                string: "A\u{FFFC}B",
+                attributes: [.font: UIFont.systemFont(ofSize: 24)]
+            ),
+            viewAttachments: [1: descriptor]
+        )
+        let value = ResolvedText(document: doc, traits: UITraitCollection()).layout(
+            width: 400, insets: UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20), scale: 1
+        )
+        let rect = try XCTUnwrap(value.viewAttachments.first?.rect)
+        let boxes = try pixels { value.drawDebug(.attachmentFrames, in: $0) }
+        // 视图会盖住自身区域，所以框必须落在视图外侧。
+        XCTAssertGreaterThan(strongest(boxes, rect.midX, rect.minY - 1, channel: 1, over: 0), 60)
+        XCTAssertEqual(color(boxes, rect.midX, rect.midY), [255, 255, 255])
+    }
+
     func testChangingOptionsDoesNotRebuildLayout() throws {
         let label = LYGlyphTextLabel(frame: CGRect(x: 0, y: 0, width: 300, height: 80))
         label.document = try LYGlyphTextDocument(attributedText: NSAttributedString(string: "Debug"))

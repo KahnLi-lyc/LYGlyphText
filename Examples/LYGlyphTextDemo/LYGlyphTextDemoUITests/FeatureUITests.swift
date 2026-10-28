@@ -42,8 +42,11 @@ final class FeatureUITests: XCTestCase {
         let before = status.label
         let end = app.descendants(matching: .any)["LYGlyphText.selectionEnd"]
         XCTAssertTrue(end.waitForExistence(timeout: 5))
-        // 编辑菜单可能显示在选区下方并盖住拖柄圆点，从文字行内的竖线部分开始拖。
-        let start = end.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+        // 编辑菜单可能显示在选区下方并盖住拖柄圆点；拖柄无障碍框又扩展到 44pt 命中区，
+        // 所以按拖柄中心 x 与首行文字高度（长按位置）定位竖线部分。
+        let start = label.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: end.frame.midX - label.frame.minX, dy: label.frame.height * 0.3
+        ))
         let target = label.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.3))
         start.press(forDuration: 0.3, thenDragTo: target)
         let longer = NSPredicate(format: "label BEGINSWITH '已选：' AND label.length > %d", before.count)

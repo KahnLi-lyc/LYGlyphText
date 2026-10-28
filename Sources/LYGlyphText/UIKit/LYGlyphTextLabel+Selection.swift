@@ -315,6 +315,8 @@ final class SelectionHandleView: UIView {
     let handle: LYGlyphTextLabel.SelectionHandle
     private weak var owner: LYGlyphTextLabel?
     private static let knob: CGFloat = 10
+    /// 触摸与无障碍共用的扩展命中区，使拖柄可操作区域约为 44pt。
+    private static let hitOutset = UIEdgeInsets(top: -12, left: -17, bottom: -12, right: -17)
     /// iOS 17+ 的 UITextLoupeSession；以 AnyObject 保存以兼容 iOS 16 部署目标。
     private var loupe: AnyObject?
 
@@ -343,6 +345,12 @@ final class SelectionHandleView: UIView {
         set {}
     }
 
+    /// 与 `point(inside:with:)` 一致的扩展区域，而不是只有 10pt 宽的可见竖线。
+    override var accessibilityFrame: CGRect {
+        get { UIAccessibility.convertToScreenCoordinates(bounds.inset(by: Self.hitOutset), in: self) }
+        set {}
+    }
+
     /// 向后（原文索引增大方向）移动这一端一个组合字符。
     override func accessibilityIncrement() {
         owner?.adjustSelection(handle, forward: true)
@@ -366,7 +374,7 @@ final class SelectionHandleView: UIView {
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        bounds.insetBy(dx: -17, dy: -12).contains(point)
+        bounds.inset(by: Self.hitOutset).contains(point)
     }
 
     override func draw(_ rect: CGRect) {

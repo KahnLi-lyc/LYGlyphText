@@ -31,6 +31,14 @@ final class SelectionHandleAccessibilityTests: XCTestCase {
         XCTAssertEqual(found.map(\.accessibilityLabel), ["选区开始", "选区结束"])
         XCTAssertEqual(found.first?.accessibilityValue, "节的")
         XCTAssertTrue(try XCTUnwrap(found.first).accessibilityTraits.contains(.adjustable))
+        // 无障碍框与触摸命中区一致，不小于 44pt 宽。
+        let handle = try XCTUnwrap(found.first)
+        XCTAssertGreaterThanOrEqual(handle.accessibilityFrame.width, 44)
+        XCTAssertGreaterThanOrEqual(handle.accessibilityFrame.height, 44)
+        let center = handle.convert(
+            CGPoint(x: handle.accessibilityFrame.midX, y: handle.accessibilityFrame.midY), from: nil
+        )
+        XCTAssertTrue(handle.point(inside: center, with: nil))
         label.selectionStartAccessibilityName = "Start"
         XCTAssertEqual(found.first?.accessibilityLabel, "Start")
         // 文字元素仍在拖柄之前。
