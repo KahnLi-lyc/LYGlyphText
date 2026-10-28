@@ -47,6 +47,17 @@ struct LYGlyphTextLayout {
     let preparedDecorations: TextDecorations.Prepared?
     let preparedDrawing: PressedTextDrawing
     let truncationToken: TruncationToken?
+    /// 文档级圆角背景／边框，已按行合并并解析颜色；坐标相对文本容器原点。
+    let backgroundShapes: [BackgroundShape]
+
+    struct BackgroundShape {
+        let rects: [CGRect]
+        let cornerRadius: CGFloat
+        let fill: CGColor?
+        let stroke: CGColor?
+        let strokeWidth: CGFloat
+    }
+
     /// 按动作序号保存需要圆角绘制的按下背景色；直角背景仍由 PressedTextDrawing 合成。
     private let roundedPressedBackgrounds: [CGColor?]
 
@@ -65,6 +76,7 @@ struct LYGlyphTextLayout {
         size: CGSize, lines: [Line], attachments: [Attachment] = [], viewAttachments: [ViewAttachment] = [],
         decorations: TextDecorations? = nil, traits: UITraitCollection = .current, source: String? = nil,
         actions: [LYGlyphTextAction] = [], truncationToken: TruncationToken? = nil,
+        backgroundStyles: [(range: NSRange, style: LYGlyphTextBackgroundStyle)] = [],
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) {
         self.truncationToken = truncationToken
@@ -84,6 +96,7 @@ struct LYGlyphTextLayout {
             )
         }
         actionIndex = Self.index(actions: actions, geometry: geometry)
+        backgroundShapes = geometry.map { Self.backgroundShapes(backgroundStyles, geometry: $0, traits: traits) } ?? []
         roundedPressedBackgrounds = actionIndex.map { entry in
             let style = entry.action.pressedStyle
             return style.cornerRadius > 0 ? style.backgroundColor?.resolvedColor(with: traits).cgColor : nil
@@ -141,6 +154,9 @@ struct LYGlyphTextLayout {
         observe(.drawCachedContent)
         context.saveGState()
         preparedDrawing.drawBackgrounds(in: context, pressed: pressedActionIndex)
+        for shape in backgroundShapes {
+            Self.draw(shape, in: context)
+        }
         var tokenColor: CGColor?
         if let pressedActionIndex, actionIndex.indices.contains(pressedActionIndex) {
             if let color = roundedPressedBackgrounds[pressedActionIndex] {
@@ -166,6 +182,76 @@ struct LYGlyphTextLayout {
             placement.attachment.image.draw(in: placement.rect)
         }
         UIGraphicsPopContext()
+    }
+
+    /// 相邻且样式相等的范围先合并，再按最终行取可见片段并集；隐藏和截断的原文没有片段。
+    private static func backgroundShapes(
+        _ styles: [(range: NSRange, style: LYGlyphTextBackgroundStyle)], geometry: SourceGeometry,
+        traits: UITraitCollection
+    ) -> [BackgroundShape] {
+        var groups: [(range: NSRange, style: LYGlyphTextBackgroundStyle)] = []
+        for item in styles.sorted(by: { $0.range.location < $1.range.location }) {
+            if let last = groups.last, last.style == item.style, NSMaxRange(last.range) == item.range.location {
+                groups[groups.count - 1].range = NSUnionRange(last.range, item.range)
+            } else {
+                groups.append(item)
+            }
+        }
+        return groups.compactMap { group in
+            // 公开 var 可能在初始化后被改写，绘制前再次清洗。
+            let style = LYGlyphTextBackgroundStyle(
+                fillColor: group.style.fillColor, strokeColor: group.style.strokeColor,
+                strokeWidth: group.style.strokeWidth, cornerRadius: group.style.cornerRadius,
+                padding: group.style.padding
+            )
+            let padding = style.padding
+            let lines = Dictionary(grouping: geometry.fragments(in: group.range), by: \.lineIndex)
+            let rects = lines.keys.sorted().compactMap { line -> CGRect? in
+                guard let first = lines[line]?.first?.rect else { return nil }
+                let union = lines[line, default: []].dropFirst().reduce(first) { $0.union($1.rect) }
+                let expanded = CGRect(
+                    x: union.minX - padding.left, y: union.minY - padding.top,
+                    width: union.width + padding.left + padding.right,
+                    height: union.height + padding.top + padding.bottom
+                )
+                return expanded.width > 0 && expanded.height > 0
+                    && [expanded.minX, expanded.maxX, expanded.minY, expanded.maxY].allSatisfy(\.isFinite)
+                    ? expanded : nil
+            }
+            guard !rects.isEmpty else { return nil }
+            return BackgroundShape(
+                rects: rects, cornerRadius: style.cornerRadius,
+                fill: style.fillColor?.resolvedColor(with: traits).cgColor,
+                stroke: style.strokeWidth > 0 ? style.strokeColor?.resolvedColor(with: traits).cgColor : nil,
+                strokeWidth: style.strokeWidth
+            )
+        }
+    }
+
+    private static func draw(_ shape: BackgroundShape, in context: CGContext) {
+        context.saveGState()
+        for rect in shape.rects {
+            let radius = min(shape.cornerRadius, rect.width / 2, rect.height / 2)
+            let path = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            if let fill = shape.fill {
+                context.setFillColor(fill)
+                context.addPath(path)
+                context.fillPath()
+            }
+            if let stroke = shape.stroke {
+                // 描边沿形状边缘向内收半个线宽，保持外框尺寸与填充一致。
+                let inset = rect.insetBy(dx: shape.strokeWidth / 2, dy: shape.strokeWidth / 2)
+                guard inset.width > 0, inset.height > 0 else { continue }
+                let innerRadius = max(0, min(radius - shape.strokeWidth / 2, inset.width / 2, inset.height / 2))
+                context.setStrokeColor(stroke)
+                context.setLineWidth(shape.strokeWidth)
+                context.addPath(CGPath(
+                    roundedRect: inset, cornerWidth: innerRadius, cornerHeight: innerRadius, transform: nil
+                ))
+                context.strokePath()
+            }
+        }
+        context.restoreGState()
     }
 
     /// 同一行相邻或重叠的片段先合并，再分别绘制圆角，避免逐字形出现分段圆角。
@@ -211,6 +297,7 @@ final class ResolvedText {
     private let attachments: [Int: LYGlyphTextAttachment]
     private let viewAttachments: [Int: LYGlyphTextViewAttachment]
     private let decorationStyles: [TextDecorations.Style]
+    private let backgroundStyles: [(range: NSRange, style: LYGlyphTextBackgroundStyle)]
 
     init(
         document: LYGlyphTextDocument?, traits: UITraitCollection,
@@ -286,6 +373,9 @@ final class ResolvedText {
             text.setAttributes(attributes, range: run.range)
         }
         self.decorationStyles = decorationStyles
+        backgroundStyles = (document?.styleRuns ?? []).compactMap { run in
+            run.backgroundStyle.map { (range: run.range, style: $0) }
+        }
         for location in Set(attachments.keys).union(viewAttachments.keys) {
             guard let size = attachments[location]?.size ?? viewAttachments[location]?.size,
                   let alignment = attachments[location]?.alignment ?? viewAttachments[location]?.alignment,
@@ -438,7 +528,7 @@ final class ResolvedText {
                 viewAttachments: visibleViewAttachments(in: visible.lines),
                 decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
                 traits: traits, source: document?.string ?? "", actions: document?.actions ?? [],
-                truncationToken: visible.token, observe: observe
+                truncationToken: visible.token, backgroundStyles: backgroundStyles, observe: observe
             )
         }
         return LYGlyphTextLayout(
@@ -449,7 +539,8 @@ final class ResolvedText {
             lines: lines, attachments: visibleAttachments(in: lines),
             viewAttachments: visibleViewAttachments(in: lines),
             decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
-            traits: traits, source: document?.string ?? "", actions: document?.actions ?? [], observe: observe
+            traits: traits, source: document?.string ?? "", actions: document?.actions ?? [],
+            backgroundStyles: backgroundStyles, observe: observe
         )
     }
 

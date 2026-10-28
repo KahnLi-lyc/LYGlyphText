@@ -201,6 +201,19 @@ token 默认 nil 时仍为继承末行样式的 `…`；字体、颜色为 nil �
 
 文档额外读取 `.shadow`（NSShadow）、`.strokeWidth`／`.strokeColor`：阴影与描边只影响绘制，不改变测量；按下局部着色的字形部分不绘制阴影。`LYGlyphTextDocument(attributedText:..., linkPressedStyle:)` 可把 `.link` 范围转为动作，actionID 为 URL 字符串；默认 nil 时仍忽略 `.link`。未支持：头部／中间截断、整段点击回调（宿主可自行添加手势）。
 
+## 圆角背景与边框
+
+```swift
+let capsule = LYGlyphTextBackgroundStyle(
+    fillColor: .systemBlue.withAlphaComponent(0.12), strokeColor: .systemBlue, strokeWidth: 1,
+    cornerRadius: 4, padding: UIEdgeInsets(top: 1, left: 4, bottom: 1, right: 4)
+)
+text.addAttribute(.lyGlyphTextBackground, value: capsule, range: topicRange)
+// 或者交给解析器：LYGlyphTextParser(rules: [.topics(attributes: [.lyGlyphTextBackground: capsule])])
+```
+
+同一行内相邻且样式相等的片段合并成一个形状，跨行时每行各一段；绘制在普通背景之上、文字之下，不改变测量。外扩 `padding` 可能超出行高，必要时用行距或内边距留出空间。
+
 ## 行内 UIView
 
 视图描述与 UIImage 描述分开；两类附件共享 UTF-16 占位、文档内唯一 ID 和明确尺寸校验。同一位置不能同时提供两种描述。工厂按 viewID 创建新的、尚未挂载的 UIView；不要在工厂闭包中强持有 Label。

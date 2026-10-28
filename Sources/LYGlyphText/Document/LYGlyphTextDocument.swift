@@ -43,6 +43,7 @@ public final class LYGlyphTextDocument {
         let strikethroughColor: UIColor?
         let ligature: Int
         let shadow: TextShadow?
+        let backgroundStyle: LYGlyphTextBackgroundStyle?
         let strokeWidth: CGFloat
         let strokeColor: UIColor?
         let paragraph: ParagraphStyle
@@ -200,6 +201,8 @@ public final class LYGlyphTextDocument {
                     strikethroughColor: attributes[.strikethroughColor] as? UIColor,
                     ligature: StyleNumber.integer(attributes[.ligature], allowed: 0 ... 2) ?? 1,
                     shadow: (attributes[.shadow] as? NSShadow).flatMap(TextShadow.init),
+                    backgroundStyle: (attributes[.lyGlyphTextBackground] as? LYGlyphTextBackgroundStyle)
+                        .flatMap { $0.isVisible ? $0 : nil },
                     strokeWidth: StyleNumber.scalar(attributes[.strokeWidth]) ?? 0,
                     strokeColor: attributes[.strokeColor] as? UIColor,
                     paragraph: paragraph
