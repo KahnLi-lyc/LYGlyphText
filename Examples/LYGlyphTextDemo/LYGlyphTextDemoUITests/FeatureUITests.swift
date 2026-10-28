@@ -84,6 +84,57 @@ final class FeatureUITests: XCTestCase {
         XCTAssertTrue(waitForLabel(status, prefix: "动作：author"), status.label)
     }
 
+    func testTruncationModeSwitchRevealsDocumentEnd() {
+        let app = openFeatures()
+        let control = app.segmentedControls["truncationModeControl"]
+        scrollUntilHittable(control, in: app)
+        // 无障碍元素只覆盖可见文字：尾部截断时看不到“全文结束”，头部与中间截断时可见。
+        let ending = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '全文结束'"))
+        XCTAssertEqual(ending.count, 0)
+        control.buttons["head"].tap()
+        XCTAssertTrue(ending.firstMatch.waitForExistence(timeout: 5))
+        let head = XCTAttachment(screenshot: app.screenshot())
+        head.name = "truncation-head"
+        head.lifetime = .keepAlways
+        add(head)
+        control.buttons["middle"].tap()
+        let opening = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '开头部分'"))
+        XCTAssertTrue(opening.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(ending.firstMatch.waitForExistence(timeout: 5))
+        control.buttons["tail"].tap()
+        let gone = NSPredicate(format: "count == 0")
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: gone, object: ending)], timeout: 5), .completed
+        )
+    }
+
+    func testMarkdownLinkTapReportsURLAction() {
+        let app = openFeatures()
+        let link = app.descendants(matching: .any)["查看文档"]
+        scrollUntilHittable(link, in: app)
+        link.tap()
+        let status = app.staticTexts["markdownStatus"]
+        XCTAssertTrue(waitForLabel(status, prefix: "链接："), status.label)
+        XCTAssertTrue(status.label.contains("example.invalid/docs"), status.label)
+        let debug = app.switches["debugSwitch"]
+        scrollUntilHittable(debug, in: app)
+        debug.tap()
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "markdown-debug-overlay"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
+    private func scrollUntilHittable(_ element: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        var attempts = 0
+        while !element.isHittable, attempts < 5 {
+            app.swipeUp()
+            attempts += 1
+        }
+        XCTAssertTrue(element.isHittable)
+    }
+
     private func waitForLabel(_ element: XCUIElement, prefix: String) -> Bool {
         let predicate = NSPredicate(format: "label BEGINSWITH %@", prefix)
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)

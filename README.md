@@ -322,7 +322,16 @@ label.onRemoteImageLoad = { [weak self] id, imageSize in
 }
 ```
 
-组件不会在加载后自行改变排版，保持测量稳定。取消后组件会忽略迟到的回调。内置加载器没有磁盘缓存；动图最多保留 300 帧。本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
+组件不会在加载后自行改变排版，保持测量稳定。取消后组件会忽略迟到的回调。动图最多保留 300 帧。
+
+内置加载器带专用磁盘缓存（默认 50MB，目录为 Caches 下的 `LYGlyphTextImages`），遵循服务器的 HTTP 缓存头，不写入宿主的 `URLCache.shared`：
+
+```swift
+let loader = LYGlyphTextURLSessionImageLoader(diskCacheCapacity: 100 * 1024 * 1024) // 0 关闭磁盘缓存
+loader.removeAllCachedImages() // 同时清空内存与磁盘缓存
+```
+
+本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
 
 ## 列表预排版
 
@@ -350,7 +359,7 @@ label.onSelectionChange = { range in print(range as Any) }
 
 SwiftUI 使用 `LYGlyphTextView(document:configuration:viewProvider:imageLoader:displayHeight:isSelectable:onAction:onSelectionChange:)`，新增参数均有默认值；截断 token 通过 `configuration` 传入。
 
-长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。拷贝同时写入纯文本与 RTF 富文本；iOS 17+ 拖动拖柄时显示系统放大镜（iOS 16 没有）；有选区时文字无障碍元素提供“拷贝”自定义动作，名称可用 `selectionCopyAccessibilityName` 替换。不支持编辑。
+长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。拷贝同时写入纯文本与 RTF 富文本；iOS 17+ 拖动拖柄时显示系统放大镜（iOS 16 没有）；有选区时文字无障碍元素提供“拷贝”自定义动作，名称可用 `selectionCopyAccessibilityName` 替换。有选区时两端拖柄也是可调节的无障碍元素（VoiceOver 上下轻扫按一个组合字符伸缩对应一端，至少保留一个字符），名称默认“选区开始”“选区结束”，可用 `selectionStartAccessibilityName`／`selectionEndAccessibilityName` 替换；`accessibilityIdentifier` 固定为 `LYGlyphText.selectionStart`／`LYGlyphText.selectionEnd`，供 UI 自动化定位。不支持编辑。
 
 ## 文本解析
 
@@ -366,6 +375,24 @@ label.onAction = { event in
 ```
 
 先替换表情短码为图片附件，再按规则顺序识别；重叠时前面的规则优先。`.pattern(_:actionID:)` 支持自定义正则。
+
+轻量 Markdown 规则：
+
+```swift
+let parser = LYGlyphTextParser(rules: [.markdownEmphasis(), .markdownLinks(), .mentions()])
+let document = try parser.document(from: NSAttributedString(string: "**粗体**、*斜体*、`code` 和 [查看文档](https://example.com)"))
+// 显示为“粗体、斜体、code 和 查看文档”，“查看文档”的动作 ID 为 "https://example.com"
+```
+
+`.markdownEmphasis()` 按所在字体派生粗体、斜体和等宽字体并去掉标记；`.markdownLinks(attributes:pressedStyle:)` 把 `[文字](url)` 显示为文字并生成 URL 动作，包含附件或文字为空的链接保持原样。处理顺序为表情 → 强调 → 链接 → 其他动作规则。不支持嵌套、转义、标题、列表、引用和代码块；不配对的标记原样保留。
+
+## 调试叠加
+
+```swift
+label.debugOptions = .all // 或 [.lineFrames, .baselines, .attachmentFrames, .actionRegions]
+```
+
+在文字之上用固定半透明颜色描出行框（红）、基线（蓝）、附件框（绿）和动作／token 区域（橙），用于排查排版与点击区域。默认为空，不影响测量、命中和无障碍；SwiftUI `LYGlyphTextView` 提供同名参数。只建议在调试构建中使用。
 
 ## 运行 Demo 和检查
 
@@ -387,7 +414,7 @@ test 使用指定设备运行同一 scheme 的宿主单测和 UI 测试，零测
 
 ## 后续能力
 
-[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md) G1—G7 已交付可点击截断 token、按下圆角、阴影／描边、`.link` 转动作、网络图片、后台预排版、选择拷贝、文本解析与对应 SwiftUI 参数，结果见各阶段验证记录。[L 批次](docs/superpowers/plans/2026-10-27-label-refinements.md) 又补充了圆角背景／边框、整段点击、富文本拷贝与放大镜、网络图片真实尺寸回调、头部／中间截断，并完成 Release 性能复测。尚未实现：编辑器、异步绘制、HTML／Markdown 解析、竖排与绕排。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
+[2.x Label 路线图](docs/superpowers/plans/2026-10-21-label-roadmap.md) G1—G7 已交付可点击截断 token、按下圆角、阴影／描边、`.link` 转动作、网络图片、后台预排版、选择拷贝、文本解析与对应 SwiftUI 参数，结果见各阶段验证记录。[L 批次](docs/superpowers/plans/2026-10-27-label-refinements.md) 又补充了圆角背景／边框、整段点击、富文本拷贝与放大镜、网络图片真实尺寸回调、头部／中间截断，并完成 Release 性能复测。[S 批次](docs/superpowers/plans/2026-10-29-label-s-batch.md) 补充了拖柄无障碍调节、内置加载器磁盘缓存、轻量 Markdown 规则和调试叠加层。尚未实现：编辑器、异步绘制、HTML 与完整 Markdown 解析、竖排与绕排。标准 `.attachment` 仍明确抛错；其他未支持的装饰属性不参与绘制。H1 宿主矩阵已通过 298 项宿主＋21 项 UI 的完整回归；A1 已补自动可见语义和动作激活，完整回归与人工状态见 A1 记录。
 
 当前已处理动态 body、语义颜色与 RTL 的环境继承及自动 AX 语义；人工 VoiceOver 和最低系统验收继续独立留证。宿主适配范围和列表复用证据见 H1 记录，不推广为未测试容器或运行环境的保证。
 
