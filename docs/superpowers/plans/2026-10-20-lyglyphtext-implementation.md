@@ -216,7 +216,8 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | G5 选择与拷贝 | 已完成 | G4 | isSelectable、selectedRange、拖柄、系统编辑菜单拷贝／全选 | [G5 记录](../../verification/2026-10-21-g5-selection.md)：413／413（387 宿主＋26 UI） |
 | G6 文本解析器 | 已完成 | G5 | 链接、@提及、#话题#、自定义正则、表情短码图片 | [G6 记录](../../verification/2026-10-21-g6-parser.md)：418／418（392 宿主＋26 UI） |
 | G7 SwiftUI 参数与 2.x 准备 | 已完成 | G6 | SwiftUI isSelectable／onSelectionChange，README、CHANGELOG、发布门槛更新 | [G7 记录](../../verification/2026-10-21-g7-swiftui-release.md)：419／419（393 宿主＋26 UI）；2.x 路线图 G1—G7 全部交付 |
-| L0—L7 Label 后续完善 | L0 `4d9575b`、L1 `983833e`、L2 `93ebf0e`、L3 `ee1c060`、L4 `b662530`、L5 `4c58a28`、L6 `1b22ca7`、L7 已交付；完整回归 442／442 | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
+| L0—L7 Label 后续完善 | L0 `4d9575b`、L1 `983833e`、L2 `93ebf0e`、L3 `ee1c060`、L4 `b662530`、L5 `4c58a28`、L6 `1b22ca7`、L7 已交付；完整回归 442／442 |
+| S0—S7 剩余功能、RocketSim 验证与首个版本 | 进行中 | L7 `9219426` | 拖柄无障碍、磁盘缓存、Markdown、调试叠加、RocketSim 验证、`1.0.0-beta.1` | [S 批次契约](2026-10-29-label-s-batch.md) | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
 
 ### R1 实施契约（2026-10-21）
 
