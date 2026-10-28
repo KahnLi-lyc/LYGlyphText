@@ -338,7 +338,7 @@ label.onSelectionChange = { range in print(range as Any) }
 
 SwiftUI 使用 `LYGlyphTextView(document:configuration:viewProvider:imageLoader:displayHeight:isSelectable:onAction:onSelectionChange:)`，新增参数均有默认值；截断 token 通过 `configuration` 传入。
 
-长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。没有放大镜；不支持编辑。
+长按非动作文字选中所在单词并显示系统编辑菜单（拷贝、全选），拖动两端拖柄调整范围；动作与可点击截断 token 优先响应。拷贝写入纯文本，附件输出替代文本。`selectedRange` 使用原文 UTF-16 并扩展到完整组合字符；全选只包含可见原文。拷贝同时写入纯文本与 RTF 富文本；iOS 17+ 拖动拖柄时显示系统放大镜（iOS 16 没有）；有选区时文字无障碍元素提供“拷贝”自定义动作，名称可用 `selectionCopyAccessibilityName` 替换。不支持编辑。
 
 ## 文本解析
 

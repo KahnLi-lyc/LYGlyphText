@@ -76,6 +76,9 @@ public final class LYGlyphTextLabel: UIView {
         set { setSelection(newValue, presentsMenu: false) }
     }
 
+    /// 有选区时无障碍自定义拷贝动作的名称，默认“拷贝”；宿主可按本地化需要替换。
+    public var selectionCopyAccessibilityName = "拷贝"
+
     /// 选区变化回调，参数为新的原文 UTF-16 范围或 nil。
     public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
 

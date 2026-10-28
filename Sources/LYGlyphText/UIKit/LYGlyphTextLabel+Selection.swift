@@ -1,4 +1,5 @@
 import UIKit
+import UniformTypeIdentifiers
 
 extension LYGlyphTextLabel {
     /// 选区拖柄的位置。
@@ -19,10 +20,18 @@ extension LYGlyphTextLabel {
         setSelection(range, presentsMenu: true)
     }
 
-    /// 把选区纯文本写入通用剪贴板。
+    /// 把选区同时以纯文本和 RTF 富文本写入通用剪贴板；附件均输出替代文本。
     override public func copy(_ sender: Any?) {
-        guard let text = selectedText, !text.isEmpty else { return }
-        UIPasteboard.general.string = text
+        guard let range = selectedRange, let document, let text = selectedText, !text.isEmpty else { return }
+        var item: [String: Any] = [UTType.utf8PlainText.identifier: text]
+        let rich = Self.richText(of: document, in: range, traits: traitCollection)
+        if let data = try? rich.data(
+            from: NSRange(location: 0, length: rich.length),
+            documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
+        ) {
+            item[UTType.rtf.identifier] = data
+        }
+        UIPasteboard.general.items = [item]
     }
 
     override public var canBecomeFirstResponder: Bool {
@@ -184,8 +193,9 @@ extension LYGlyphTextLabel {
         selectionHandles = handles
         for (view, caret) in [(handles.start, start), (handles.end, end)] {
             view.tintColor = tintColor
-            // Label 裁切子视图；拖柄超出上下边界时移回 bounds 内，保持可见可拖。
+            // Label 裁切子视图；拖柄超出边界时移回 bounds 内，保持可见可拖。
             var frame = SelectionHandleView.frame(for: caret, handle: view.handle)
+            frame.origin.x = min(max(frame.minX, bounds.minX), max(bounds.minX, bounds.maxX - frame.width))
             frame.origin.y = min(max(frame.minY, bounds.minY), max(bounds.minY, bounds.maxY - frame.height))
             view.frame = frame
             if view.superview !== self { addSubview(view) } else { bringSubviewToFront(view) }
@@ -204,6 +214,30 @@ extension LYGlyphTextLabel {
         } else {
             setSelection(nil, presentsMenu: false)
         }
+    }
+
+    /// 按文档白名单样式重建选区富文本；附件以其替代文本和所在位置的样式输出。
+    static func richText(
+        of document: LYGlyphTextDocument, in range: NSRange, traits: UITraitCollection
+    ) -> NSAttributedString {
+        let source = document.string as NSString
+        let result = NSMutableAttributedString()
+        guard NSMaxRange(range) <= source.length else { return result }
+        for run in document.styleRuns {
+            let overlap = NSIntersectionRange(run.range, range)
+            guard overlap.length > 0 else { continue }
+            var attributes: [NSAttributedString.Key: Any] = [
+                .font: run.font ?? UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits),
+                .foregroundColor: run.color ?? UIColor.label
+            ]
+            attributes[.backgroundColor] = run.background
+            if run.underlineStyle != 0 { attributes[.underlineStyle] = run.underlineStyle }
+            if run.strikethroughStyle != 0 { attributes[.strikethroughStyle] = run.strikethroughStyle }
+            if let kern = run.kern { attributes[.kern] = kern }
+            if run.baselineOffset != 0 { attributes[.baselineOffset] = run.baselineOffset }
+            result.append(NSAttributedString(string: plainText(of: document, in: overlap), attributes: attributes))
+        }
+        return result
     }
 
     static func plainText(of document: LYGlyphTextDocument, in range: NSRange) -> String {
@@ -260,6 +294,8 @@ final class SelectionHandleView: UIView {
     let handle: LYGlyphTextLabel.SelectionHandle
     private weak var owner: LYGlyphTextLabel?
     private static let knob: CGFloat = 10
+    /// iOS 17+ 的 UITextLoupeSession；以 AnyObject 保存以兼容 iOS 16 部署目标。
+    private var loupe: AnyObject?
 
     init(owner: LYGlyphTextLabel, handle: LYGlyphTextLabel.SelectionHandle) {
         self.owner = owner
@@ -302,14 +338,23 @@ final class SelectionHandleView: UIView {
 
     @objc private func panned(_ recognizer: UIPanGestureRecognizer) {
         guard let owner else { return }
+        var point = recognizer.location(in: owner)
+        // 拖柄圆点在字符上下方，换算回字符中线所在高度。
+        point.y += handle == .start ? Self.knob : -Self.knob
         switch recognizer.state {
+        case .began:
+            if #available(iOS 17.0, *) {
+                loupe = UITextLoupeSession.begin(at: point, fromSelectionWidgetView: self, in: owner)
+            }
         case .changed:
-            var point = recognizer.location(in: owner)
-            // 拖柄圆点在字符上下方，换算回字符中线所在高度。
-            point.y += handle == .start ? Self.knob : -Self.knob
             owner.moveSelectionHandle(handle, to: point)
-        case .ended:
-            owner.presentSelectionMenu()
+            if #available(iOS 17.0, *), let session = loupe as? UITextLoupeSession {
+                session.move(to: point, withCaretRect: frame, trackingCaret: true)
+            }
+        case .ended, .cancelled, .failed:
+            if #available(iOS 17.0, *), let session = loupe as? UITextLoupeSession { session.invalidate() }
+            loupe = nil
+            if recognizer.state == .ended { owner.presentSelectionMenu() }
         default:
             break
         }

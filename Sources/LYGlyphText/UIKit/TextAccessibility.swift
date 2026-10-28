@@ -184,4 +184,18 @@ final class TextAccessibilityElement: UIAccessibilityElement {
     override func accessibilityActivate() -> Bool {
         owner?.activateAccessibilityElement(self) ?? false
     }
+
+    /// Label 存在选区时提供“拷贝”自定义动作，名称来自 `selectionCopyAccessibilityName`。
+    override var accessibilityCustomActions: [UIAccessibilityCustomAction]? {
+        get {
+            guard let owner, owner.isCurrentAccessibilityElement(self), owner.selectedText?.isEmpty == false
+            else { return nil }
+            return [UIAccessibilityCustomAction(name: owner.selectionCopyAccessibilityName) { [weak owner] _ in
+                guard let owner, owner.selectedText?.isEmpty == false else { return false }
+                owner.copy(nil)
+                return true
+            }]
+        }
+        set {}
+    }
 }
