@@ -1,0 +1,522 @@
+{
+ "baseline": "1e787fb (P1)",
+ "current": "4c58a28 (L5)",
+ "machineLoad": "load average 84-367 during runs (other tasks running simulators); absolute values are noisy, A/B interleaving reduces bias",
+ "method": "P1 PerformanceMeasurementTests in Release (-O WMO, ENABLE_TESTABILITY=YES), interleaved base1,cur1,base2,cur2,base3,cur3 on the same simulator; p50 nanoseconds per run; medians of three runs",
+ "phases": {
+  "documentConstruction": {
+   "utf16-100-attachments-0": {
+    "baselineMedian": 14333,
+    "baselineRuns": [
+     13875,
+     14500,
+     14333
+    ],
+    "currentMedian": 14833,
+    "currentRuns": [
+     14833,
+     15083,
+     14292
+    ]
+   },
+   "utf16-100-attachments-10": {
+    "baselineMedian": 20417,
+    "baselineRuns": [
+     20333,
+     20417,
+     20417
+    ],
+    "currentMedian": 21292,
+    "currentRuns": [
+     21292,
+     21458,
+     20584
+    ]
+   },
+   "utf16-100-attachments-3": {
+    "baselineMedian": 16292,
+    "baselineRuns": [
+     16542,
+     16292,
+     16250
+    ],
+    "currentMedian": 17125,
+    "currentRuns": [
+     16833,
+     17125,
+     17208
+    ]
+   },
+   "utf16-1000-attachments-0": {
+    "baselineMedian": 102375,
+    "baselineRuns": [
+     102584,
+     101875,
+     102375
+    ],
+    "currentMedian": 102750,
+    "currentRuns": [
+     102000,
+     103584,
+     102750
+    ]
+   },
+   "utf16-1000-attachments-10": {
+    "baselineMedian": 109041,
+    "baselineRuns": [
+     108625,
+     109041,
+     112084
+    ],
+    "currentMedian": 109792,
+    "currentRuns": [
+     109125,
+     109792,
+     109833
+    ]
+   },
+   "utf16-1000-attachments-3": {
+    "baselineMedian": 105958,
+    "baselineRuns": [
+     105958,
+     105708,
+     106042
+    ],
+    "currentMedian": 104125,
+    "currentRuns": [
+     104125,
+     105792,
+     102916
+    ]
+   },
+   "utf16-5000-attachments-0": {
+    "baselineMedian": 499958,
+    "baselineRuns": [
+     503083,
+     480125,
+     499958
+    ],
+    "currentMedian": 503458,
+    "currentRuns": [
+     503458,
+     507292,
+     493750
+    ]
+   },
+   "utf16-5000-attachments-10": {
+    "baselineMedian": 513375,
+    "baselineRuns": [
+     489583,
+     517916,
+     513375
+    ],
+    "currentMedian": 511125,
+    "currentRuns": [
+     511125,
+     511791,
+     483959
+    ]
+   },
+   "utf16-5000-attachments-3": {
+    "baselineMedian": 515750,
+    "baselineRuns": [
+     484166,
+     519458,
+     515750
+    ],
+    "currentMedian": 508292,
+    "currentRuns": [
+     508292,
+     512208,
+     505666
+    ]
+   }
+  },
+  "labelDrawCachedBitmap": {
+   "utf16-100-attachments-0": {
+    "baselineMedian": 376916,
+    "baselineRuns": [
+     376916,
+     366584,
+     379125
+    ],
+    "currentMedian": 384000,
+    "currentRuns": [
+     379083,
+     384000,
+     390458
+    ]
+   },
+   "utf16-100-attachments-10": {
+    "baselineMedian": 617458,
+    "baselineRuns": [
+     616042,
+     617458,
+     635833
+    ],
+    "currentMedian": 649875,
+    "currentRuns": [
+     630042,
+     657125,
+     649875
+    ]
+   },
+   "utf16-100-attachments-3": {
+    "baselineMedian": 481250,
+    "baselineRuns": [
+     481250,
+     461750,
+     494916
+    ],
+    "currentMedian": 485667,
+    "currentRuns": [
+     485667,
+     491750,
+     471750
+    ]
+   },
+   "utf16-1000-attachments-0": {
+    "baselineMedian": 1122416,
+    "baselineRuns": [
+     1122416,
+     1116375,
+     1220833
+    ],
+    "currentMedian": 1180875,
+    "currentRuns": [
+     1252667,
+     1180875,
+     1106792
+    ]
+   },
+   "utf16-1000-attachments-10": {
+    "baselineMedian": 1307417,
+    "baselineRuns": [
+     1347417,
+     1287667,
+     1307417
+    ],
+    "currentMedian": 1344125,
+    "currentRuns": [
+     1344125,
+     1353666,
+     1316291
+    ]
+   },
+   "utf16-1000-attachments-3": {
+    "baselineMedian": 1203166,
+    "baselineRuns": [
+     1203166,
+     1202458,
+     1208250
+    ],
+    "currentMedian": 1216416,
+    "currentRuns": [
+     1209375,
+     1236584,
+     1216416
+    ]
+   },
+   "utf16-5000-attachments-0": {
+    "baselineMedian": 2612125,
+    "baselineRuns": [
+     2486583,
+     2612125,
+     2752375
+    ],
+    "currentMedian": 2664042,
+    "currentRuns": [
+     2679709,
+     2664042,
+     2631917
+    ]
+   },
+   "utf16-5000-attachments-10": {
+    "baselineMedian": 2828875,
+    "baselineRuns": [
+     2623375,
+     2912500,
+     2828875
+    ],
+    "currentMedian": 2858667,
+    "currentRuns": [
+     2871250,
+     2658917,
+     2858667
+    ]
+   },
+   "utf16-5000-attachments-3": {
+    "baselineMedian": 2780417,
+    "baselineRuns": [
+     2491708,
+     2786250,
+     2780417
+    ],
+    "currentMedian": 2747375,
+    "currentRuns": [
+     2786209,
+     2747375,
+     2626125
+    ]
+   }
+  },
+  "newLabelFirstSizeThatFits": {
+   "utf16-100-attachments-0": {
+    "baselineMedian": 1943708,
+    "baselineRuns": [
+     1943708,
+     1885375,
+     2064541
+    ],
+    "currentMedian": 1931167,
+    "currentRuns": [
+     1931167,
+     1942291,
+     1861917
+    ]
+   },
+   "utf16-100-attachments-10": {
+    "baselineMedian": 2085375,
+    "baselineRuns": [
+     2085375,
+     2011500,
+     2356167
+    ],
+    "currentMedian": 2083542,
+    "currentRuns": [
+     2100750,
+     2083542,
+     1936791
+    ]
+   },
+   "utf16-100-attachments-3": {
+    "baselineMedian": 1967583,
+    "baselineRuns": [
+     1967583,
+     1888958,
+     2268500
+    ],
+    "currentMedian": 2019291,
+    "currentRuns": [
+     2137333,
+     1971042,
+     2019291
+    ]
+   },
+   "utf16-1000-attachments-0": {
+    "baselineMedian": 12908000,
+    "baselineRuns": [
+     12863916,
+     12908000,
+     13493291
+    ],
+    "currentMedian": 12004541,
+    "currentRuns": [
+     12004541,
+     12094125,
+     11348792
+    ]
+   },
+   "utf16-1000-attachments-10": {
+    "baselineMedian": 13627000,
+    "baselineRuns": [
+     13738417,
+     13439584,
+     13627000
+    ],
+    "currentMedian": 12085292,
+    "currentRuns": [
+     11870791,
+     12364792,
+     12085292
+    ]
+   },
+   "utf16-1000-attachments-3": {
+    "baselineMedian": 13536541,
+    "baselineRuns": [
+     13536541,
+     13268625,
+     14235750
+    ],
+    "currentMedian": 11825042,
+    "currentRuns": [
+     11761834,
+     12281833,
+     11825042
+    ]
+   },
+   "utf16-5000-attachments-0": {
+    "baselineMedian": 63748708,
+    "baselineRuns": [
+     63748708,
+     63046542,
+     66344208
+    ],
+    "currentMedian": 56830167,
+    "currentRuns": [
+     56830167,
+     58772375,
+     54784875
+    ]
+   },
+   "utf16-5000-attachments-10": {
+    "baselineMedian": 66135750,
+    "baselineRuns": [
+     62208042,
+     66135750,
+     66576583
+    ],
+    "currentMedian": 57599708,
+    "currentRuns": [
+     61038708,
+     57252083,
+     57599708
+    ]
+   },
+   "utf16-5000-attachments-3": {
+    "baselineMedian": 66565583,
+    "baselineRuns": [
+     61323875,
+     67659583,
+     66565583
+    ],
+    "currentMedian": 59540667,
+    "currentRuns": [
+     59540667,
+     59746750,
+     57618708
+    ]
+   }
+  },
+  "sameLabelHotSizeThatFits": {
+   "utf16-100-attachments-0": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-100-attachments-10": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-100-attachments-3": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-1000-attachments-0": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 334,
+    "currentRuns": [
+     333,
+     334,
+     334
+    ]
+   },
+   "utf16-1000-attachments-10": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-1000-attachments-3": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     250,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-5000-attachments-0": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     209,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-5000-attachments-10": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     209,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   },
+   "utf16-5000-attachments-3": {
+    "baselineMedian": 250,
+    "baselineRuns": [
+     209,
+     250,
+     250
+    ],
+    "currentMedian": 333,
+    "currentRuns": [
+     333,
+     333,
+     333
+    ]
+   }
+  }
+ },
+ "simulator": "iPhone 17 Pro iOS 27.0 5260ADE6-ADC2-44AA-9EEB-CDEC90196D08",
+ "xcode": "27.1 (27A9275), Swift 6.4"
+}
