@@ -152,7 +152,7 @@ Label 默认以容器提供最终可见内容的自动无障碍元素：按 UTF-
 
 ## 行内图片
 
-以原文 UTF-16 位置将图片描述关联到单个 U+FFFC。尺寸由调用方明确提供，不从 UIImage 分辨率推导；默认 `.bottom`，对齐基于占位字符样式的字体 ascender／descender 区域。图片填充声明矩形，保留 UIImage 方向。
+以原文 UTF-16 位置将图片描述关联到单个 U+FFFC。尺寸由调用方明确提供，不从 UIImage 分辨率推导；默认 `.bottom`，对齐基于占位字符样式的字体 ascender／descender 区域。图片按 `contentMode` 绘制在声明矩形内（默认 `.scaleToFill` 拉伸填满，语义与 UIImageView 相同，超出部分裁切），保留 UIImage 方向；`contentMode` 只影响绘制，不改变排版。图标与文字之间需要留白时，可声明比图片更大的尺寸并使用 `.center` 或 `.scaleAspectFit`。
 
 ```swift
 @MainActor

@@ -24,17 +24,23 @@ public struct LYGlyphTextAttachment {
     /// 最终可见图片的非空替代文本参与自动无障碍语义；nil、空串或仅空白文本作为装饰。
     /// 人工 VoiceOver 朗读体验尚未验收。
     public let alternativeText: String?
+    /// 图片在声明尺寸内的绘制方式，语义与 UIImageView 相同，默认 `.scaleToFill` 拉伸填满。
+    /// 只影响绘制，不改变排版尺寸、点击或选择几何；超出声明框的部分被裁切。
+    public let contentMode: UIView.ContentMode
 
     /// 创建附件描述。尺寸和文档内 ID 唯一性在文档初始化时校验。
-    /// 图片填充声明尺寸，保留 UIImage 方向；超宽部分裁切，不自动缩小尺寸。
+    /// 图片按 contentMode 绘制在声明尺寸内，保留 UIImage 方向；超宽部分裁切，不自动缩小尺寸。
+    /// 需要图标与文字之间留白时，可声明比图片更大的尺寸并使用 `.center` 或 `.scaleAspectFit`。
     public init(
         id: String, image: UIImage, size: CGSize,
-        alignment: LYGlyphTextAttachmentAlignment = .bottom, alternativeText: String? = nil
+        alignment: LYGlyphTextAttachmentAlignment = .bottom, alternativeText: String? = nil,
+        contentMode: UIView.ContentMode = .scaleToFill
     ) {
         self.id = id
         self.image = image
         self.size = size
         self.alignment = alignment
         self.alternativeText = alternativeText
+        self.contentMode = contentMode
     }
 }

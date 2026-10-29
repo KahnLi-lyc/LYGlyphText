@@ -192,7 +192,18 @@ struct LYGlyphTextLayout {
         // UIImage 的 UIKit 绘制路径负责方向与 scale；不直接翻转其 CGImage。
         UIGraphicsPushContext(context)
         for placement in attachments {
-            placement.attachment.image.draw(in: placement.rect)
+            let image = placement.attachment.image
+            let imageRect = AttachmentImageGeometry.drawingRect(
+                imageSize: image.size, in: placement.rect, contentMode: placement.attachment.contentMode
+            )
+            if placement.rect.contains(imageRect) {
+                image.draw(in: imageRect)
+            } else {
+                context.saveGState()
+                context.clip(to: placement.rect)
+                image.draw(in: imageRect)
+                context.restoreGState()
+            }
         }
         UIGraphicsPopContext()
     }
