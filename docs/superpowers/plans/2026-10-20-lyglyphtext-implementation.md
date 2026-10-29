@@ -218,7 +218,7 @@ label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 | G7 SwiftUI 参数与 2.x 准备 | 已完成 | G6 | SwiftUI isSelectable／onSelectionChange，README、CHANGELOG、发布门槛更新 | [G7 记录](../../verification/2026-10-21-g7-swiftui-release.md)：419／419（393 宿主＋26 UI）；2.x 路线图 G1—G7 全部交付 |
 | L0—L7 Label 后续完善 | L0 `4d9575b`、L1 `983833e`、L2 `93ebf0e`、L3 `ee1c060`、L4 `b662530`、L5 `4c58a28`、L6 `1b22ca7`、L7 已交付；完整回归 442／442 | G7 `a3dfd74` | 文档级圆角背景、整段点击、选择拷贝增强、网络图片真实尺寸、头部／中间截断、Release 性能复测 | [L 批次契约](2026-10-27-label-refinements.md) |
 | S0—S7 剩余功能、RocketSim 验证与首个版本 | S0 `5f6f1a7`、S1—S5 `4f2dd1f`、S6、S7 已交付；Tag `1.0.0-beta.1` | L7 `9219426` | 拖柄无障碍、磁盘缓存、Markdown、调试叠加、RocketSim 验证、`1.0.0-beta.1` | [S 批次契约](2026-10-29-label-s-batch.md)、[S1—S5 记录](../../verification/2026-10-29-s1-s5-label-features.md)、[S6 记录](../../verification/2026-10-29-s6-rocketsim.md)、[S7 记录](../../verification/2026-10-29-s7-release.md) |
-| C0—C6 核心场景收口 | C0 `ed26ce5`、C1 `bdb7412`、C2 `b22eaef`、C3 `b536225`、C4 `39140d1`、C5 已交付；完整回归 478／478；C6 待真机 | S7 之后 main `f663c01` | 能力对比与不做清单、本地图片 contentMode、便捷构造文档、富文本截断 token、Kingfisher 桥接编译与加载器冻结、真机性能测量 | [C 批次契约](2026-10-29-label-c-batch.md)、[能力对比](../../YYLABEL_COMPARISON.md)、[C 批次记录](../../verification/2026-10-29-c-batch.md) |
+| C0—C6 核心场景收口 | C0 `ed26ce5`、C1 `bdb7412`、C2 `b22eaef`、C3 `b536225`、C4 `39140d1`、C5 已交付；完整回归 478／478；C6 初步测量（进行中） | S7 之后 main `f663c01` | 能力对比与不做清单、本地图片 contentMode、便捷构造文档、富文本截断 token、Kingfisher 桥接编译与加载器冻结、真机性能测量 | [C 批次契约](2026-10-29-label-c-batch.md)、[能力对比](../../YYLABEL_COMPARISON.md)、[C 批次记录](../../verification/2026-10-29-c-batch.md)、[C6 初步记录](../../verification/2026-10-29-c6-device-performance.md) |
 
 ### R1 实施契约（2026-10-21）
 

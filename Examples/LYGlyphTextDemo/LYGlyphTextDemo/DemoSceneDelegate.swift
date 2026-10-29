@@ -12,7 +12,11 @@ final class DemoSceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         do {
-            if ProcessInfo.processInfo.arguments.contains("--performance-profile") {
+            if ProcessInfo.processInfo.arguments.contains("--feed-profile") {
+                window.rootViewController = try UINavigationController(
+                    rootViewController: FeedPerformanceController(profile: true)
+                )
+            } else if ProcessInfo.processInfo.arguments.contains("--performance-profile") {
                 window.rootViewController = try UINavigationController(
                     rootViewController: PerformanceListController(profile: true)
                 )
