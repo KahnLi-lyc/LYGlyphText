@@ -18,7 +18,7 @@
 |---|---|
 | Xcode27.1／Swift6.4 的 Swift6模式 | P1 Package／Demo build 与368／368（344宿主＋24UI）通过，86 Swift冻结一致 |
 | 最新可用 iOS Simulator | iPhone17Pro／iOS27，P1完整宿主与UI通过，Release四图与正式四图已导出检查 |
-| Swift6.0实际编译器 | R1 已探测，未安装真实 Swift6.0.x，仍未验证；Swift6.4 的 v6 模式不代替，见[R1记录](verification/2026-10-21-minimum-compatibility.md) |
+| Swift6.0实际编译器 | R1 已探测，未安装真实 Swift6.0.x，仍未验证；Swift6.4 的 v6 模式不代替，见[R1记录](verification/2026-10-21-minimum-compatibility.md)。C5 起 Demo 依赖的 Kingfisher 8.14.0 要求 swift-tools 6.2，本门槛只覆盖组件 Package 与独立公开 API 消费者（2026-10-29 用户决定：开发统一使用 Xcode 27） |
 | iOS16实际运行 | R1 未发现 iOS16 runtime／可用设备，0宿主＋0UI，仍未验证；部署目标和新SDK编译不代替运行 |
 | 独立公开API消费者 | R1 在Swift6.4／SDK27.1下构建成功（arm64／x86_64、target16.0）；没有运行，不计入上述两项兼容性通过 |
 | 真机 | 未验证；模拟器性能不代表设备性能 |
@@ -33,7 +33,7 @@
 2.x 能力（截断 token、特效、网络图片、预排版、选择拷贝、解析器）按 [2.x 路线图](superpowers/plans/2026-10-21-label-roadmap.md) 逐阶段交付，自动检查结果见各阶段验证记录。以下与 1.0 门槛同样独立、仍未验证：
 
 - 真实网络：内置加载器用本地 URLProtocol 桩、模拟加载器和 127.0.0.1 回环 HTTP 服务器（S2 磁盘缓存）测试；C4 在模拟器上对一个公网 PNG（raw.githubusercontent.com）做过一次性加载探测。不同服务器缓存头、弱网与真机未验证。内置加载器功能冻结，生产推荐桥接宿主图片库。
-- Kingfisher 桥接：C4 起 Demo（仅 Demo App target）固定 Kingfisher 8.12.0，桥接 `KingfisherImageLoader.swift` 在 Swift 6 模式编译通过；iOS 27 Simulator 上临时探测测试用真实公网 PNG 验证了内置加载器与 Kingfisher 桥接都能加载、Kingfisher 取消后不回调（探测未保留为常驻测试）。组件 Package 仍无第三方依赖。真机、iOS 16 与不同服务器缓存头仍未验证。
+- Kingfisher 桥接：Demo（仅 Demo App target）固定 Kingfisher 8.14.0（C4 先用 8.12.0，C5 按用户决定升级），桥接 `KingfisherImageLoader.swift` 在 Swift 6 模式编译通过；iOS 27 Simulator 上临时探测测试用真实公网 PNG 验证了内置加载器与 Kingfisher 桥接都能加载、Kingfisher 取消后不回调（探测未保留为常驻测试）。组件 Package 仍无第三方依赖。真机、iOS 16 与不同服务器缓存头仍未验证。
 - 选择拷贝：真实长按与系统菜单拷贝、整段点击与动作分离已有 UI 测试；拖柄已暴露为可调节无障碍元素，拖动有 UI 测试与 RocketSim 录屏（S1、S6），放大镜只有录屏没有断言；人工 VoiceOver 下的拖柄调节、选区、“拷贝”动作与 token 朗读、iPad 指针与外接键盘未验证；iOS 16 没有放大镜。
 - 头部／中间截断：自动测试覆盖 LTR、RTL、附件与跨省略处动作；只作用于最后一条可见行，末尾文字取自最后一个有内容的段落。
 - 预排版：Release 计时为模拟器数据，不代表真机；后台线程上的 UIFont／动态颜色解析在 iOS 16 上未实际运行。
@@ -47,7 +47,7 @@
 
 ## 发布前补证顺序
 
-1. 获取真实Swift6.0.x及匹配SDK／完整Xcode构建环境，分别构建Package、Demo、独立公开API消费者并记录实际swiftc路径／版本／日志；本轮未安装或下载，所需环境见[R1记录](verification/2026-10-21-minimum-compatibility.md)。
+1. 获取真实Swift6.0.x及匹配SDK／完整Xcode构建环境，分别构建Package、独立公开API消费者并记录（Demo 因 Kingfisher 需要 Swift 6.2+，不在此门槛内）实际swiftc路径／版本／日志；本轮未安装或下载，所需环境见[R1记录](verification/2026-10-21-minimum-compatibility.md)。
 2. 获取受支持宿主上的iOS16 runtime或具备测试签名条件的可用设备，保留全部368项基线运行适用矩阵；记录具体小版本／build、实际数量及未执行原因，同时保留当前系统证据，不用部署目标代替，不由后续16.x外推更早版本。
 3. 真机滚动、内存、方向、触摸及附件释放观测，单列设备和构建配置。
 4. 人工启用VoiceOver，逐项检查逻辑阅读、动作／按钮、装饰附件、裁切、滚动和焦点；发现缺陷先保留证据再修复。

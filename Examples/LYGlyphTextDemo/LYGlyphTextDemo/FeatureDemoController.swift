@@ -72,6 +72,7 @@ final class FeatureDemoController: UIViewController {
     private let loaderControl = UISegmentedControl(items: ["内置加载器", "Kingfisher"])
     private let network = LYGlyphTextLabel(frame: .zero)
     private let networkStatus = UILabel()
+    private let contentModes = LYGlyphTextLabel(frame: .zero)
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -106,8 +107,12 @@ final class FeatureDemoController: UIViewController {
 
         truncated.accessibilityIdentifier = "tokenLabel"
         truncated.configuration.numberOfLines = 2
+        // 文字片段与箭头图标组成一个可点击 token；图标没有替代文本，只是装饰。
+        let chevron = UIImage(systemName: "chevron.down")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
         truncated.configuration.truncationToken = LYGlyphTextTruncationToken(
-            text: "…展开全文", foregroundColor: .systemBlue, actionID: "expand", pressedCornerRadius: 4
+            pieces: [.text("…"), .text("展开全文", foregroundColor: .systemBlue)]
+                + (chevron.map { [.image($0, size: CGSize(width: 12, height: 8))] } ?? []),
+            actionID: "expand", pressedCornerRadius: 4
         )
         truncated.document = try? LYGlyphTextDocument(attributedText: NSAttributedString(
             string: String(repeating: "超过两行的动态内容会在末尾显示可点击的展开按钮。", count: 6),
@@ -195,6 +200,9 @@ final class FeatureDemoController: UIViewController {
         markdownStatus.text = "未点击链接"
         markdownStatus.accessibilityIdentifier = "markdownStatus"
 
+        contentModes.accessibilityIdentifier = "contentModeLabel"
+        contentModes.document = Self.contentModeDocument(font: body)
+
         loaderControl.accessibilityIdentifier = "loaderControl"
         loaderControl.selectedSegmentIndex = 0
         loaderControl.addAction(UIAction { [weak self] _ in self?.reloadNetworkImage() }, for: .valueChanged)
@@ -213,7 +221,17 @@ final class FeatureDemoController: UIViewController {
         debugSwitch.addAction(UIAction { [weak self] _ in
             guard let self else { return }
             let options: LYGlyphTextDebugOptions = debugSwitch.isOn ? .all : []
-            for label in [selectable, truncated, remote, network, tappable, capsule, modeLabel, markdown] {
+            for label in [
+                selectable,
+                truncated,
+                remote,
+                network,
+                contentModes,
+                tappable,
+                capsule,
+                modeLabel,
+                markdown
+            ] {
                 label.debugOptions = options
             }
         }, for: .valueChanged)
@@ -222,7 +240,8 @@ final class FeatureDemoController: UIViewController {
 
         let stack = UIStackView(arrangedSubviews: [
             selectable, selectionStatus, truncated, tokenStatus, remote, remoteStatus, remoteSizeStatus, loaderControl,
-            network, networkStatus, tappable, tapStatus, capsule, modeControl, modeLabel, markdown, markdownStatus,
+            network, networkStatus, contentModes, tappable, tapStatus, capsule, modeControl, modeLabel, markdown,
+            markdownStatus,
             debugRow
         ])
         stack.axis = .vertical
@@ -263,6 +282,31 @@ final class FeatureDemoController: UIViewController {
                 attributes: [.font: UIFont.preferredFont(forTextStyle: .body)]
             ))
         ])
+    }
+
+    /// 同一张 2:1 图片放进正方形声明框：拉伸、完整显示与裁切填满的对比。
+    private static func contentModeDocument(font: UIFont) -> LYGlyphTextDocument? {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 56, height: 28), format: format).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 56, height: 28))
+            UIColor.systemPink.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 14, height: 28))
+            context.fill(CGRect(x: 42, y: 0, width: 14, height: 28))
+        }
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        var segments: [LYGlyphTextSegment] = []
+        for (index, (mode, name)) in [
+            (UIView.ContentMode.scaleToFill, "拉伸"), (.scaleAspectFit, "fit"), (.scaleAspectFill, "fill")
+        ].enumerated() {
+            segments.append(.image(LYGlyphTextAttachment(
+                id: "mode\(index)", image: image, size: CGSize(width: 28, height: 28), alignment: .center,
+                contentMode: mode
+            )))
+            segments.append(.text(NSAttributedString(string: " \(name)  ", attributes: attributes)))
+        }
+        return try? LYGlyphTextDocument(segments: segments)
     }
 
     private func updateTruncationMode() {

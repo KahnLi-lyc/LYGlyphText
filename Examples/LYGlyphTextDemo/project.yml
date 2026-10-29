@@ -13,11 +13,11 @@ settings:
 packages:
   LYGlyphText:
     path: ../..
-  # 只用于演示宿主桥接图片库；组件 Package 不依赖。8.13.0 起要求 swift-tools 6.2，
-  # 固定 8.12.0 使 Demo 仍可用 Swift 6.0 编译器构建。
+  # 只用于演示宿主桥接图片库；组件 Package 不依赖。Kingfisher 8.13.0 起要求 swift-tools 6.2，
+  # 因此 Demo 需要 Swift 6.2 及以上工具链；组件 Package 本身仍是 swift-tools 6.0。
   Kingfisher:
     url: https://github.com/onevcat/Kingfisher.git
-    exactVersion: 8.12.0
+    exactVersion: 8.14.0
 targets:
   LYGlyphTextDemo:
     type: application

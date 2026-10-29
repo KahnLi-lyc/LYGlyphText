@@ -308,7 +308,7 @@ func showAuthor(on label: LYGlyphTextLabel, avatar: URL) throws {
 }
 ```
 
-**生产环境推荐桥接宿主已有的图片库**（Kingfisher、SDWebImage 等），复用其内存／磁盘缓存、WebP／APNG 等格式和动图按需解码。Kingfisher 桥接见 Demo 中已编译的 [KingfisherImageLoader.swift](Examples/LYGlyphTextDemo/LYGlyphTextDemo/KingfisherImageLoader.swift)（Demo 固定 Kingfisher 8.12.0，Swift 6 模式构建通过，组件本身不依赖 Kingfisher），可原样复制到自己的工程：
+**生产环境推荐桥接宿主已有的图片库**（Kingfisher、SDWebImage 等），复用其内存／磁盘缓存、WebP／APNG 等格式和动图按需解码。Kingfisher 桥接见 Demo 中已编译的 [KingfisherImageLoader.swift](Examples/LYGlyphTextDemo/LYGlyphTextDemo/KingfisherImageLoader.swift)（Demo 固定 Kingfisher 8.14.0，需要 Swift 6.2 及以上工具链，Swift 6 模式构建通过；组件本身不依赖 Kingfisher），可原样复制到自己的工程：
 
 ```swift
 import Kingfisher
@@ -372,7 +372,7 @@ let loader = LYGlyphTextURLSessionImageLoader(diskCacheCapacity: 100 * 1024 * 10
 loader.removeAllCachedImages() // 同时清空内存与磁盘缓存
 ```
 
-Kingfisher 桥接在 Demo 中以 Swift 6 模式编译，并在模拟器上用真实公网图片验证过加载与取消（见 C 批次验证记录）；组件 Package 依赖仍为零。
+Kingfisher 桥接在 Demo 中以 Swift 6 模式编译，并在模拟器上用真实公网图片验证过加载与取消（见 [C 批次验证记录](docs/verification/2026-10-29-c-batch.md)）；组件 Package 依赖仍为零。
 
 ## 列表预排版
 

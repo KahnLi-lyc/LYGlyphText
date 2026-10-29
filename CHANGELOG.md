@@ -2,6 +2,19 @@
 
 ## 未发布
 
+C 批次（核心场景收口）：只补图文混排、高亮点击、长按复制三个场景内的小缺口；与 YYLabel 的逐项对比和不做清单见[能力对比](docs/YYLABEL_COMPARISON.md)。以下均为新增 API，旧调用行为不变。
+
+### 新增
+
+- 本地图片附件 `LYGlyphTextAttachment` 新增 `contentMode`（默认 `.scaleToFill`，保持原拉伸行为），语义与 UIImageView 相同，超出声明框的部分裁切，不改变排版。
+- `LYGlyphTextDocument(text:font:foregroundColor:)`：纯文本一行构造文档；文本含 U+FFFC 时与其他入口一样抛错。
+- 截断 token 支持文字与图片片段：`LYGlyphTextTruncationToken.Piece`、`pieces` 与 `init(pieces:...)`，可组合“…全文 + 图标”；头部、中间、尾部截断与预排版都适用，无障碍朗读文字片段与图片替代文本。
+- Demo 固定引入 Kingfisher 8.14.0（只用于 Demo App target；该版本要求 swift-tools 6.2，Demo 因此需要 Swift 6.2 及以上工具链），提供已编译的 `KingfisherImageLoader` 桥接与加载器切换演示；组件 Package 仍无第三方依赖。
+
+### 说明
+
+- 内置加载器 `LYGlyphTextURLSessionImageLoader` 定位为没有图片库时的兜底，功能冻结、只修缺陷；生产环境推荐通过 `LYGlyphTextImageLoading` 桥接 Kingfisher、SDWebImage 等宿主图片库。
+
 ### 修复
 
 - Markdown 强调：`我*很*好` 等紧挨中文的斜体可以识别；没有斜体字形的字符（如苹方中文）改用合成倾斜，不再只去掉星号；标记内侧紧挨空白时保持原样（`a * b * c`）；行内代码内的星号与链接地址不再被当成强调改写。

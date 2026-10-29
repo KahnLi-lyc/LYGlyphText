@@ -13,7 +13,7 @@ LYGlyphText 只做只读 Label，服务三个核心场景：
 不追求与 YYLabel 逐项对齐。下表“处理”一列：
 
 - ✅ 已有：已交付并有自动测试；
-- 🔜 C*n*：在 [C 批次](superpowers/plans/2026-10-29-label-c-batch.md) 对应步骤补齐；
+- ✅ C*n*：在 [C 批次](superpowers/plans/2026-10-29-label-c-batch.md) 对应步骤补齐（见 [C 批次验证记录](verification/2026-10-29-c-batch.md)）；
 - ⛔ 不做：不在核心场景内，理由见[不做清单](#不做清单)；
 - 🔍 C6：由 C6 真机性能测量决定。
 
@@ -21,9 +21,9 @@ LYGlyphText 只做只读 Label，服务三个核心场景：
 
 | 能力 | YYLabel | LYGlyphText | 处理 |
 |---|---|---|---|
-| 富文本输入 | `attributedText`，另有 `text`／`font`／`textColor` 便捷属性 | 只接受 `LYGlyphTextDocument`（由 NSAttributedString 或分段构造） | 🔜 C2 增加一行构造文档的入口；Label 不加便捷属性 |
+| 富文本输入 | `attributedText`，另有 `text`／`font`／`textColor` 便捷属性 | 只接受 `LYGlyphTextDocument`（由 NSAttributedString 或分段构造） | ✅ C2 `LYGlyphTextDocument(text:font:foregroundColor:)`；Label 不加便捷属性 |
 | 行数限制、截断位置 | ✅ 头／中／尾 | ✅ `.head`／`.middle`／`.tail` | ✅ |
-| 截断 token | ✅ 任意 NSAttributedString，可带图片和高亮 | ⚠️ 只能设文字、字体、颜色，可点击 | 🔜 C3 支持多段文字与图片 |
+| 截断 token | ✅ 任意 NSAttributedString，可带图片和高亮 | ⚠️ 只能设文字、字体、颜色，可点击 | ✅ C3 `pieces` 支持多段文字与图片 |
 | 垂直对齐、内边距 | ✅ | ✅ | ✅ |
 | 单词／字符换行 | ✅ | ✅ | ✅ |
 | 异形容器 `textContainerPath`、绕排 `exclusionPaths` | ✅ | ❌ | ⛔ |
@@ -51,7 +51,7 @@ LYGlyphText 只做只读 Label，服务三个核心场景：
 
 | 能力 | YYLabel | LYGlyphText | 处理 |
 |---|---|---|---|
-| UIImage 附件 | ✅ 支持 contentMode 和 contentInsets | ⚠️ 本地图片拉伸填满声明尺寸；网络图片已支持 `contentMode` | 🔜 C1 本地图片支持 `contentMode`；contentInsets 用“更大的声明尺寸 + `.center`／`.scaleAspectFit`”实现 |
+| UIImage 附件 | ✅ 支持 contentMode 和 contentInsets | ⚠️ 本地图片拉伸填满声明尺寸；网络图片已支持 `contentMode` | ✅ C1 本地图片支持 `contentMode`；contentInsets 用“更大的声明尺寸 + `.center`／`.scaleAspectFit`”实现 |
 | UIView 附件 | ✅ 直接放入视图实例 | ✅ 由工厂创建，可见时挂载、离屏时卸载，测量时不创建视图 | ✅ LY 生命周期更严谨 |
 | CALayer 附件 | ✅ | ❌ | ⛔ |
 | 对齐到字体 | ✅ 上／中／下 | ✅ 上／中／下 | ✅ |
