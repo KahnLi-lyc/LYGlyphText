@@ -92,6 +92,12 @@ public final class LYGlyphTextLabel: UIView {
     /// 选区结束拖柄的无障碍名称，默认“选区结束”。
     public var selectionEndAccessibilityName = "选区结束"
 
+    /// 发送无障碍布局变化通知；参数为希望 VoiceOver 停留的元素。测试可替换以观察参数。
+    var postAccessibilityLayoutChanged: (Any?) -> Void = { UIAccessibility.post(
+        notification: .layoutChanged,
+        argument: $0
+    ) }
+
     /// 选区变化回调，参数为新的原文 UTF-16 范围或 nil。
     public var onSelectionChange: (@MainActor (NSRange?) -> Void)?
 

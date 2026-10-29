@@ -122,7 +122,8 @@ extension LYGlyphTextLabel {
         if handle == .start { start = min(step(start), source.rangeOfComposedCharacterSequence(at: end - 1).location) }
         else { end = max(step(end), NSMaxRange(source.rangeOfComposedCharacterSequence(at: start))) }
         setSelection(NSRange(location: start, length: end - start), presentsMenu: false)
-        UIAccessibility.post(notification: .layoutChanged, argument: nil)
+        // 焦点留在被调节的拖柄上，避免 VoiceOver 跳回第一个元素。
+        postAccessibilityLayoutChanged(handle == .start ? selectionHandles?.start : selectionHandles?.end)
     }
 
     func setSelection(_ range: NSRange?, presentsMenu: Bool) {

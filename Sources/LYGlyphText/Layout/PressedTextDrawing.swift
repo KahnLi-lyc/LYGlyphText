@@ -410,7 +410,11 @@ struct PressedTextDrawing {
             context.setShadow(offset: shadow.offset, blur: shadow.blurRadius, color: shadow.color)
         }
         context.setFillColor(color)
-        context.textMatrix = .identity
+        // 使用 run 自带的文字矩阵（例如带倾斜矩阵的合成斜体字体）；位置由 textPosition 决定，平移清零。
+        var matrix = CTRunGetTextMatrix(run)
+        matrix.tx = 0
+        matrix.ty = 0
+        context.textMatrix = matrix
         context.scaleBy(x: 1, y: -1)
         context.textPosition = CGPoint(x: baseline.x, y: -baseline.y)
         observe(.glyphDrawCall)

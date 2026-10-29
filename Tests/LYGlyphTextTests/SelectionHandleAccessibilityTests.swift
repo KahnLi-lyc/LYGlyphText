@@ -35,8 +35,12 @@ final class SelectionHandleAccessibilityTests: XCTestCase {
         let handle = try XCTUnwrap(found.first)
         XCTAssertGreaterThanOrEqual(handle.accessibilityFrame.width, 44)
         XCTAssertGreaterThanOrEqual(handle.accessibilityFrame.height, 44)
-        let center = handle.convert(
-            CGPoint(x: handle.accessibilityFrame.midX, y: handle.accessibilityFrame.midY), from: nil
+        // accessibilityFrame 是屏幕坐标；用同一换算求出拖柄原点，再把中心换回拖柄坐标。
+        // 测试窗口没有挂场景时换算为恒等，挂场景时含窗口偏移，两种情况都成立。
+        let origin = UIAccessibility.convertToScreenCoordinates(handle.bounds, in: handle).origin
+        let center = CGPoint(
+            x: handle.accessibilityFrame.midX - origin.x + handle.bounds.minX,
+            y: handle.accessibilityFrame.midY - origin.y + handle.bounds.minY
         )
         XCTAssertTrue(handle.point(inside: center, with: nil))
         label.selectionStartAccessibilityName = "Start"
@@ -74,6 +78,22 @@ final class SelectionHandleAccessibilityTests: XCTestCase {
         }
         XCTAssertEqual(label.selectedRange, NSRange(location: 0, length: 1))
         XCTAssertEqual(end.accessibilityValue, "a")
+        withExtendedLifetime(window) {}
+    }
+
+    func testAdjustingKeepsVoiceOverFocusOnTheAdjustedHandle() throws {
+        let (window, label) = try hosted("焦点保持在拖柄上")
+        var arguments: [Any?] = []
+        label.postAccessibilityLayoutChanged = { arguments.append($0) }
+        label.selectedRange = NSRange(location: 1, length: 2)
+        label.layoutIfNeeded()
+        let start = try XCTUnwrap(handles(label).first)
+        let end = try XCTUnwrap(handles(label).last)
+        end.accessibilityIncrement()
+        start.accessibilityDecrement()
+        XCTAssertEqual(arguments.count, 2)
+        XCTAssertTrue(arguments.first.flatMap { $0 as AnyObject? } === end)
+        XCTAssertTrue(arguments.last.flatMap { $0 as AnyObject? } === start)
         withExtendedLifetime(window) {}
     }
 }

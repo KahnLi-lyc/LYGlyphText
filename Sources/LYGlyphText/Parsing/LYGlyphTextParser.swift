@@ -1,3 +1,4 @@
+import CoreText
 import UIKit
 
 /// 文本识别规则：识别链接、@提及、#话题或自定义模式并生成动作，或把表情短码替换为图片附件。
@@ -153,26 +154,100 @@ public struct LYGlyphTextParser {
         text.replaceCharacters(in: range, with: replacement)
     }
 
+    /// `[文字](链接)`：链接规则据此替换，强调规则据此保护链接地址。
+    private static let linkPattern = "\\[([^\\]\\n]+)\\]\\(([^)\\s]+)\\)"
+
+    private enum Emphasis {
+        case code, bold, italic
+    }
+
+    /// 单遍收集行内代码、粗体、斜体候选，按此优先级保留互不重叠的匹配，再从后向前替换。
+    ///
+    /// 代码优先，所以代码内的星号保持原样；与链接地址相交的候选丢弃，地址不被改写。
+    /// 标记内侧不能是空白；斜体外侧只排除 ASCII 字母数字，因此 `我*很*好` 能识别，`2*3*4` 保持原样。
     private func applyEmphasis(in text: NSMutableAttributedString, attachments: inout [Int: LYGlyphTextAttachment]) {
-        let patterns: [(String, (UIFont) -> UIFont)] = [
-            ("\\*\\*([^*\\n]+?)\\*\\*", { Self.font($0, adding: .traitBold) }),
-            ("`([^`\\n]+)`", { UIFont.monospacedSystemFont(ofSize: $0.pointSize, weight: .regular) }),
-            ("(?<![*\\w])\\*([^*\\n]+?)\\*(?![*\\w])", { Self.font($0, adding: .traitItalic) })
+        let source = text.string as NSString
+        let whole = NSRange(location: 0, length: source.length)
+        func matches(_ pattern: String) -> [NSTextCheckingResult] {
+            (try? NSRegularExpression(pattern: pattern))?.matches(in: text.string, range: whole) ?? []
+        }
+        var taken = matches(Self.linkPattern).map { $0.range(at: 2) }
+        var accepted: [(match: NSTextCheckingResult, kind: Emphasis)] = []
+        let patterns: [(Emphasis, String)] = [
+            (.code, "`([^`\\n]+)`"),
+            (.bold, "\\*\\*(?![\\s*])([^*\\n]+?)(?<![\\s*])\\*\\*"),
+            (.italic, "(?<![A-Za-z0-9*])\\*(?![\\s*])([^*\\n]+?)(?<![\\s*])\\*(?![A-Za-z0-9*])")
         ]
-        for (pattern, derive) in patterns {
-            guard let expression = try? NSRegularExpression(pattern: pattern) else { continue }
-            let matches = expression.matches(in: text.string, range: NSRange(location: 0, length: text.length))
-            for match in matches.reversed() {
-                let inner = match.range(at: 1)
-                guard !containsAttachment(text.string as NSString, match.range) else { continue }
-                let content = NSMutableAttributedString(attributedString: text.attributedSubstring(from: inner))
-                content.enumerateAttribute(.font, in: NSRange(location: 0, length: content.length)) { value, range, _ in
-                    let base = (value as? UIFont) ?? UIFont.preferredFont(forTextStyle: .body)
-                    content.addAttribute(.font, value: derive(base), range: range)
-                }
-                replace(match.range, with: content, in: text, attachments: &attachments)
+        for (kind, pattern) in patterns {
+            for match in matches(pattern) where !containsAttachment(source, match.range)
+                && !taken.contains(where: { NSIntersectionRange($0, match.range).length > 0 })
+            {
+                taken.append(match.range)
+                accepted.append((match, kind))
             }
         }
+        for (match, kind) in accepted.sorted(by: { $0.match.range.location > $1.match.range.location }) {
+            let content = NSMutableAttributedString(attributedString: text
+                .attributedSubstring(from: match.range(at: 1)))
+            switch kind {
+            case .code: Self.deriveFonts(in: content) { UIFont.monospacedSystemFont(
+                    ofSize: $0.pointSize,
+                    weight: .regular
+                ) }
+            case .bold: Self.deriveFonts(in: content) { Self.font($0, adding: .traitBold) }
+            case .italic: Self.italicize(content)
+            }
+            replace(match.range, with: content, in: text, attachments: &attachments)
+        }
+    }
+
+    /// 按所在位置的字体派生新字体；没有字体时以 body 字体派生。
+    private static func deriveFonts(in content: NSMutableAttributedString, _ derive: (UIFont) -> UIFont) {
+        content.enumerateAttribute(.font, in: NSRange(location: 0, length: content.length)) { value, range, _ in
+            content.addAttribute(
+                .font,
+                value: derive((value as? UIFont) ?? .preferredFont(forTextStyle: .body)),
+                range: range
+            )
+        }
+    }
+
+    /// 真斜体字体能显示的字符使用真斜体；其余字符（例如没有斜体字形的苹方中文）使用实际回退字体加约 12° 倾斜。
+    /// 彩色字形（emoji）保持原字体，不做倾斜。
+    private static func italicize(_ content: NSMutableAttributedString) {
+        let string = content.string as NSString
+        var fonts: [(NSRange, UIFont)] = []
+        content.enumerateAttribute(.font, in: NSRange(location: 0, length: content.length)) { value, range, _ in
+            let base = (value as? UIFont) ?? .preferredFont(forTextStyle: .body)
+            let italic = font(base, adding: .traitItalic)
+            let hasItalic = italic.fontDescriptor.symbolicTraits.contains(.traitItalic)
+            string.enumerateSubstrings(in: range, options: .byComposedCharacterSequences) { _, character, _, _ in
+                fonts.append((
+                    character,
+                    hasItalic && covers(italic, string, character)
+                        ? italic : oblique(base, string, character)
+                ))
+            }
+        }
+        for (range, font) in fonts {
+            content.addAttribute(.font, value: font, range: range)
+        }
+    }
+
+    private static func covers(_ font: UIFont, _ string: NSString, _ range: NSRange) -> Bool {
+        var characters = [UniChar](repeating: 0, count: range.length)
+        string.getCharacters(&characters, range: range)
+        var glyphs = [CGGlyph](repeating: 0, count: range.length)
+        return CTFontGetGlyphsForCharacters(font as CTFont, characters, &glyphs, range.length)
+    }
+
+    private static func oblique(_ base: UIFont, _ string: NSString, _ range: NSRange) -> UIFont {
+        let fallback = CTFontCreateForString(
+            base as CTFont, string as CFString, CFRange(location: range.location, length: range.length)
+        )
+        guard !CTFontGetSymbolicTraits(fallback).contains(.traitColorGlyphs) else { return base }
+        var skew = CGAffineTransform(a: 1, b: 0, c: 0.21, d: 1, tx: 0, ty: 0)
+        return CTFontCreateCopyWithAttributes(fallback, base.pointSize, &skew, nil) as UIFont
     }
 
     private static func font(_ font: UIFont, adding trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
@@ -185,7 +260,7 @@ public struct LYGlyphTextParser {
     private func replaceLinks(
         in text: NSMutableAttributedString, attachments: inout [Int: LYGlyphTextAttachment]
     ) -> [(range: NSRange, url: String)] {
-        guard let expression = try? NSRegularExpression(pattern: "\\[([^\\]\\n]+)\\]\\(([^)\\s]+)\\)")
+        guard let expression = try? NSRegularExpression(pattern: Self.linkPattern)
         else { return [] }
         var links: [(range: NSRange, url: String)] = []
         let matches = expression.matches(in: text.string, range: NSRange(location: 0, length: text.length))
