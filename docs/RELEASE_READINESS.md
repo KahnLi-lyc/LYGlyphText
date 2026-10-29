@@ -32,8 +32,8 @@
 
 2.x 能力（截断 token、特效、网络图片、预排版、选择拷贝、解析器）按 [2.x 路线图](superpowers/plans/2026-10-21-label-roadmap.md) 逐阶段交付，自动检查结果见各阶段验证记录。以下与 1.0 门槛同样独立、仍未验证：
 
-- 真实网络：内置加载器用本地 URLProtocol 桩、模拟加载器和 127.0.0.1 回环 HTTP 服务器（S2 磁盘缓存）测试，未连接公网服务器；不同服务器缓存头的差异未验证。
-- Kingfisher 桥接：README 示例按其公开 API 编写，本仓不依赖 Kingfisher，未编译。
+- 真实网络：内置加载器用本地 URLProtocol 桩、模拟加载器和 127.0.0.1 回环 HTTP 服务器（S2 磁盘缓存）测试；C4 在模拟器上对一个公网 PNG（raw.githubusercontent.com）做过一次性加载探测。不同服务器缓存头、弱网与真机未验证。内置加载器功能冻结，生产推荐桥接宿主图片库。
+- Kingfisher 桥接：C4 起 Demo（仅 Demo App target）固定 Kingfisher 8.12.0，桥接 `KingfisherImageLoader.swift` 在 Swift 6 模式编译通过；iOS 27 Simulator 上临时探测测试用真实公网 PNG 验证了内置加载器与 Kingfisher 桥接都能加载、Kingfisher 取消后不回调（探测未保留为常驻测试）。组件 Package 仍无第三方依赖。真机、iOS 16 与不同服务器缓存头仍未验证。
 - 选择拷贝：真实长按与系统菜单拷贝、整段点击与动作分离已有 UI 测试；拖柄已暴露为可调节无障碍元素，拖动有 UI 测试与 RocketSim 录屏（S1、S6），放大镜只有录屏没有断言；人工 VoiceOver 下的拖柄调节、选区、“拷贝”动作与 token 朗读、iPad 指针与外接键盘未验证；iOS 16 没有放大镜。
 - 头部／中间截断：自动测试覆盖 LTR、RTL、附件与跨省略处动作；只作用于最后一条可见行，末尾文字取自最后一个有内容的段落。
 - 预排版：Release 计时为模拟器数据，不代表真机；后台线程上的 UIFont／动态颜色解析在 iOS 16 上未实际运行。

@@ -13,6 +13,11 @@ settings:
 packages:
   LYGlyphText:
     path: ../..
+  # 只用于演示宿主桥接图片库；组件 Package 不依赖。8.13.0 起要求 swift-tools 6.2，
+  # 固定 8.12.0 使 Demo 仍可用 Swift 6.0 编译器构建。
+  Kingfisher:
+    url: https://github.com/onevcat/Kingfisher.git
+    exactVersion: 8.12.0
 targets:
   LYGlyphTextDemo:
     type: application
@@ -27,6 +32,7 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
     dependencies:
       - package: LYGlyphText
+      - package: Kingfisher
   LYGlyphTextDemoTests:
     type: bundle.unit-test
     platform: iOS

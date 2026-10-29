@@ -308,35 +308,45 @@ func showAuthor(on label: LYGlyphTextLabel, avatar: URL) throws {
 }
 ```
 
-已经使用 Kingfisher 的项目可以把下面的桥接复制到自己的工程，复用 Kingfisher 的磁盘／内存缓存（组件本身不依赖 Kingfisher）：
+**生产环境推荐桥接宿主已有的图片库**（Kingfisher、SDWebImage 等），复用其内存／磁盘缓存、WebP／APNG 等格式和动图按需解码。Kingfisher 桥接见 Demo 中已编译的 [KingfisherImageLoader.swift](Examples/LYGlyphTextDemo/LYGlyphTextDemo/KingfisherImageLoader.swift)（Demo 固定 Kingfisher 8.12.0，Swift 6 模式构建通过，组件本身不依赖 Kingfisher），可原样复制到自己的工程：
 
 ```swift
 import Kingfisher
 import LYGlyphText
+import UIKit
 
 @MainActor
 final class KingfisherImageLoader: LYGlyphTextImageLoading {
     private final class Task: LYGlyphTextImageLoadingTask {
-        let task: DownloadTask?
-        init(_ task: DownloadTask?) { self.task = task }
-        func cancel() { task?.cancel() }
+        var download: DownloadTask?
+        private(set) var isCancelled = false
+
+        func cancel() {
+            guard !isCancelled else { return }
+            isCancelled = true
+            download?.cancel()
+        }
     }
 
     func loadImage(
         from url: URL, targetSize: CGSize, scale: CGFloat,
         completion: @escaping @MainActor (Result<UIImage, any Error>) -> Void
     ) -> any LYGlyphTextImageLoadingTask {
+        let task = Task()
         let options: KingfisherOptionsInfo = [
             .processor(DownsamplingImageProcessor(size: targetSize)),
             .scaleFactor(scale),
+            .cacheOriginalImage,
             .callbackQueue(.mainCurrentOrAsync)
         ]
-        let task = KingfisherManager.shared.retrieveImage(with: url, options: options) { result in
+        task.download = KingfisherManager.shared.retrieveImage(with: url, options: options) { result in
             MainActor.assumeIsolated {
+                // Kingfisher 取消后仍以 taskCancelled 回调；协议要求取消后不再调用 completion。
+                guard !task.isCancelled else { return }
                 completion(result.map(\.image).mapError { $0 as any Error })
             }
         }
-        return Task(task)
+        return task
     }
 }
 ```
@@ -355,14 +365,14 @@ label.onRemoteImageLoad = { [weak self] id, imageSize in
 
 组件不会在加载后自行改变排版，保持测量稳定。取消后组件会忽略迟到的回调。动图最多保留 300 帧。
 
-内置加载器带专用磁盘缓存（默认 50MB，目录为 Caches 下的 `LYGlyphTextImages`），遵循服务器的 HTTP 缓存头，不写入宿主的 `URLCache.shared`：
+内置加载器 `LYGlyphTextURLSessionImageLoader` 是没有图片库时的**兜底**，只用系统框架，功能冻结、只修缺陷：内存缓存、专用磁盘缓存（默认 50MB，目录为 Caches 下的 `LYGlyphTextImages`，遵循服务器的 HTTP 缓存头，不写入宿主的 `URLCache.shared`）、请求合并、降采样；多帧动图只读取 GIF 帧时长，最多 300 帧一次全部解码进内存。
 
 ```swift
 let loader = LYGlyphTextURLSessionImageLoader(diskCacheCapacity: 100 * 1024 * 1024) // 0 关闭磁盘缓存
 loader.removeAllCachedImages() // 同时清空内存与磁盘缓存
 ```
 
-本仓不依赖 Kingfisher，上述桥接示例按其公开 API 编写，没有在本仓编译；协议本身由测试中的模拟加载器完整覆盖。
+Kingfisher 桥接在 Demo 中以 Swift 6 模式编译，并在模拟器上用真实公网图片验证过加载与取消（见 C 批次验证记录）；组件 Package 依赖仍为零。
 
 ## 列表预排版
 

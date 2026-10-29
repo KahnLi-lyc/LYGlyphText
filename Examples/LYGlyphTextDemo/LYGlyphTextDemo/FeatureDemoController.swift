@@ -66,6 +66,12 @@ final class FeatureDemoController: UIViewController {
     private let debugSwitch = UISwitch()
     private let remoteSizeStatus = UILabel()
     private var remoteFitted = false
+    /// 真实网络图片：内置加载器是没有图片库时的兜底，生产推荐桥接 Kingfisher 等宿主图片库。
+    private let builtInLoader = LYGlyphTextURLSessionImageLoader()
+    private let kingfisherLoader = KingfisherImageLoader()
+    private let loaderControl = UISegmentedControl(items: ["内置加载器", "Kingfisher"])
+    private let network = LYGlyphTextLabel(frame: .zero)
+    private let networkStatus = UILabel()
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -189,12 +195,25 @@ final class FeatureDemoController: UIViewController {
         markdownStatus.text = "未点击链接"
         markdownStatus.accessibilityIdentifier = "markdownStatus"
 
+        loaderControl.accessibilityIdentifier = "loaderControl"
+        loaderControl.selectedSegmentIndex = 0
+        loaderControl.addAction(UIAction { [weak self] _ in self?.reloadNetworkImage() }, for: .valueChanged)
+        network.accessibilityIdentifier = "networkLabel"
+        networkStatus.accessibilityIdentifier = "networkStatus"
+        networkStatus.numberOfLines = 0
+        network.onRemoteImageLoad = { [weak self] _, size in
+            guard let self else { return }
+            let name = loaderControl.titleForSegment(at: loaderControl.selectedSegmentIndex) ?? ""
+            networkStatus.text = "\(name)：已加载 \(Int(size.width))×\(Int(size.height))"
+        }
+        reloadNetworkImage()
+
         debugSwitch.accessibilityIdentifier = "debugSwitch"
         debugSwitch.accessibilityLabel = "调试叠加"
         debugSwitch.addAction(UIAction { [weak self] _ in
             guard let self else { return }
             let options: LYGlyphTextDebugOptions = debugSwitch.isOn ? .all : []
-            for label in [selectable, truncated, remote, tappable, capsule, modeLabel, markdown] {
+            for label in [selectable, truncated, remote, network, tappable, capsule, modeLabel, markdown] {
                 label.debugOptions = options
             }
         }, for: .valueChanged)
@@ -202,8 +221,9 @@ final class FeatureDemoController: UIViewController {
         debugRow.spacing = 8
 
         let stack = UIStackView(arrangedSubviews: [
-            selectable, selectionStatus, truncated, tokenStatus, remote, remoteStatus, remoteSizeStatus, tappable,
-            tapStatus, capsule, modeControl, modeLabel, markdown, markdownStatus, debugRow
+            selectable, selectionStatus, truncated, tokenStatus, remote, remoteStatus, remoteSizeStatus, loaderControl,
+            network, networkStatus, tappable, tapStatus, capsule, modeControl, modeLabel, markdown, markdownStatus,
+            debugRow
         ])
         stack.axis = .vertical
         stack.spacing = 10
@@ -222,6 +242,26 @@ final class FeatureDemoController: UIViewController {
             stack.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 16),
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -16)
+        ])
+    }
+
+    /// 切换加载器后重建文档，使附件重新挂载并通过新加载器请求。
+    private func reloadNetworkImage() {
+        let isKingfisher = loaderControl.selectedSegmentIndex == 1
+        network.imageLoader = isKingfisher ? kingfisherLoader : builtInLoader
+        networkStatus.text = "加载中"
+        guard let url = URL(string: "https://raw.githubusercontent.com/onevcat/Kingfisher/master/images/logo.png")
+        else { return }
+        network.document = try? LYGlyphTextDocument(segments: [
+            .remoteImage(.init(
+                id: "network", url: url, size: CGSize(width: 120, height: 60), alignment: .center,
+                contentMode: .scaleAspectFit, placeholder: UIImage(systemName: "photo"),
+                alternativeText: "Kingfisher 标志"
+            )),
+            .text(NSAttributedString(
+                string: isKingfisher ? " 通过 Kingfisher 桥接加载" : " 通过内置加载器加载",
+                attributes: [.font: UIFont.preferredFont(forTextStyle: .body)]
+            ))
         ])
     }
 

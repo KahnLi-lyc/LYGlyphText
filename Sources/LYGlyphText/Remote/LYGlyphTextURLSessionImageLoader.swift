@@ -2,7 +2,10 @@ import ImageIO
 import UIKit
 
 /// 只使用 URLSession、NSCache、URLCache 与 ImageIO 的轻量加载器：内存缓存、遵循 HTTP 缓存头的专用磁盘缓存、
-/// 同尺寸请求合并、按目标尺寸降采样，多帧 GIF 生成动画图片。宿主需要更复杂的缓存策略或其他格式时可桥接自己的图片库。
+/// 同尺寸请求合并、按目标尺寸降采样，多帧 GIF 生成动画图片（最多 `maximumFrameCount` 帧，一次全部解码进内存）。
+///
+/// 这是宿主没有图片库时的兜底实现，功能冻结、只修缺陷。生产环境需要 LRU／过期淘汰、WebP／APNG 动图或按需解码帧时，
+/// 通过 `LYGlyphTextImageLoading` 桥接 Kingfisher、SDWebImage 等宿主图片库（README 与 Demo 提供 Kingfisher 示例）。
 ///
 /// 实例由宿主创建并在多个 Label 间共享；释放加载器会取消其进行中的请求。
 @MainActor

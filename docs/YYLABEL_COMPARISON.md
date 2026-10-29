@@ -106,7 +106,7 @@ LYGlyphText 只做只读 Label，服务三个核心场景：
 结论：
 
 - 内置加载器是**兜底**，用于没有图片库的宿主和 Demo；功能冻结，不再增强缓存、格式或动图。
-- 生产环境推荐用加载协议桥接已有的图片库，例如 Kingfisher 或 SDWebImage。桥接只需一个实现协议的小类，见 README 的“网络图片”一节。
+- 生产环境推荐用加载协议桥接已有的图片库，例如 Kingfisher 或 SDWebImage。桥接只需一个实现协议的小类；Kingfisher 版本见 Demo 中已编译的 [KingfisherImageLoader.swift](../Examples/LYGlyphTextDemo/LYGlyphTextDemo/KingfisherImageLoader.swift)，组件本身不依赖它。
 - 与 YYWebImage 比较时，对象应是桥接后的图片库，而不是内置加载器。
 
 ## 不做清单
