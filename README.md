@@ -213,6 +213,21 @@ label.onAction = { event in
 }
 ```
 
+混合样式或带图标的 token 使用 `pieces`，片段按顺序排列，整个 token 仍是一个点击区域：
+
+```swift
+label.configuration.truncationToken = LYGlyphTextTruncationToken(
+    pieces: [
+        .text("…"),                                   // 继承末行起点的字体与颜色
+        .text("全文", foregroundColor: .systemBlue),
+        .image(chevron, size: CGSize(width: 12, height: 12), alternativeText: "展开")
+    ],
+    actionID: "expand"
+)
+```
+
+`pieces` 非空时取代 `text`／`font`／`foregroundColor`。图片片段按声明尺寸参与宽度计算，默认相对末行字体区域居中，宽高不是正的有限值时忽略；图片不随按下状态改色，按下前景色作用于全部文字片段。无障碍朗读文字片段与非空 `alternativeText` 的拼接。
+
 `configuration.truncationMode` 可选 `.tail`（默认）、`.head`（token＋剩余原文末尾）、`.middle`（本行开头＋token＋剩余原文末尾），只作用于最后一条可见行；末尾文字取自最后一个有内容的段落。token 默认 nil 时仍为继承末行样式的 `…`；字体、颜色为 nil 时同样继承末行起点。token 是生成内容，事件 `range` 为 `NSRange(location: NSNotFound, length: 0)`；空间不足时整体省略。可交互 token 是最后一个无障碍按钮。`LYGlyphTextPressedStyle(cornerRadius:)` 让按下背景按行合并后绘制圆角。
 
 文档额外读取 `.shadow`（NSShadow）、`.strokeWidth`／`.strokeColor`：阴影与描边只影响绘制，不改变测量；按下局部着色的字形部分不绘制阴影。`LYGlyphTextDocument(attributedText:..., linkPressedStyle:)` 可把 `.link` 范围转为动作，actionID 为 URL 字符串；默认 nil 时仍忽略 `.link`。

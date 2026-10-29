@@ -43,8 +43,17 @@ struct LYGlyphTextLayout {
 
     /// 实际绘制的截断 token；矩形相对于文本容器原点，颜色已按显示环境解析。
     struct TruncationToken {
+        struct Image {
+            let image: UIImage
+            /// 相对于文本容器原点的声明矩形。
+            let rect: CGRect
+        }
+
+        /// 文字片段与图片替代文本的拼接，用于无障碍与调试。
         let text: String
         let rects: [CGRect]
+        /// token 中的图片片段；不随按下状态改色。
+        let images: [Image]
         let actionID: String?
         let pressedForegroundColor: CGColor?
         let pressedBackgroundColor: CGColor?
@@ -204,6 +213,9 @@ struct LYGlyphTextLayout {
                 image.draw(in: imageRect)
                 context.restoreGState()
             }
+        }
+        for image in truncationToken?.images ?? [] {
+            image.image.draw(in: image.rect)
         }
         UIGraphicsPopContext()
     }
@@ -629,15 +641,13 @@ final class ResolvedText {
         let sourceRange = CTLineGetStringRange(last.text)
         let start = min(sourceLength, sourceRange.location)
         let end = min(sourceLength, sourceRange.location + sourceRange.length)
-        let tokenString = token?.displayText ?? "…"
-        let tokenColor = token?.foregroundColor?.resolvedColor(with: traits).cgColor
+        let content = TruncationTokenContent(token, traits: traits)
         let lineRange = NSRange(location: start, length: end - start)
         let edge: EdgeTruncation? = switch mode {
         case .tail: nil
         case .head, .middle: EdgeTruncation(
                 text: attributedText, lineRange: lineRange, sourceLength: sourceLength, width: width,
-                mode: mode == .head ? .head : .middle, tokenString: tokenString, tokenFont: token?.font,
-                tokenColor: tokenColor
+                mode: mode == .head ? .head : .middle, token: content
             )
         }
         let truncation: (
@@ -650,10 +660,7 @@ final class ResolvedText {
                 edge.suffixSegment, edge.visibleSourceRanges
             )
         } else {
-            let tail = TailTruncation(
-                text: attributedText, range: lineRange, width: width, tokenString: tokenString,
-                tokenFont: token?.font, tokenColor: tokenColor
-            )
+            let tail = TailTruncation(text: attributedText, range: lineRange, width: width, token: content)
             truncation = (
                 tail.text, tail.line, tail.alignmentOffset, tail.drawsToken, tail.tokenRange, tail.sourceOffset, nil,
                 tail.visibleSourceRanges(in: tail.line, source: attributedText.string as NSString)
@@ -724,8 +731,29 @@ final class ResolvedText {
                 let rect = CGRect(x: x + position.x, y: y - ascent, width: advance, height: ascent + descent)
                 return [rect.minX, rect.maxX, rect.minY, rect.maxY].allSatisfy(\.isFinite) ? rect : nil
             }
+            // 图片片段与文档附件使用相同的 delegate 度量：底边位于基线上方 bottom 处。
+            let images = (CTLineGetGlyphRuns(truncation.line) as! [CTRun]).compactMap {
+                run -> LYGlyphTextLayout.TruncationToken.Image? in
+                let attributes = CTRunGetAttributes(run) as NSDictionary
+                guard let index = attributes[TruncationTokenContent.imageKey] as? Int,
+                      content.pieces.indices.contains(index),
+                      case let .image(image, size, _) = content.pieces[index],
+                      CTRunGetGlyphCount(run) > 0,
+                      let delegate = attributes[kCTRunDelegateAttributeName].map({ $0 as! CTRunDelegate })
+                else { return nil }
+                let metrics = Unmanaged<AttachmentMetrics>.fromOpaque(CTRunDelegateGetRefCon(delegate))
+                    .takeUnretainedValue()
+                var position = CGPoint.zero
+                CTRunGetPositions(run, CFRange(location: 0, length: 1), &position)
+                let rect = CGRect(
+                    x: x + position.x, y: y - position.y - metrics.bottom - size.height,
+                    width: size.width, height: size.height
+                )
+                return [rect.minX, rect.maxX, rect.minY, rect.maxY].allSatisfy(\.isFinite)
+                    ? .init(image: image, rect: rect) : nil
+            }
             tokenGeometry = LYGlyphTextLayout.TruncationToken(
-                text: truncation.text.attributedSubstring(from: truncation.tokenRange).string, rects: rects,
+                text: content.spokenText, rects: rects, images: images,
                 actionID: token?.interactiveActionID,
                 pressedForegroundColor: token?.pressedForegroundColor?.resolvedColor(with: traits).cgColor,
                 pressedBackgroundColor: token?.pressedBackgroundColor?.resolvedColor(with: traits).cgColor,

@@ -59,10 +59,10 @@ final class TruncationSearchTests: XCTestCase {
             for item in try cases(text, widths: Array(stride(from: 40, through: 320, by: 23))) {
                 for token in ["…", "…展开全文", "… more", String(repeating: "…", count: 8)] {
                     let fast = TailTruncation(
-                        text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token
+                        text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token)
                     )
                     let reference = TailTruncation(
-                        text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token,
+                        text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token),
                         usesEstimate: false
                     )
                     let source = item.resolved.attributedText.string as NSString
@@ -94,10 +94,10 @@ final class TruncationSearchTests: XCTestCase {
         let item = try XCTUnwrap(cases(text, widths: [320]).first)
         let token = String(repeating: "…", count: 12)
         let fast = TailTruncation(
-            text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token
+            text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token)
         )
         let reference = TailTruncation(
-            text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token,
+            text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token),
             usesEstimate: false
         )
         XCTAssertTrue(fast.drawsToken)
@@ -114,10 +114,10 @@ final class TruncationSearchTests: XCTestCase {
         let item = try XCTUnwrap(cases(text, widths: [200]).first)
         let token = "…展开全文"
         let fast = TailTruncation(
-            text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token
+            text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token)
         )
         let reference = TailTruncation(
-            text: item.resolved.attributedText, range: item.range, width: item.width, tokenString: token,
+            text: item.resolved.attributedText, range: item.range, width: item.width, token: .text(token),
             usesEstimate: false
         )
         XCTAssertEqual(fast.candidateCount, reference.candidateCount)

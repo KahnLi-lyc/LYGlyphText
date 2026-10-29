@@ -23,7 +23,7 @@ struct EdgeTruncation {
     /// 剩余原文没有可保留的末尾文字时返回 nil，由调用方回退到尾部截断。
     init?(
         text: NSAttributedString, lineRange: NSRange, sourceLength: Int, width: CGFloat, mode: Mode,
-        tokenString: String, tokenFont: UIFont?, tokenColor: CGColor?
+        token content: TruncationTokenContent
     ) {
         let source = text.string as NSString
         let lineStart = lineRange.location
@@ -52,10 +52,7 @@ struct EdgeTruncation {
             result.append(min(cursor, end))
             return result
         }
-        let setup = TruncationSetup(
-            text: text, location: lineStart, width: width, tokenString: tokenString, tokenFont: tokenFont,
-            tokenColor: tokenColor
-        )
+        let setup = TruncationSetup(text: text, location: lineStart, width: width, token: content)
         func part(_ start: Int, _ end: Int) -> NSAttributedString {
             text.attributedSubstring(from: NSRange(location: start, length: max(0, end - start)))
         }

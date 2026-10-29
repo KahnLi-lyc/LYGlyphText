@@ -17,13 +17,10 @@ struct TailTruncation {
 
     /// - Parameter usesEstimate: 纯 LTR 行先按位置估算截断点；关闭时从行尾逐个组合字符回退，作为等价对照。
     init(
-        text: NSAttributedString, range: NSRange, width: CGFloat, tokenString: String = "…",
-        tokenFont: UIFont? = nil, tokenColor: CGColor? = nil, usesEstimate: Bool = true
+        text: NSAttributedString, range: NSRange, width: CGFloat, token content: TruncationTokenContent = .text("…"),
+        usesEstimate: Bool = true
     ) {
-        let setup = TruncationSetup(
-            text: text, location: range.location, width: width, tokenString: tokenString, tokenFont: tokenFont,
-            tokenColor: tokenColor
-        )
+        let setup = TruncationSetup(text: text, location: range.location, width: width, token: content)
         let token = setup.token
         let tokenLine = setup.tokenLine
         let paragraph = setup.paragraph
@@ -191,10 +188,7 @@ struct TruncationSetup {
     let physicalStart: CGFloat
     let drawsToken: Bool
 
-    init(
-        text: NSAttributedString, location: Int, width: CGFloat, tokenString: String, tokenFont: UIFont?,
-        tokenColor: CGColor?
-    ) {
+    init(text: NSAttributedString, location: Int, width: CGFloat, token content: TruncationTokenContent) {
         let range = NSRange(location: location, length: 0)
         let original = text.attributes(at: min(location, text.length - 1), effectiveRange: nil)
         // 使用白名单，生成字符不能继承附件 delegate、位置或未来的业务属性。
@@ -204,12 +198,11 @@ struct TruncationSetup {
         }
         let paragraph = ResolvedParagraph(text: text, at: range.location)
         attributes[NSAttributedString.Key(kCTParagraphStyleAttributeName as String)] = paragraph.style
-        if let tokenFont { attributes[NSAttributedString.Key(kCTFontAttributeName as String)] = tokenFont }
-        if let tokenColor { attributes[NSAttributedString.Key(kCTForegroundColorAttributeName as String)] = tokenColor }
         attributes[TailTruncation.tokenKey] = true
         // 与原文 run 相同从绘制上下文取填充色，使按下状态可以改色；未按下时上下文颜色即 token 颜色。
         attributes[NSAttributedString.Key(kCTForegroundColorFromContextAttributeName as String)] = true
-        let token = NSAttributedString(string: tokenString, attributes: attributes)
+        // 每个片段在继承属性上覆盖自己的字体与颜色，成为独立 run，全部带 token 标记。
+        let token = content.attributedString(base: attributes)
         let tokenLine = CTLineCreateWithAttributedString(token)
         let paragraphRange = (text.string as NSString).paragraphRange(for: NSRange(location: range.location, length: 0))
         var leading: CGFloat = 0
