@@ -36,6 +36,14 @@ Swift Package Manager 按版本接入（预发布版本需要写明确切版本�
 
 UIKit 示例，在主线程调用可抛错的文档构造方法：
 
+只需要纯文本时可以一行构造（nil 字体为动态 body，nil 颜色为 label 色；文本含 U+FFFC 时抛错）：
+
+```swift
+label.document = try LYGlyphTextDocument(text: "纯文本内容", font: .systemFont(ofSize: 15), foregroundColor: .secondaryLabel)
+```
+
+带样式、动作或附件时使用 NSAttributedString 或分段入口：
+
 ```swift
 import LYGlyphText
 import UIKit

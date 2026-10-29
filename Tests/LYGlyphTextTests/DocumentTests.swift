@@ -48,4 +48,37 @@ final class DocumentTests: XCTestCase {
         )
         XCTAssertEqual((document.string as NSString).length, 9)
     }
+
+    func testPlainTextInitializerMatchesEquivalentAttributedText() throws {
+        let font = UIFont.systemFont(ofSize: 18)
+        let plain = try LYGlyphTextDocument(text: "Hello 你好 😀", font: font, foregroundColor: .systemRed)
+        let attributed = try LYGlyphTextDocument(attributedText: NSAttributedString(
+            string: "Hello 你好 😀", attributes: [.font: font, .foregroundColor: UIColor.systemRed]
+        ))
+        XCTAssertEqual(plain.string, attributed.string)
+        XCTAssertEqual(plain.styleRuns.map(\.range), attributed.styleRuns.map(\.range))
+        XCTAssertEqual(plain.styleRuns.first?.font, font)
+        XCTAssertEqual(plain.styleRuns.first?.color, .systemRed)
+        XCTAssertTrue(plain.attachments.isEmpty && plain.viewAttachments.isEmpty && plain.actions.isEmpty)
+        let label = LYGlyphTextLabel(frame: .zero)
+        label.document = plain
+        let plainSize = label.measuredLayout(width: 120).size
+        label.document = attributed
+        XCTAssertEqual(plainSize, label.measuredLayout(width: 120).size)
+    }
+
+    func testPlainTextInitializerDefaultsToDynamicBodyAndLabelColor() throws {
+        let document = try LYGlyphTextDocument(text: "默认样式")
+        // 未设置的字体与颜色快照为 nil，与无属性 NSAttributedString 相同，排版时取动态 body 与 label 色；
+        // 动态字号跟随环境的行为由 EnvironmentTests 覆盖。
+        XCTAssertNil(document.styleRuns.first?.font)
+        XCTAssertNil(document.styleRuns.first?.color)
+        XCTAssertNoThrow(try LYGlyphTextDocument(text: ""))
+    }
+
+    func testPlainTextInitializerRejectsObjectReplacementCharacter() {
+        XCTAssertThrowsError(try LYGlyphTextDocument(text: "😀\u{FFFC}")) {
+            XCTAssertEqual($0 as? LYGlyphTextDocumentError, .unsupportedObjectReplacementCharacter(location: 2))
+        }
+    }
 }

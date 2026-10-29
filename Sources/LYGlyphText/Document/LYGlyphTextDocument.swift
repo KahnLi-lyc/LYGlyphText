@@ -256,6 +256,20 @@ public final class LYGlyphTextDocument {
         )
     }
 
+    /// 用纯文本创建文档，适合不需要附件、动作或混合样式的简单场景。
+    /// - Parameters:
+    ///   - text: 原文。
+    ///   - font: 显式字体，保持固定字号；nil 使用随 Dynamic Type 变化的动态 body 字体。
+    ///   - foregroundColor: 前景色；nil 使用 label 语义色。
+    /// - Throws: 文本包含 U+FFFC 时抛出 `unsupportedObjectReplacementCharacter`；需要附件时使用
+    ///   `init(segments:)` 或 attributedText 初始化入口。
+    public convenience init(text: String, font: UIFont? = nil, foregroundColor: UIColor? = nil) throws {
+        var attributes: [NSAttributedString.Key: Any] = [:]
+        attributes[.font] = font
+        attributes[.foregroundColor] = foregroundColor
+        try self.init(attributedText: NSAttributedString(string: text, attributes: attributes))
+    }
+
     /// 依次连接文本和附件，在初始化时建立快照并复用完整文档校验。
     /// - Parameter segments: 顺序片段；相邻且标识相同的动作仍保持独立。
     /// - Throws: 与 attributedText 初始化入口相同；空动作或跨片段切开组合字符也会失败。
