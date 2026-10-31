@@ -159,11 +159,17 @@ public final class LYGlyphTextLabel: UIView {
     var preparedAccessibilityElementIDs: Set<ObjectIdentifier> = []
     var isSendingAccessibilityAction = false
 
-    /// 宿主显式数组（包括空数组）优先；nil 恢复最近展示事务准备的自动内容。
+    /// 宿主显式数组（包括空数组）优先；nil 恢复自动内容。
+    ///
+    /// 自动内容按需构建：辅助功能读取时快照已过期就现场准备，同一版本内复用同一组元素。
     override public var accessibilityElements: [Any]? {
         get {
             if let hostAccessibilityElements { return hostAccessibilityElements }
-            guard preparedAccessibilityRevision == accessibilityRevision, window != nil else { return [] }
+            guard window != nil else { return [] }
+            if preparedAccessibilityRevision != accessibilityRevision {
+                prepareAccessibility(revision: accessibilityRevision)
+            }
+            guard preparedAccessibilityRevision == accessibilityRevision else { return [] }
             // 有选区时两端拖柄排在文字之后，可被 VoiceOver 与自动化定位。
             guard let handles = selectionHandles, handles.start.superview === self else {
                 return preparedAccessibilityElements
@@ -329,7 +335,10 @@ public final class LYGlyphTextLabel: UIView {
         }
         let revision = accessibilityRevision
         reconcileAttachments()
-        prepareAccessibility(revision: revision)
+        // 辅助功能运行时随展示事务提前准备；否则等首次读取再构建，列表滚动不为每个新 cell 付出这部分成本。
+        if UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning {
+            prepareAccessibility(revision: revision)
+        }
         if selectedRange != nil { updateSelectionHandles() }
     }
 

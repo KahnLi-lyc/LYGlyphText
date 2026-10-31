@@ -109,6 +109,13 @@ final class FeedScrollBenchmarkTests: XCTestCase {
             }
         }
         XCTAssertTrue(runs.allSatisfy { $0.steps == steps && $0.totalMilliseconds > 0 })
+        // 回归保护：预排版采用后滚动不在主线程完整排版；辅助功能未运行时不为新 cell 构建无障碍快照。
+        for run in runs where run.mode == "LYGlyphText" {
+            XCTAssertEqual(run.fullLayoutBuilds, 0, "\(run.pointsPerFrame)pt/frame")
+            if !UIAccessibility.isVoiceOverRunning, !UIAccessibility.isSwitchControlRunning {
+                XCTAssertEqual(run.accessibilityPreparations, 0, "\(run.pointsPerFrame)pt/frame")
+            }
+        }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(Report(configuration: configuration, runs: runs))
