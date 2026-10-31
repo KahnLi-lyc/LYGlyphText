@@ -126,7 +126,7 @@ LYGlyphText 只做只读 Label，服务三个核心场景：
 | 在后台构建文档 | 文档构造本身很便宜（见上方数据）；MainActor 文档是 Swift 6 并发设计的一部分，改动收益不抵成本 |
 | 自研图片缓存增强（LRU、WebP／APNG 动图、按需解码帧） | 桥接 Kingfisher／SDWebImage 即可获得，组件保持零第三方依赖 |
 
-异步绘制不在此表：由 C6 真机测量决定，达到门槛才排期，否则移入本表并附上数据。初步数据见 [C6 记录](verification/2026-10-29-c6-device-performance.md)，归因尚未完成。
+异步绘制不在此表：由 C6 真机测量决定，达到门槛才排期，否则移入本表并附上数据。真机初步数据见 [C6 记录](verification/2026-10-29-c6-device-performance.md)；随后模拟器归因发现差距主要来自尺寸查询在主线程重复排版而不是绘制，P2 已消除（见 [P2 记录](verification/2026-10-31-p2-scroll-performance.md)），优化后绘制只占主线程 7.5%，待真机复测确认。
 
 ## 发布前仍需补的验证
 

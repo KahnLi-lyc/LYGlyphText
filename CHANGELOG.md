@@ -11,6 +11,10 @@ C 批次（核心场景收口）：只补图文混排、高亮点击、长按复
 - 截断 token 支持文字与图片片段：`LYGlyphTextTruncationToken.Piece`、`pieces` 与 `init(pieces:...)`，可组合“…全文 + 图标”；头部、中间、尾部截断与预排版都适用，无障碍朗读文字片段与图片替代文本。
 - Demo 固定引入 Kingfisher 8.14.0（只用于 Demo App target；该版本要求 swift-tools 6.2，Demo 因此需要 Swift 6.2 及以上工具链），提供已编译的 `KingfisherImageLoader` 桥接与加载器切换演示；组件 Package 仍无第三方依赖。
 
+### 性能
+
+- 列表自适应行高时，不限宽度的尺寸查询改走只求尺寸路径并随预排版提供，采用预排版后滚动中不再在主线程重新排版；无障碍元素改为按需构建；只有排版相关的 trait 变化才重新排版。模拟器业务图文列表基准中，滚动每步 p95 从约为系统 UILabel 的 2 倍降到约 0.5 倍，见 [P2 记录](docs/verification/2026-10-31-p2-scroll-performance.md)。公开 API 与尺寸结果不变。
+
 ### 说明
 
 - 内置加载器 `LYGlyphTextURLSessionImageLoader` 定位为没有图片库时的兜底，功能冻结、只修缺陷；生产环境推荐通过 `LYGlyphTextImageLoading` 桥接 Kingfisher、SDWebImage 等宿主图片库。

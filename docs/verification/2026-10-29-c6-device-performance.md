@@ -24,3 +24,7 @@ Demo 新增 `FeedPerformanceController`（启动参数 `--feed-profile`）：180
 - 180 行固定负载列表（`--performance-profile`）录制被中止；设备上的 `PerformanceMeasurementTests` 未运行。
 
 **结论暂不下**：卡顿门槛的第一个条件已满足，第二个条件（耗时主要在 LYGlyphText 绘制）尚未验证，异步绘制是否立项待归因后决定。原始 trace 保存在本地 `.build/verification/c6-device/`（不提交）。
+
+## 后续（2026-10-31）
+
+模拟器归因与优化见 [P2 记录](2026-10-31-p2-scroll-performance.md)：差距主要来自 `intrinsicContentSize` 在主线程重复完整排版（43%），实际绘制只占 2.7%；P2 优化后模拟器上已低于 UILabel 对照组。真机复测待下次连接设备。
