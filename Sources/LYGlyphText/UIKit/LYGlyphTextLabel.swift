@@ -380,9 +380,13 @@ public final class LYGlyphTextLabel: UIView {
         context.restoreGState()
     }
 
-    /// 更新默认 body 字体、动态颜色及显示比例后重新排版。
+    /// 默认 body 字体、动态颜色、显示比例或方向等排版相关 trait 变化后重新排版。
+    ///
+    /// 尺寸类别等不影响排版的 trait 变化不清空布局缓存，也不丢弃尚未采用的预排版结果。
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
+        if let previousTraitCollection,
+           LayoutEnvironment(previousTraitCollection) == LayoutEnvironment(traitCollection) { return }
         geometryRevision &+= 1
         cancelActionInteraction()
         MeasurementCounters.traitInvalidations &+= 1

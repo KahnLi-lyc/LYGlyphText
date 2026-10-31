@@ -484,6 +484,31 @@ final class EnvironmentTests: XCTestCase {
         return view.subviews.lazy.compactMap(findLabel).first
     }
 
+    func testOnlyLayoutRelevantTraitChangesInvalidateLayout() throws {
+        let fixture = UIKitFixture()
+        defer { fixture.close() }
+        fixture.label.document = try LYGlyphTextDocument(text: "尺寸类别变化不需要重新排版。")
+        fixture.apply()
+        _ = fixture.label.measuredLayout(width: fixture.label.bounds.width)
+        fixture.label.resetLayoutMeasurementCounts()
+        MeasurementCounters.reset()
+        // 尺寸类别不在排版环境中：不清空缓存，绘制与测量命中原布局。
+        fixture.parent.setOverrideTraitCollection(UITraitCollection(traitsFrom: [
+            .init(preferredContentSizeCategory: .large), .init(userInterfaceStyle: .light),
+            .init(layoutDirection: .leftToRight), .init(horizontalSizeClass: .compact)
+        ]), forChild: fixture.child)
+        fixture.parent.view.layoutIfNeeded()
+        XCTAssertEqual(fixture.label.traitCollection.horizontalSizeClass, .compact)
+        _ = fixture.label.measuredLayout(width: fixture.label.bounds.width)
+        XCTAssertEqual(MeasurementCounters.traitInvalidations, 0)
+        XCTAssertEqual(fixture.label.layoutMeasurementSnapshot.layoutBuildCount, 0)
+        // 明暗变化影响动态颜色解析：仍然重新排版。
+        fixture.apply(style: .dark)
+        _ = fixture.label.measuredLayout(width: fixture.label.bounds.width)
+        XCTAssertEqual(MeasurementCounters.traitInvalidations, 1)
+        XCTAssertEqual(fixture.label.layoutMeasurementSnapshot.layoutBuildCount, 1)
+    }
+
     @MainActor
     private final class UIKitFixture {
         let parent = UIViewController()
