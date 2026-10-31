@@ -17,6 +17,8 @@ public final class LYGlyphTextPreparedLayout {
     let environment: LayoutEnvironment
     let resolvedText: ResolvedText
     let layout: LYGlyphTextLayout
+    /// 理想宽度（不限宽）下的尺寸，供采用后 Auto Layout 的固有宽度查询，不必在主线程重新排版。
+    let idealSize: CGSize
     /// 诊断：排版是否在主线程完成。
     let wasBuiltOnMainThread: Bool
 
@@ -30,6 +32,7 @@ public final class LYGlyphTextPreparedLayout {
         self.environment = environment
         resolvedText = built.text
         layout = built.layout
+        idealSize = built.idealSize
         wasBuiltOnMainThread = built.wasOnMainThread
         size = built.layout.size
     }
@@ -62,6 +65,7 @@ public final class LYGlyphTextPreparedLayout {
     struct Built {
         let text: ResolvedText
         let layout: LYGlyphTextLayout
+        let idealSize: CGSize
         let wasOnMainThread: Bool
 
         init(
@@ -69,12 +73,17 @@ public final class LYGlyphTextPreparedLayout {
             traits: UITraitCollection
         ) {
             text = ResolvedText(document: document, traits: traits, wrapping: configuration.wrapping)
+            let scale = traits.displayScale > 0 ? traits.displayScale : 1
             layout = text.layout(
-                width: width, insets: configuration.insets,
-                scale: traits.displayScale > 0 ? traits.displayScale : 1,
+                width: width, insets: configuration.insets, scale: scale,
                 numberOfLines: max(0, configuration.numberOfLines), truncationToken: configuration.truncationToken,
                 truncationMode: configuration.truncationMode
             )
+            idealSize = width == nil ? layout.size : text.layout(
+                width: nil, insets: configuration.insets, scale: scale,
+                numberOfLines: max(0, configuration.numberOfLines), truncationToken: configuration.truncationToken,
+                truncationMode: configuration.truncationMode, displayData: false
+            ).size
             wasOnMainThread = Thread.isMainThread
         }
     }

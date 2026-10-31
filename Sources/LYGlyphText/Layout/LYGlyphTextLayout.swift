@@ -485,6 +485,7 @@ final class ResolvedText {
         width: CGFloat?, insets: UIEdgeInsets, scale: CGFloat, numberOfLines: Int = 0,
         truncationToken: LYGlyphTextTruncationToken? = nil,
         truncationMode: LYGlyphTextConfiguration.TruncationMode = .tail,
+        displayData: Bool = true,
         observe: (TextDecorations.PreparationEvent) -> Void = { _ in }
     ) -> LYGlyphTextLayout {
         func inset(_ value: CGFloat) -> CGFloat {
@@ -530,7 +531,8 @@ final class ResolvedText {
                         scale: scale,
                         numberOfLines: numberOfLines,
                         truncationToken: truncationToken,
-                        truncationMode: truncationMode
+                        truncationMode: truncationMode,
+                        displayData: displayData
                     )
             }
             return LYGlyphTextLayout(
@@ -557,11 +559,14 @@ final class ResolvedText {
                 Array(lines.prefix(numberOfLines)), width: contentWidth, insets: insets, scale: scale,
                 token: truncationToken, mode: truncationMode
             ) else { return fallback() }
+            let size = CGSize(
+                width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
+                height: pixelCeil(visible.height + vertical)
+            )
+            // 只求尺寸时不生成源几何、装饰、动作索引与按下绘制计划；尺寸与完整布局完全相同。
+            guard displayData else { return LYGlyphTextLayout(size: size, lines: visible.lines, traits: traits) }
             return LYGlyphTextLayout(
-                size: CGSize(
-                    width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
-                    height: pixelCeil(visible.height + vertical)
-                ),
+                size: size,
                 lines: visible.lines, attachments: visibleAttachments(in: visible.lines),
                 viewAttachments: visibleViewAttachments(in: visible.lines),
                 decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),
@@ -569,11 +574,13 @@ final class ResolvedText {
                 truncationToken: visible.token, backgroundStyles: backgroundStyles, observe: observe
             )
         }
+        let size = CGSize(
+            width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
+            height: pixelCeil(frame.contentHeight + vertical)
+        )
+        guard displayData else { return LYGlyphTextLayout(size: size, lines: lines, traits: traits) }
         return LYGlyphTextLayout(
-            size: CGSize(
-                width: pixelCeil(min(outerWidth, idealWidth + horizontal)),
-                height: pixelCeil(frame.contentHeight + vertical)
-            ),
+            size: size,
             lines: lines, attachments: visibleAttachments(in: lines),
             viewAttachments: visibleViewAttachments(in: lines),
             decorations: TextDecorations(source: document?.string ?? "", styles: decorationStyles, scale: scale),

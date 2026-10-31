@@ -9,6 +9,8 @@ struct LayoutCache {
 
     private var resolvedText: ResolvedText?
     private var entries: [(width: CGFloat?, layout: LYGlyphTextLayout)] = []
+    /// 理想宽度（不限宽）下的尺寸，只由尺寸路径或预排版填充；采用预排版时保留。
+    private var idealSize: CGSize?
     /// 实际新建布局的次数；命中缓存不计数。
     private(set) var buildCount = 0
 
@@ -39,16 +41,43 @@ struct LayoutCache {
         return layout
     }
 
-    /// 采用预排版结果作为当前解析输入与唯一缓存项；不增加构建计数。
+    /// 理想宽度下的尺寸，供 Auto Layout 的固有宽度查询。
+    ///
+    /// 只计算行、截断与高度，不生成源几何、装饰、动作索引和按下绘制计划，不占用布局缓存，也不增加构建计数；
+    /// 已有理想宽度的完整布局时直接使用其尺寸。
+    mutating func idealSize(
+        document: LYGlyphTextDocument?, configuration: LYGlyphTextConfiguration, traits: UITraitCollection
+    ) -> CGSize {
+        if let cached = entries.first(where: { $0.width == nil }) { return cached.layout.size }
+        if let idealSize { return idealSize }
+        let text = resolvedText ?? ResolvedText(document: document, traits: traits, wrapping: configuration.wrapping)
+        resolvedText = text
+        MeasurementCounters.sizeMeasurements &+= 1
+        let size = text.layout(
+            width: nil, insets: configuration.insets, scale: traits.displayScale > 0 ? traits.displayScale : 1,
+            numberOfLines: max(0, configuration.numberOfLines), truncationToken: configuration.truncationToken,
+            truncationMode: configuration.truncationMode, displayData: false
+        ).size
+        idealSize = size
+        return size
+    }
+
+    /// 记录预排版在后台得到的理想宽度尺寸；输入与当前缓存一致时由宿主调用。
+    mutating func rememberIdealSize(_ size: CGSize) {
+        idealSize = size
+    }
+
+    /// 采用预排版结果作为当前解析输入与唯一布局缓存项；不增加构建计数，保留理想宽度尺寸。
     mutating func adopt(width: CGFloat?, layout: LYGlyphTextLayout, resolvedText: ResolvedText) {
         self.resolvedText = resolvedText
         entries = [(width, layout)]
     }
 
-    /// 丢弃解析输入与全部布局，不重置构建计数。
+    /// 丢弃解析输入、全部布局与理想宽度尺寸，不重置构建计数。
     mutating func invalidate() {
         resolvedText = nil
         entries.removeAll(keepingCapacity: true)
+        idealSize = nil
     }
 
     mutating func resetBuildCount() {

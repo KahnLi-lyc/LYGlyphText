@@ -281,14 +281,15 @@ public final class LYGlyphTextLabel: UIView {
 
     /// 理想宽度与当前有效测量宽度下的高度，均按显示比例向上对齐像素。
     override public var intrinsicContentSize: CGSize {
-        let ideal = measuredLayout(width: nil).size
+        let ideal = measuredIdealSize()
         guard let width = explicitWidth ?? positiveWidth(bounds.width) else { return ideal }
         return CGSize(width: ideal.width, height: measuredLayout(width: width).size.height)
     }
 
     /// 按调用方宽度测量，不读取旧 frame、不修改约束或自身尺寸；高度不限制内容测量。
     override public func sizeThatFits(_ size: CGSize) -> CGSize {
-        measuredLayout(width: normalizedWidth(size.width)).size
+        guard let width = normalizedWidth(size.width) else { return measuredIdealSize() }
+        return measuredLayout(width: width).size
     }
 
     /// 横向 required 时直接按目标宽度测量，适用于列表离屏自适应高度。
@@ -298,7 +299,7 @@ public final class LYGlyphTextLabel: UIView {
         verticalFittingPriority: UILayoutPriority
     ) -> CGSize {
         let width = horizontalFittingPriority == .required ? normalizedWidth(targetSize.width) : nil
-        var result = measuredLayout(width: width).size
+        var result = width.map { measuredLayout(width: $0).size } ?? measuredIdealSize()
         if horizontalFittingPriority == .required, targetSize.width.isFinite {
             result.width = max(0, targetSize.width)
         }
@@ -427,19 +428,32 @@ public final class LYGlyphTextLabel: UIView {
     }
 
     func measuredLayout(width: CGFloat?) -> LYGlyphTextLayout {
-        if let prepared = pendingPreparedLayout {
-            if prepared.document !== document || prepared.configuration != configuration {
-                pendingPreparedLayout = nil
-            } else if prepared.width == width.flatMap(normalizedWidth),
-                      LayoutEnvironment(traitCollection) == prepared.environment
-            {
-                pendingPreparedLayout = nil
-                layoutCache.adopt(width: prepared.width, layout: prepared.layout, resolvedText: prepared.resolvedText)
-            }
-        }
+        consumePreparedLayout(width: width.flatMap(normalizedWidth))
         return layoutCache.layout(
             width: width.flatMap(normalizedWidth), document: document, configuration: configuration,
             traits: traitCollection
         )
+    }
+
+    /// 理想宽度下的尺寸；只用于固有宽度查询，不构建显示数据。
+    func measuredIdealSize() -> CGSize {
+        // 预排版本身就是理想宽度时直接采用其布局；否则只记录其理想宽度尺寸。
+        consumePreparedLayout(width: nil, adoptsLayout: pendingPreparedLayout?.width == nil)
+        return layoutCache.idealSize(document: document, configuration: configuration, traits: traitCollection)
+    }
+
+    /// 预排版与当前输入和显示环境一致时，先记录其理想宽度尺寸；宽度也一致且允许时采用其布局。
+    private func consumePreparedLayout(width: CGFloat?, adoptsLayout: Bool = true) {
+        guard let prepared = pendingPreparedLayout else { return }
+        guard prepared.document === document, prepared.configuration == configuration else {
+            pendingPreparedLayout = nil
+            return
+        }
+        guard LayoutEnvironment(traitCollection) == prepared.environment else { return }
+        layoutCache.rememberIdealSize(prepared.idealSize)
+        if adoptsLayout, prepared.width == width {
+            pendingPreparedLayout = nil
+            layoutCache.adopt(width: prepared.width, layout: prepared.layout, resolvedText: prepared.resolvedText)
+        }
     }
 }
