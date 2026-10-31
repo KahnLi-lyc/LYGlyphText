@@ -26,6 +26,7 @@ struct LayoutCache {
         resolvedText = text
         let scale = traits.displayScale > 0 ? traits.displayScale : 1
         buildCount &+= 1
+        MeasurementCounters.fullLayoutBuilds &+= 1
         let layout = text.layout(
             width: width, insets: configuration.insets, scale: scale, numberOfLines: max(
                 0,

@@ -17,6 +17,7 @@ extension LYGlyphTextLabel {
             preparedAccessibilityRevision = revision
             return
         }
+        MeasurementCounters.accessibilityPreparations &+= 1
         let layout = measuredLayout(width: max(0, bounds.width))
         let nativeViews = mountedAttachments.mapValues(\.view)
         let semantics = TextAccessibility(

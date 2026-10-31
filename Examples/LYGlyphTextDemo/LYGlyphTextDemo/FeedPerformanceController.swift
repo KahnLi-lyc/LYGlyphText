@@ -13,10 +13,10 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     fileprivate static let horizontalInset: CGFloat = 16
     private static let rowCount = 180
     private static let signposter = OSSignposter(subsystem: "dev.lyglyphtext.demo", category: "Performance")
-    private let tableView = UITableView(frame: .zero, style: .plain)
+    let tableView = UITableView(frame: .zero, style: .plain)
     private let statusLabel = UILabel()
     private let shouldProfile: Bool
-    private let usesUILabel = UserDefaults.standard.bool(forKey: "feedUseUILabel")
+    private let usesUILabel: Bool
     private let speed: CGFloat = {
         let value = UserDefaults.standard.double(forKey: "feedScrollSpeed")
         return value > 0 ? value : 2800
@@ -33,9 +33,13 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     private var lastTick: UInt64 = 0
     private var direction: CGFloat = 1
     private var hasPrepared = false
+    /// 预排版完成并刷新列表后为 true，供基准测试等待。
+    private(set) var isReady = false
 
-    init(profile: Bool = false) throws {
+    /// - Parameter usesUILabel: nil 时读取启动参数 `-feedUseUILabel`。
+    init(profile: Bool = false, usesUILabel: Bool? = nil) throws {
         shouldProfile = profile
+        self.usesUILabel = usesUILabel ?? UserDefaults.standard.bool(forKey: "feedUseUILabel")
         let chevron = UIImage(systemName: "chevron.down")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
         configuration = LYGlyphTextConfiguration(
             numberOfLines: 5,
@@ -49,7 +53,7 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
         inputs = Self.makeInputs(names: images.keys.sorted())
         super.init(nibName: nil, bundle: nil)
         title = "业务图文 · 180 行"
-        if usesUILabel {
+        if self.usesUILabel {
             plainTexts = inputs.map { Self.systemText($0, images: images) }
         } else {
             let parser = LYGlyphTextParser(rules: [
@@ -137,6 +141,7 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
             usesUILabel ? "UILabel" : "LYGlyphText", width, milliseconds, speed
         )
         tableView.reloadData()
+        isReady = true
         if shouldProfile { startProfile() }
     }
 

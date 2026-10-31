@@ -375,6 +375,7 @@ public final class LYGlyphTextLabel: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
         geometryRevision &+= 1
         cancelActionInteraction()
+        MeasurementCounters.traitInvalidations &+= 1
         invalidateText()
     }
 
