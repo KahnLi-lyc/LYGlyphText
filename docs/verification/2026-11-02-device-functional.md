@@ -80,4 +80,4 @@ Leaks 与 Allocations 录制下的两次运行（factory／unmount 为 139／139
 - 只测了一台 A14 设备、iOS 27.0.1、一个公网图片源（raw.githubusercontent.com，`cache-control: max-age=300`）与当时的网络；弱网、其他服务器缓存头、iOS 16、更旧设备未测。
 - 网络图片场景只测了 2800pt/s；Allocations 只录了内置加载器。
 - 方向变化未测。人工 VoiceOver 不在本批次范围内，仍未验证。
-- 原始 trace、xcresult 与日志保存在本地 `.build/device-functional/`（不提交）；App 自测 JSON 汇总在 [device-functional-2026-11-02.json](data/device-functional-2026-11-02.json)。
+- 原始 trace、xcresult、日志与回归运行目录（`.build/device-functional/`、`.build/verification/20261102T0*`）未提交，2026-11-02 已按用户要求删除以释放磁盘空间，新建的模拟器 `LYGlyphText DeviceFunc 20261102` 也已删除；本文数值是删除前读取的。App 自测 JSON 汇总保留在 [device-functional-2026-11-02.json](data/device-functional-2026-11-02.json)。
