@@ -74,8 +74,21 @@ LYGlyphText 约慢 2 倍，与真机比例一致。计数器显示：**已开启
 | build（Package 与 Demo，Swift 6 模式） | PASS |
 | 完整宿主＋UI 回归（main `7fa120c` 代码） | **484／484 Passed**（454 宿主＋30 UI），0 失败／跳过，`runtimeWarnings=[]`（`20261031T094544Z-93923-test`）；原有 478 项全部保留 |
 
-## 结论与后续
+## 真机复测（2026-11-02）
 
-- 模拟器上，业务图文列表的滚动成本已低于系统 UILabel 对照组；差距的主要原因（尺寸查询在主线程重复完整排版）已消除。
-- 异步绘制：模拟器归因显示绘制只占主线程 7.5%，暂无立项依据。按 C6 门槛，下次接真机时复测 Animation Hitches；只有真机仍超过 5ms/s 且卡顿帧主要耗时在 LYGlyphText 绘制，才新开异步绘制批次。
-- 模拟器数据不代表真机；真机复测未做。
+设备 iPhone 12 Pro Max（A14，60Hz），iOS 27.0.1；main `2187fb0` 的 Release 构建（个人开发证书签名，只在命令行传入）；场景与 C6 相同（`--feed-profile`，自动往返滚动 45 秒），`xctrace` Animation Hitches 每组 55 秒。卡顿时间比统一取滚动区间 8—48 秒，C6 的优化前 trace 用同一窗口重新计算，以便直接比较。
+
+| 滚动速度 | 实现 | 优化前（C6） | 优化后 |
+|---:|---|---:|---:|
+| 2800pt/s | LYGlyphText | 23.4ms/s（55 次） | **0.8ms/s**（2 次，最长 17ms） |
+| 2800pt/s | UILabel | 15.4ms/s | 13.3ms/s（31 次） |
+| 800pt/s | LYGlyphText | 53.3ms/s（117 次） | **0ms/s**（0 次） |
+| 800pt/s | UILabel | 23.8ms/s | 19.6ms/s（47 次） |
+
+Time Profiler（2800pt/s，各 55 秒）：LYGlyphText 组主线程样本 9756，UILabel 组 14466。LYGlyphText 组中 UITableView 布局 27.4%、LYGlyphText 绘制 11.7%、尺寸查询触发的排版 0.5%、无障碍准备 0%；UILabel 组中 Auto Layout 引擎占 43.2%。LYGlyphText 组确实在滚动和绘制，只是主线程工作量更少。
+
+## 结论
+
+- 差距的主要原因（尺寸查询在主线程重复完整排版）已消除。真机上业务图文列表的卡顿时间比从 23.4／53.3ms/s 降到 0.8／0ms/s，低于系统 UILabel 对照组。
+- 异步绘制：真机卡顿时间比低于 C6 门槛（5ms/s），按门槛移入[能力对比](../YYLABEL_COMPARISON.md)的不做清单；只有出现真实卡顿证据时再评估。
+- 范围：只测了一台 A14 设备与一个业务列表场景；更旧设备、iOS 16、含网络图片的列表未测。

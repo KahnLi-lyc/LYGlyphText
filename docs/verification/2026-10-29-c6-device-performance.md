@@ -27,4 +27,4 @@ Demo 新增 `FeedPerformanceController`（启动参数 `--feed-profile`）：180
 
 ## 后续（2026-10-31）
 
-模拟器归因与优化见 [P2 记录](2026-10-31-p2-scroll-performance.md)：差距主要来自 `intrinsicContentSize` 在主线程重复完整排版（43%），实际绘制只占 2.7%；P2 优化后模拟器上已低于 UILabel 对照组。真机复测待下次连接设备。
+模拟器归因与优化见 [P2 记录](2026-10-31-p2-scroll-performance.md)：差距主要来自 `intrinsicContentSize` 在主线程重复完整排版（43%），实际绘制只占 2.7%；P2 优化后模拟器上已低于 UILabel 对照组。2026-11-02 真机复测：LYGlyphText 卡顿时间比 0.8ms/s（2800pt/s）与 0ms/s（800pt/s），UILabel 对照组 13.3／19.6ms/s；低于 5ms/s 门槛，异步绘制不做。数据见 P2 记录的“真机复测”一节。

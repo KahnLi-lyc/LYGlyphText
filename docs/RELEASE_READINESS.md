@@ -21,7 +21,7 @@
 | Swift6.0实际编译器 | R1 已探测，未安装真实 Swift6.0.x，仍未验证；Swift6.4 的 v6 模式不代替，见[R1记录](verification/2026-10-21-minimum-compatibility.md)。C5 起 Demo 依赖的 Kingfisher 8.14.0 要求 swift-tools 6.2，本门槛只覆盖组件 Package 与独立公开 API 消费者（2026-10-29 用户决定：开发统一使用 Xcode 27） |
 | iOS16实际运行 | R1 未发现 iOS16 runtime／可用设备，0宿主＋0UI，仍未验证；部署目标和新SDK编译不代替运行 |
 | 独立公开API消费者 | R1 在Swift6.4／SDK27.1下构建成功（arm64／x86_64、target16.0）；没有运行，不计入上述两项兼容性通过 |
-| 真机 | 未验证；模拟器性能不代表设备性能 |
+| 真机 | 部分验证：iPhone 12 Pro Max（iOS 27.0.1）Release 业务图文列表滚动卡顿时间比 0—0.8ms/s（见 [P2 记录](verification/2026-10-31-p2-scroll-performance.md)）；内存、方向、触摸、附件释放与其他设备未验证 |
 | 自动AX语义／激活 | A1完整回归通过；保留原生附件子树 |
 | 人工VoiceOver | 未验证：顺序、停顿、重复朗读、焦点、滚动及按钮体验 |
 | 原生任意后代AX frame部分裁切 | 未验证／不保证；父clipsToBounds不保证后代AX frame |
