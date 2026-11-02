@@ -1,3 +1,4 @@
+import Kingfisher
 import LYGlyphText
 import os
 import UIKit
@@ -7,7 +8,12 @@ import UIKit
 /// 数据到达后在后台预排版，cell 直接采用预排版结果；`--feed-profile` 启动时自动往返滚动 45 秒（默认 2800pt/s，
 /// 可用启动参数 `-feedScrollSpeed 800` 调整），供 Instruments 的 Animation Hitches 与 Time Profiler 录制。
 /// 启动参数 `-feedUseUILabel YES` 改用系统 UILabel（相同文字与 NSTextAttachment 表情）作为对照组。
-/// 自动滚动区间记录为 os_signpost “FeedScroll”。只使用本地生成的表情图片，不访问网络。
+/// 自动滚动区间记录为 os_signpost “FeedScroll”。默认只使用本地生成的表情图片，不访问网络。
+///
+/// 启动参数 `-feedRemoteImages YES` 让每行带 1—2 张网络图片附件（公网 PNG，查询参数区分 270 个地址），
+/// `-feedImageLoader kingfisher` 改用 Demo 的 Kingfisher 桥接，默认内置 `LYGlyphTextURLSessionImageLoader`。
+/// 该模式启动时清空所用加载器的内存与磁盘缓存。自动滚动期间每秒记录一次进程 RSS，结束后与图片加载计数
+/// 一起写入本 App 沙盒 Documents 的 `feed-profile.json`。
 @MainActor
 final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     fileprivate static let horizontalInset: CGFloat = 16
@@ -17,6 +23,11 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     private let statusLabel = UILabel()
     private let shouldProfile: Bool
     private let usesUILabel: Bool
+    private let imageLoader: (any LYGlyphTextImageLoading)?
+    private let loaderName: String
+    private var loadedImageCount = 0
+    private var memorySamples: [[String: Double]] = []
+    private var lastMemorySample: UInt64 = 0
     private let speed: CGFloat = {
         let value = UserDefaults.standard.double(forKey: "feedScrollSpeed")
         return value > 0 ? value : 2800
@@ -37,9 +48,26 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     private(set) var isReady = false
 
     /// - Parameter usesUILabel: nil 时读取启动参数 `-feedUseUILabel`。
-    init(profile: Bool = false, usesUILabel: Bool? = nil) throws {
+    /// - Parameter remoteImages: nil 时读取启动参数 `-feedRemoteImages`；UILabel 对照组忽略。
+    init(profile: Bool = false, usesUILabel: Bool? = nil, remoteImages: Bool? = nil) throws {
         shouldProfile = profile
         self.usesUILabel = usesUILabel ?? UserDefaults.standard.bool(forKey: "feedUseUILabel")
+        let usesRemoteImages = !self.usesUILabel
+            && (remoteImages ?? UserDefaults.standard.bool(forKey: "feedRemoteImages"))
+        if !usesRemoteImages {
+            imageLoader = nil
+            loaderName = "无"
+        } else if UserDefaults.standard.string(forKey: "feedImageLoader") == "kingfisher" {
+            KingfisherManager.shared.cache.clearMemoryCache()
+            KingfisherManager.shared.cache.clearDiskCache()
+            imageLoader = KingfisherImageLoader()
+            loaderName = "Kingfisher"
+        } else {
+            let loader = LYGlyphTextURLSessionImageLoader()
+            loader.removeAllCachedImages()
+            imageLoader = loader
+            loaderName = "内置加载器"
+        }
         let chevron = UIImage(systemName: "chevron.down")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
         configuration = LYGlyphTextConfiguration(
             numberOfLines: 5,
@@ -55,6 +83,8 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
         title = "业务图文 · 180 行"
         if self.usesUILabel {
             plainTexts = inputs.map { Self.systemText($0, images: images) }
+        } else if usesRemoteImages {
+            documents = try inputs.enumerated().map { try Self.remoteDocument($1, row: $0, images: images) }
         } else {
             let parser = LYGlyphTextParser(rules: [
                 .emoticons(images, size: CGSize(width: 20, height: 20)),
@@ -121,8 +151,11 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: FeedCell.reuseID, for: indexPath)
         (cell as? FeedCell)?.bind(
-            document: documents[indexPath.row], configuration: configuration, prepared: prepared[indexPath.row]
-        )
+            document: documents[indexPath.row], configuration: configuration, prepared: prepared[indexPath.row],
+            imageLoader: imageLoader
+        ) { [weak self] in
+            self?.loadedImageCount += 1
+        }
         return cell
     }
 
@@ -137,8 +170,8 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
         }
         let milliseconds = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
         statusLabel.text = String(
-            format: "%@ · 180 行 · %.0fpt · 5 行截断 · 预排版 %.0fms · %.0fpt/s",
-            usesUILabel ? "UILabel" : "LYGlyphText", width, milliseconds, speed
+            format: "%@ · 180 行 · %.0fpt · 5 行截断 · 预排版 %.0fms · %.0fpt/s · 网络图片：%@",
+            usesUILabel ? "UILabel" : "LYGlyphText", width, milliseconds, speed, loaderName
         )
         tableView.reloadData()
         isReady = true
@@ -148,6 +181,7 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
     private func startProfile() {
         profileStart = DispatchTime.now().uptimeNanoseconds
         lastTick = profileStart
+        recordMemory(now: profileStart)
         scrollInterval = Self.signposter.beginInterval("FeedScroll")
         let target = FeedDisplayLinkTarget(owner: self)
         let link = CADisplayLink(target: target, selector: #selector(FeedDisplayLinkTarget.tick))
@@ -161,8 +195,37 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
         if let scrollInterval {
             Self.signposter.endInterval("FeedScroll", scrollInterval)
             self.scrollInterval = nil
-            statusLabel.text = (statusLabel.text ?? "") + " · 自动滚动结束"
+            statusLabel.text = (statusLabel.text ?? "") + " · 自动滚动结束 · 已加载图片 \(loadedImageCount) 次"
+            writeProfileSummary()
         }
+    }
+
+    private func recordMemory(now: UInt64) {
+        lastMemorySample = now
+        guard let bytes = PerformanceListController.residentSize() else { return }
+        memorySamples.append([
+            "elapsedSeconds": Double(now - profileStart) / 1_000_000_000, "residentSizeBytes": Double(bytes)
+        ])
+    }
+
+    /// 只写入本 App 沙盒的 Documents，供真机取回核对内存曲线与图片确实经网络加载。
+    private func writeProfileSummary() {
+        recordMemory(now: DispatchTime.now().uptimeNanoseconds)
+        let summary: [String: Any] = [
+            "implementation": usesUILabel ? "UILabel" : "LYGlyphText",
+            "speedPointsPerSecond": speed,
+            "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+            "memorySamples": memorySamples,
+            "loader": loaderName,
+            "loadedImageCallbacks": loadedImageCount,
+            "remoteImageCount": imageLoader == nil ? 0
+                : documents.indices.reduce(0) { $0 + Self.remoteImageCount(row: $1) },
+            "elapsedSeconds": Double(DispatchTime.now().uptimeNanoseconds - profileStart) / 1_000_000_000
+        ]
+        guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+              let data = try? JSONSerialization.data(withJSONObject: summary, options: [.prettyPrinted, .sortedKeys])
+        else { return }
+        try? data.write(to: directory.appendingPathComponent("feed-profile.json"), options: .atomic)
     }
 
     fileprivate func profileTick() {
@@ -183,6 +246,7 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
             direction = 1
         }
         tableView.setContentOffset(CGPoint(x: 0, y: offset), animated: false)
+        if now - lastMemorySample >= 1_000_000_000 { recordMemory(now: now) }
     }
 
     private static func emoticonImages() -> [String: UIImage] {
@@ -226,6 +290,85 @@ final class FeedPerformanceController: UIViewController, UITableViewDataSource {
             }
             return NSAttributedString(string: text, attributes: [.font: body, .foregroundColor: UIColor.label])
         }
+    }
+
+    private static let remoteImageBase = "https://raw.githubusercontent.com/onevcat/Kingfisher/master/images/logo.png"
+
+    /// 偶数行 2 张、奇数行 1 张网络图片。
+    private static func remoteImageCount(row: Int) -> Int {
+        row.isMultiple(of: 2) ? 2 : 1
+    }
+
+    /// 网络图片模式：第一张图放在行首，第二张放在第一个句号之后；表情与 @／#／链接按解析器相同的规则
+    /// 拆成图片片段和动作片段（解析器的输出不能再插入远程图片）。
+    private static func remoteDocument(
+        _ input: NSAttributedString, row: Int, images: [String: UIImage]
+    ) throws -> LYGlyphTextDocument {
+        let attributes = input.attributes(at: 0, effectiveRange: nil)
+        let text = input.string as NSString
+        let split = text.range(of: "。")
+        let head = split.location == NSNotFound ? text as String : text.substring(to: split.location + 1)
+        let tail = split.location == NSNotFound ? "" : text.substring(from: split.location + 1)
+        var counter = 0
+        var segments: [LYGlyphTextSegment] = []
+        for index in 0 ..< remoteImageCount(row: row) {
+            guard let url = URL(string: remoteImageBase + "?feed=\(row)-\(index)") else { continue }
+            let remote = LYGlyphTextRemoteImageAttachment(
+                id: "remote-\(index)", url: url, size: CGSize(width: 48, height: 24), alignment: .center,
+                contentMode: .scaleAspectFit, placeholder: UIImage(systemName: "photo"), alternativeText: "配图"
+            )
+            if index > 0 { segments += tokenSegments(head, attributes: attributes, images: images, counter: &counter) }
+            segments.append(.remoteImage(remote, attributes: attributes))
+        }
+        segments += tokenSegments(
+            remoteImageCount(row: row) > 1 ? tail : head + tail, attributes: attributes, images: images,
+            counter: &counter
+        )
+        return try LYGlyphTextDocument(segments: segments)
+    }
+
+    private static let tokenExpression = try? NSRegularExpression(
+        pattern: "\\[[^\\]]+\\]|@[\\p{L}\\p{N}_]+|#[^#\\n]+#|https?://[A-Za-z0-9./_-]+"
+    )
+
+    private static func tokenSegments(
+        _ string: String, attributes: [NSAttributedString.Key: Any], images: [String: UIImage],
+        counter: inout Int
+    ) -> [LYGlyphTextSegment] {
+        let source = string as NSString
+        var segments: [LYGlyphTextSegment] = []
+        var cursor = 0
+        func plain(upTo location: Int) {
+            guard location > cursor else { return }
+            let range = NSRange(location: cursor, length: location - cursor)
+            segments.append(.text(NSAttributedString(string: source.substring(with: range), attributes: attributes)))
+        }
+        let matches = tokenExpression?.matches(in: string, range: NSRange(location: 0, length: source.length)) ?? []
+        for match in matches {
+            let token = source.substring(with: match.range)
+            if token.hasPrefix("[") {
+                guard let image = images[token] else { continue }
+                plain(upTo: match.range.location)
+                counter += 1
+                segments.append(.image(
+                    .init(
+                        id: "emoticon-\(counter)", image: image, size: CGSize(width: 20, height: 20),
+                        alignment: .center, alternativeText: token
+                    ),
+                    attributes: attributes
+                ))
+            } else {
+                plain(upTo: match.range.location)
+                var linked = attributes
+                linked[.foregroundColor] = UIColor.link
+                let id = token.hasPrefix("@") ? "mention:" + token.dropFirst()
+                    : token.hasPrefix("#") ? "topic:" + token.dropFirst().dropLast() : token
+                segments.append(.text(NSAttributedString(string: token, attributes: linked), actionID: id))
+            }
+            cursor = match.range.location + match.range.length
+        }
+        plain(upTo: source.length)
+        return segments
     }
 
     /// 对照组：表情短码替换为 20pt 的 NSTextAttachment，其余文字与属性相同。
@@ -289,8 +432,13 @@ private final class FeedCell: UITableViewCell {
     }
 
     func bind(
-        document: LYGlyphTextDocument, configuration: LYGlyphTextConfiguration, prepared: LYGlyphTextPreparedLayout?
+        document: LYGlyphTextDocument, configuration: LYGlyphTextConfiguration, prepared: LYGlyphTextPreparedLayout?,
+        imageLoader: (any LYGlyphTextImageLoading)?, onImageLoad: @escaping @MainActor () -> Void
     ) {
+        label.imageLoader = imageLoader
+        if imageLoader != nil {
+            label.onRemoteImageLoad = { _, _ in onImageLoad() }
+        }
         label.configuration = configuration
         if let prepared {
             label.apply(prepared)

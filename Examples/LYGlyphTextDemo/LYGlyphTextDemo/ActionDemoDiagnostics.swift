@@ -152,9 +152,13 @@
                     points["lineGap"] = screenPoint(
                         CGPoint(x: first.midX, y: (first.maxY + second.minY) / 2), in: label
                     )
-                    points["lineEnd"] = screenPoint(CGPoint(
-                        x: min(display.contentClip.maxX - 2, first.maxX + 12), y: first.midY
-                    ), in: label)
+                    // 跨行动作除最后一行外都占到所在行行尾；取行尾后确有 12pt 空白的第一行，
+                    // 宽屏上首行可能排满到内容边缘，不能把点夹回动作矩形内。
+                    if let line = ordered.dropLast().first(where: {
+                        $0.maxX + 12 <= display.contentClip.maxX - 2
+                    }) {
+                        points["lineEnd"] = screenPoint(CGPoint(x: line.maxX + 12, y: line.midY), in: label)
+                    }
                 }
             }
             if let token = truncationTokenRect(layout: layout, display: display) {

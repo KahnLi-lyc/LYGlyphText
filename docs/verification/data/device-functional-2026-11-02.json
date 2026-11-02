@@ -1,0 +1,2042 @@
+{
+  "build": "Release, SWIFT_VERSION=6, Xcode 27.2 (27B52)",
+  "date": "2026-11-02",
+  "device": "iPhone 12 Pro Max (iPhone13,4), iOS 27.0.1",
+  "note": "App-side JSON copied from the Demo sandbox Documents (feed-profile.json / performance-scroll.json). RSS is mach resident_size, not a leak verdict. Instruments values are in the verification record.",
+  "runs": {
+    "allocations-feed": {
+      "appJSON": {
+        "elapsedSeconds": 45.02273525,
+        "implementation": "LYGlyphText",
+        "loadedImageCallbacks": 0,
+        "loader": "无",
+        "memorySamples": [
+          {
+            "elapsedSeconds": 0,
+            "residentSizeBytes": 153911296
+          },
+          {
+            "elapsedSeconds": 1.002314583,
+            "residentSizeBytes": 175161344
+          },
+          {
+            "elapsedSeconds": 2.00290825,
+            "residentSizeBytes": 178192384
+          },
+          {
+            "elapsedSeconds": 3.00349925,
+            "residentSizeBytes": 178241536
+          },
+          {
+            "elapsedSeconds": 4.003982917,
+            "residentSizeBytes": 178241536
+          },
+          {
+            "elapsedSeconds": 5.004617542,
+            "residentSizeBytes": 178126848
+          },
+          {
+            "elapsedSeconds": 6.005122167,
+            "residentSizeBytes": 177946624
+          },
+          {
+            "elapsedSeconds": 7.005604875,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 8.006325667,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 9.006777167,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 10.007487708,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 11.008120958,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 12.008612458,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 13.00926675,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 14.00996125,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 15.010643667,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 16.011228208,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 17.011916125,
+            "residentSizeBytes": 177864704
+          },
+          {
+            "elapsedSeconds": 18.01262825,
+            "residentSizeBytes": 177881088
+          },
+          {
+            "elapsedSeconds": 19.013280333,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 20.013884625,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 21.014594042,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 22.015344333,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 23.016031208,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 24.016648083,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 25.017159875,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 26.017892,
+            "residentSizeBytes": 179978240
+          },
+          {
+            "elapsedSeconds": 27.018471292,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 28.019150583,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 29.019799333,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 30.020354458,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 31.021011333,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 32.021659542,
+            "residentSizeBytes": 178257920
+          },
+          {
+            "elapsedSeconds": 33.022455625,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 34.022939042,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 35.023623833,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 36.024289583,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 37.024943708,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 38.025428,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 39.026242833,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 40.026892792,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 41.027564792,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 42.0282295,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 43.028835083,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 44.029251708,
+            "residentSizeBytes": 178176000
+          },
+          {
+            "elapsedSeconds": 45.022491208,
+            "residentSizeBytes": 178192384
+          }
+        ],
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "remoteImageCount": 0,
+        "speedPointsPerSecond": 2800
+      },
+      "command": "Allocations 60s, --feed-profile"
+    },
+    "allocations-feed-remote-builtin": {
+      "appJSON": {
+        "elapsedSeconds": 45.017921125,
+        "implementation": "LYGlyphText",
+        "loadedImageCallbacks": 1326,
+        "loader": "内置加载器",
+        "memorySamples": [
+          {
+            "elapsedSeconds": 0,
+            "residentSizeBytes": 154238976
+          },
+          {
+            "elapsedSeconds": 1.001303958,
+            "residentSizeBytes": 177700864
+          },
+          {
+            "elapsedSeconds": 2.002101083,
+            "residentSizeBytes": 181878784
+          },
+          {
+            "elapsedSeconds": 3.002549625,
+            "residentSizeBytes": 182566912
+          },
+          {
+            "elapsedSeconds": 4.0032775,
+            "residentSizeBytes": 182910976
+          },
+          {
+            "elapsedSeconds": 5.003872375,
+            "residentSizeBytes": 183009280
+          },
+          {
+            "elapsedSeconds": 6.004502416,
+            "residentSizeBytes": 182992896
+          },
+          {
+            "elapsedSeconds": 7.005208375,
+            "residentSizeBytes": 182960128
+          },
+          {
+            "elapsedSeconds": 8.00578925,
+            "residentSizeBytes": 182992896
+          },
+          {
+            "elapsedSeconds": 9.006441625,
+            "residentSizeBytes": 183156736
+          },
+          {
+            "elapsedSeconds": 10.007565666,
+            "residentSizeBytes": 183156736
+          },
+          {
+            "elapsedSeconds": 11.007861416,
+            "residentSizeBytes": 183156736
+          },
+          {
+            "elapsedSeconds": 12.008450125,
+            "residentSizeBytes": 183156736
+          },
+          {
+            "elapsedSeconds": 13.009033208,
+            "residentSizeBytes": 183189504
+          },
+          {
+            "elapsedSeconds": 14.009711708,
+            "residentSizeBytes": 183238656
+          },
+          {
+            "elapsedSeconds": 15.010277416,
+            "residentSizeBytes": 183271424
+          },
+          {
+            "elapsedSeconds": 16.010957416,
+            "residentSizeBytes": 183205888
+          },
+          {
+            "elapsedSeconds": 17.011623625,
+            "residentSizeBytes": 183238656
+          },
+          {
+            "elapsedSeconds": 18.012259,
+            "residentSizeBytes": 183205888
+          },
+          {
+            "elapsedSeconds": 19.015204166,
+            "residentSizeBytes": 183205888
+          },
+          {
+            "elapsedSeconds": 20.030448166,
+            "residentSizeBytes": 183205888
+          },
+          {
+            "elapsedSeconds": 21.03095925,
+            "residentSizeBytes": 183205888
+          },
+          {
+            "elapsedSeconds": 22.031580166,
+            "residentSizeBytes": 183304192
+          },
+          {
+            "elapsedSeconds": 23.032339833,
+            "residentSizeBytes": 183418880
+          },
+          {
+            "elapsedSeconds": 24.033005916,
+            "residentSizeBytes": 183517184
+          },
+          {
+            "elapsedSeconds": 25.033661208,
+            "residentSizeBytes": 183468032
+          },
+          {
+            "elapsedSeconds": 26.034454166,
+            "residentSizeBytes": 183468032
+          },
+          {
+            "elapsedSeconds": 27.035632541,
+            "residentSizeBytes": 183468032
+          },
+          {
+            "elapsedSeconds": 28.035796083,
+            "residentSizeBytes": 183468032
+          },
+          {
+            "elapsedSeconds": 29.037540458,
+            "residentSizeBytes": 183468032
+          },
+          {
+            "elapsedSeconds": 30.0535685,
+            "residentSizeBytes": 183615488
+          },
+          {
+            "elapsedSeconds": 31.054313125,
+            "residentSizeBytes": 183484416
+          },
+          {
+            "elapsedSeconds": 32.054912333,
+            "residentSizeBytes": 183484416
+          },
+          {
+            "elapsedSeconds": 33.055567416,
+            "residentSizeBytes": 183582720
+          },
+          {
+            "elapsedSeconds": 34.056256208,
+            "residentSizeBytes": 183812096
+          },
+          {
+            "elapsedSeconds": 35.057025041,
+            "residentSizeBytes": 183828480
+          },
+          {
+            "elapsedSeconds": 36.057594083,
+            "residentSizeBytes": 183762944
+          },
+          {
+            "elapsedSeconds": 37.058155916,
+            "residentSizeBytes": 183762944
+          },
+          {
+            "elapsedSeconds": 38.058922625,
+            "residentSizeBytes": 183762944
+          },
+          {
+            "elapsedSeconds": 39.059354875,
+            "residentSizeBytes": 183828480
+          },
+          {
+            "elapsedSeconds": 40.059913125,
+            "residentSizeBytes": 183828480
+          },
+          {
+            "elapsedSeconds": 41.0606105,
+            "residentSizeBytes": 183762944
+          },
+          {
+            "elapsedSeconds": 42.06102925,
+            "residentSizeBytes": 183795712
+          },
+          {
+            "elapsedSeconds": 43.061745583,
+            "residentSizeBytes": 183762944
+          },
+          {
+            "elapsedSeconds": 44.062292958,
+            "residentSizeBytes": 183795712
+          },
+          {
+            "elapsedSeconds": 45.017732916,
+            "residentSizeBytes": 183779328
+          }
+        ],
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "remoteImageCount": 270,
+        "speedPointsPerSecond": 2800
+      },
+      "command": "Allocations 60s, --feed-profile -feedRemoteImages YES -feedImageLoader builtin"
+    },
+    "allocations-performance": {
+      "appJSON": {
+        "clock": "DispatchTime.uptimeNanoseconds",
+        "completedRoundTrips": 0,
+        "contentWidthPoints": 320,
+        "directionChanges": 1,
+        "elapsedSeconds": 45.852123541,
+        "finalActions": 0,
+        "finalButtons": 0,
+        "finalFactory": 475,
+        "finalLiveWeakViews": 0,
+        "finalUnmount": 475,
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "numberOfLines": 3,
+        "observations": [
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 0,
+            "factory": 12,
+            "liveWeakViews": 12,
+            "offsetPoints": 0,
+            "residentSizeBytes": 101171200,
+            "unmount": 0
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 1.140388833,
+            "factory": 24,
+            "liveWeakViews": 17,
+            "offsetPoints": 922,
+            "residentSizeBytes": 113557504,
+            "unmount": 7
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 2.643846291,
+            "factory": 36,
+            "liveWeakViews": 17,
+            "offsetPoints": 1482,
+            "residentSizeBytes": 121389056,
+            "unmount": 19
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 3.935417875,
+            "factory": 49,
+            "liveWeakViews": 13,
+            "offsetPoints": 2322,
+            "residentSizeBytes": 124157952,
+            "unmount": 36
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 5.229415541,
+            "factory": 66,
+            "liveWeakViews": 17,
+            "offsetPoints": 3162,
+            "residentSizeBytes": 126107648,
+            "unmount": 49
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 6.445904041,
+            "factory": 79,
+            "liveWeakViews": 13,
+            "offsetPoints": 4002,
+            "residentSizeBytes": 126386176,
+            "unmount": 66
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 7.919978208,
+            "factory": 91,
+            "liveWeakViews": 13,
+            "offsetPoints": 4562,
+            "residentSizeBytes": 126468096,
+            "unmount": 78
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 9.581188041,
+            "factory": 108,
+            "liveWeakViews": 18,
+            "offsetPoints": 5402,
+            "residentSizeBytes": 126795776,
+            "unmount": 90
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 10.88061425,
+            "factory": 121,
+            "liveWeakViews": 13,
+            "offsetPoints": 6242,
+            "residentSizeBytes": 126763008,
+            "unmount": 108
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 12.178390583,
+            "factory": 138,
+            "liveWeakViews": 17,
+            "offsetPoints": 7082,
+            "residentSizeBytes": 127057920,
+            "unmount": 121
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 13.181615666,
+            "factory": 150,
+            "liveWeakViews": 18,
+            "offsetPoints": 7642,
+            "residentSizeBytes": 127090688,
+            "unmount": 132
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 14.350716083,
+            "factory": 157,
+            "liveWeakViews": 13,
+            "offsetPoints": 8202,
+            "residentSizeBytes": 127041536,
+            "unmount": 144
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 15.651067166,
+            "factory": 174,
+            "liveWeakViews": 17,
+            "offsetPoints": 9042,
+            "residentSizeBytes": 127188992,
+            "unmount": 157
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 16.865961541,
+            "factory": 187,
+            "liveWeakViews": 13,
+            "offsetPoints": 9882,
+            "residentSizeBytes": 127139840,
+            "unmount": 174
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 18.316429958,
+            "factory": 198,
+            "liveWeakViews": 12,
+            "offsetPoints": 10442,
+            "residentSizeBytes": 127139840,
+            "unmount": 186
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 19.995168625,
+            "factory": 216,
+            "liveWeakViews": 18,
+            "offsetPoints": 11282,
+            "residentSizeBytes": 127238144,
+            "unmount": 198
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 21.300479041,
+            "factory": 229,
+            "liveWeakViews": 13,
+            "offsetPoints": 12122,
+            "residentSizeBytes": 127156224,
+            "unmount": 216
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 22.611189208,
+            "factory": 246,
+            "liveWeakViews": 17,
+            "offsetPoints": 12962,
+            "residentSizeBytes": 127238144,
+            "unmount": 229
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 23.61785225,
+            "factory": 258,
+            "liveWeakViews": 18,
+            "offsetPoints": 13522,
+            "residentSizeBytes": 127270912,
+            "unmount": 240
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 24.784630208,
+            "factory": 265,
+            "liveWeakViews": 13,
+            "offsetPoints": 14082,
+            "residentSizeBytes": 127221760,
+            "unmount": 252
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 26.087375666,
+            "factory": 282,
+            "liveWeakViews": 17,
+            "offsetPoints": 14922,
+            "residentSizeBytes": 127287296,
+            "unmount": 265
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 27.088857541,
+            "factory": 294,
+            "liveWeakViews": 18,
+            "offsetPoints": 15482,
+            "residentSizeBytes": 127303680,
+            "unmount": 276
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 28.252131791,
+            "factory": 301,
+            "liveWeakViews": 13,
+            "offsetPoints": 16042,
+            "residentSizeBytes": 127238144,
+            "unmount": 288
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 29.5682725,
+            "factory": 318,
+            "liveWeakViews": 17,
+            "offsetPoints": 16882,
+            "residentSizeBytes": 127303680,
+            "unmount": 301
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 30.603137125,
+            "factory": 330,
+            "liveWeakViews": 18,
+            "offsetPoints": 17442,
+            "residentSizeBytes": 127320064,
+            "unmount": 312
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 31.770320958,
+            "factory": 337,
+            "liveWeakViews": 13,
+            "offsetPoints": 18002,
+            "residentSizeBytes": 127254528,
+            "unmount": 324
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 33.074932125,
+            "factory": 354,
+            "liveWeakViews": 17,
+            "offsetPoints": 18842,
+            "residentSizeBytes": 127336448,
+            "unmount": 337
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 34.476329625,
+            "factory": 366,
+            "liveWeakViews": 17,
+            "offsetPoints": 18355.333333333332,
+            "residentSizeBytes": 127549440,
+            "unmount": 349
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 35.642471583,
+            "factory": 373,
+            "liveWeakViews": 13,
+            "offsetPoints": 17795.333333333332,
+            "residentSizeBytes": 127500288,
+            "unmount": 360
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 36.658584666,
+            "factory": 385,
+            "liveWeakViews": 18,
+            "offsetPoints": 17246.333333333332,
+            "residentSizeBytes": 127598592,
+            "unmount": 367
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 38.806186666,
+            "factory": 403,
+            "liveWeakViews": 13,
+            "offsetPoints": 16173,
+            "residentSizeBytes": 127533056,
+            "unmount": 390
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 40.673389625,
+            "factory": 426,
+            "liveWeakViews": 17,
+            "offsetPoints": 15053,
+            "residentSizeBytes": 127598592,
+            "unmount": 409
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 42.315322833,
+            "factory": 439,
+            "liveWeakViews": 13,
+            "offsetPoints": 14213,
+            "residentSizeBytes": 127811584,
+            "unmount": 426
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 44.191460375,
+            "factory": 462,
+            "liveWeakViews": 17,
+            "offsetPoints": 13093,
+            "residentSizeBytes": 127762432,
+            "unmount": 445
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 45.852123541,
+            "factory": 475,
+            "liveWeakViews": 0,
+            "offsetPoints": 0,
+            "residentSizeBytes": 115015680,
+            "unmount": 475
+          }
+        ],
+        "rowCount": 180,
+        "schemaVersion": 1,
+        "speedPointsPerSecond": 2800,
+        "stopSynchronousLiveWeakViews": 0
+      },
+      "command": "Allocations 60s, --performance-profile"
+    },
+    "hitches-remote-builtin": {
+      "appJSON": {
+        "elapsedSeconds": 45.017181,
+        "implementation": "LYGlyphText",
+        "loadedImageCallbacks": 1328,
+        "loader": "内置加载器",
+        "memorySamples": [
+          {
+            "elapsedSeconds": 0,
+            "residentSizeBytes": 118013952
+          },
+          {
+            "elapsedSeconds": 1.015074,
+            "residentSizeBytes": 141705216
+          },
+          {
+            "elapsedSeconds": 2.015903542,
+            "residentSizeBytes": 145735680
+          },
+          {
+            "elapsedSeconds": 3.016532792,
+            "residentSizeBytes": 146358272
+          },
+          {
+            "elapsedSeconds": 4.017423458,
+            "residentSizeBytes": 146554880
+          },
+          {
+            "elapsedSeconds": 5.018001542,
+            "residentSizeBytes": 146489344
+          },
+          {
+            "elapsedSeconds": 6.01868,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 7.01946575,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 8.020140458,
+            "residentSizeBytes": 146669568
+          },
+          {
+            "elapsedSeconds": 9.021054958,
+            "residentSizeBytes": 146505728
+          },
+          {
+            "elapsedSeconds": 10.021795708,
+            "residentSizeBytes": 146505728
+          },
+          {
+            "elapsedSeconds": 11.022358083,
+            "residentSizeBytes": 146505728
+          },
+          {
+            "elapsedSeconds": 12.023225,
+            "residentSizeBytes": 146505728
+          },
+          {
+            "elapsedSeconds": 13.023710292,
+            "residentSizeBytes": 146554880
+          },
+          {
+            "elapsedSeconds": 14.024574292,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 15.025165792,
+            "residentSizeBytes": 146554880
+          },
+          {
+            "elapsedSeconds": 16.025834333,
+            "residentSizeBytes": 146587648
+          },
+          {
+            "elapsedSeconds": 17.026687292,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 18.027477292,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 19.028162375,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 20.028829917,
+            "residentSizeBytes": 146522112
+          },
+          {
+            "elapsedSeconds": 21.029654958,
+            "residentSizeBytes": 146538496
+          },
+          {
+            "elapsedSeconds": 22.030276042,
+            "residentSizeBytes": 146702336
+          },
+          {
+            "elapsedSeconds": 23.03111225,
+            "residentSizeBytes": 146817024
+          },
+          {
+            "elapsedSeconds": 24.03186975,
+            "residentSizeBytes": 146882560
+          },
+          {
+            "elapsedSeconds": 25.032556917,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 26.03330175,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 27.034112167,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 28.034928667,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 29.035604917,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 30.036514917,
+            "residentSizeBytes": 146866176
+          },
+          {
+            "elapsedSeconds": 31.037080958,
+            "residentSizeBytes": 146882560
+          },
+          {
+            "elapsedSeconds": 32.037681042,
+            "residentSizeBytes": 146931712
+          },
+          {
+            "elapsedSeconds": 33.038583583,
+            "residentSizeBytes": 146997248
+          },
+          {
+            "elapsedSeconds": 34.039192875,
+            "residentSizeBytes": 147292160
+          },
+          {
+            "elapsedSeconds": 35.040057875,
+            "residentSizeBytes": 147177472
+          },
+          {
+            "elapsedSeconds": 36.040649083,
+            "residentSizeBytes": 147177472
+          },
+          {
+            "elapsedSeconds": 37.041361292,
+            "residentSizeBytes": 147177472
+          },
+          {
+            "elapsedSeconds": 38.042025583,
+            "residentSizeBytes": 147177472
+          },
+          {
+            "elapsedSeconds": 39.042681542,
+            "residentSizeBytes": 147243008
+          },
+          {
+            "elapsedSeconds": 40.043292292,
+            "residentSizeBytes": 147177472
+          },
+          {
+            "elapsedSeconds": 41.043953958,
+            "residentSizeBytes": 147161088
+          },
+          {
+            "elapsedSeconds": 42.044725792,
+            "residentSizeBytes": 147161088
+          },
+          {
+            "elapsedSeconds": 43.045160542,
+            "residentSizeBytes": 146685952
+          },
+          {
+            "elapsedSeconds": 44.045772458,
+            "residentSizeBytes": 146554880
+          },
+          {
+            "elapsedSeconds": 45.016914708,
+            "residentSizeBytes": 146505728
+          }
+        ],
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "remoteImageCount": 270,
+        "speedPointsPerSecond": 2800
+      },
+      "command": "Animation Hitches 55s, --feed-profile -feedRemoteImages YES -feedImageLoader builtin"
+    },
+    "hitches-remote-kingfisher": {
+      "appJSON": {
+        "elapsedSeconds": 45.010155208,
+        "implementation": "LYGlyphText",
+        "loadedImageCallbacks": 1328,
+        "loader": "Kingfisher",
+        "memorySamples": [
+          {
+            "elapsedSeconds": 0,
+            "residentSizeBytes": 119488512
+          },
+          {
+            "elapsedSeconds": 1.011227625,
+            "residentSizeBytes": 142983168
+          },
+          {
+            "elapsedSeconds": 2.011675083,
+            "residentSizeBytes": 146817024
+          },
+          {
+            "elapsedSeconds": 3.012236333,
+            "residentSizeBytes": 147570688
+          },
+          {
+            "elapsedSeconds": 4.013015708,
+            "residentSizeBytes": 147832832
+          },
+          {
+            "elapsedSeconds": 5.013581375,
+            "residentSizeBytes": 148324352
+          },
+          {
+            "elapsedSeconds": 6.014200083,
+            "residentSizeBytes": 148946944
+          },
+          {
+            "elapsedSeconds": 7.01496975,
+            "residentSizeBytes": 149405696
+          },
+          {
+            "elapsedSeconds": 8.015599542,
+            "residentSizeBytes": 150011904
+          },
+          {
+            "elapsedSeconds": 9.016218042,
+            "residentSizeBytes": 150323200
+          },
+          {
+            "elapsedSeconds": 10.01699,
+            "residentSizeBytes": 150339584
+          },
+          {
+            "elapsedSeconds": 11.017551917,
+            "residentSizeBytes": 150339584
+          },
+          {
+            "elapsedSeconds": 12.018370292,
+            "residentSizeBytes": 150274048
+          },
+          {
+            "elapsedSeconds": 13.018929458,
+            "residentSizeBytes": 150274048
+          },
+          {
+            "elapsedSeconds": 14.019756,
+            "residentSizeBytes": 150011904
+          },
+          {
+            "elapsedSeconds": 15.020447583,
+            "residentSizeBytes": 150011904
+          },
+          {
+            "elapsedSeconds": 16.02101875,
+            "residentSizeBytes": 150011904
+          },
+          {
+            "elapsedSeconds": 17.021784792,
+            "residentSizeBytes": 150011904
+          },
+          {
+            "elapsedSeconds": 18.022441792,
+            "residentSizeBytes": 150110208
+          },
+          {
+            "elapsedSeconds": 19.023060333,
+            "residentSizeBytes": 150110208
+          },
+          {
+            "elapsedSeconds": 20.023722042,
+            "residentSizeBytes": 150110208
+          },
+          {
+            "elapsedSeconds": 21.024255792,
+            "residentSizeBytes": 150110208
+          },
+          {
+            "elapsedSeconds": 22.024814333,
+            "residentSizeBytes": 150110208
+          },
+          {
+            "elapsedSeconds": 23.025528917,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 24.026155917,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 25.026787833,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 26.027423292,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 27.027999625,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 28.028742208,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 29.029349167,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 30.030057125,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 31.030737458,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 32.031201792,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 33.031969542,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 34.032521833,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 35.033159625,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 36.033888375,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 37.034484542,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 38.035153667,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 39.035670625,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 40.03642325,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 41.03706475,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 42.037666083,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 43.038332083,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 44.038843917,
+            "residentSizeBytes": 149979136
+          },
+          {
+            "elapsedSeconds": 45.009920167,
+            "residentSizeBytes": 149979136
+          }
+        ],
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "remoteImageCount": 270,
+        "speedPointsPerSecond": 2800
+      },
+      "command": "Animation Hitches 55s, --feed-profile -feedRemoteImages YES -feedImageLoader kingfisher"
+    },
+    "leaks-feed": {
+      "appJSON": {
+        "elapsedSeconds": 45.023933625,
+        "implementation": "LYGlyphText",
+        "loadedImageCallbacks": 0,
+        "loader": "无",
+        "memorySamples": [
+          {
+            "elapsedSeconds": 0,
+            "residentSizeBytes": 152027136
+          },
+          {
+            "elapsedSeconds": 1.00730925,
+            "residentSizeBytes": 174063616
+          },
+          {
+            "elapsedSeconds": 2.007991625,
+            "residentSizeBytes": 177209344
+          },
+          {
+            "elapsedSeconds": 3.008744,
+            "residentSizeBytes": 177209344
+          },
+          {
+            "elapsedSeconds": 4.009126208,
+            "residentSizeBytes": 177258496
+          },
+          {
+            "elapsedSeconds": 5.009666166,
+            "residentSizeBytes": 177012736
+          },
+          {
+            "elapsedSeconds": 6.010178333,
+            "residentSizeBytes": 176979968
+          },
+          {
+            "elapsedSeconds": 7.010706333,
+            "residentSizeBytes": 176832512
+          },
+          {
+            "elapsedSeconds": 8.011225875,
+            "residentSizeBytes": 176832512
+          },
+          {
+            "elapsedSeconds": 9.011735375,
+            "residentSizeBytes": 176832512
+          },
+          {
+            "elapsedSeconds": 11.396412958,
+            "residentSizeBytes": 176832512
+          },
+          {
+            "elapsedSeconds": 12.396776625,
+            "residentSizeBytes": 178569216
+          },
+          {
+            "elapsedSeconds": 13.3972455,
+            "residentSizeBytes": 178946048
+          },
+          {
+            "elapsedSeconds": 14.397783041,
+            "residentSizeBytes": 178946048
+          },
+          {
+            "elapsedSeconds": 15.398336083,
+            "residentSizeBytes": 177225728
+          },
+          {
+            "elapsedSeconds": 16.398977583,
+            "residentSizeBytes": 177225728
+          },
+          {
+            "elapsedSeconds": 17.399667,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 18.400149125,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 19.400854291,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 20.401282458,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 21.401769375,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 23.803260416,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 24.803375583,
+            "residentSizeBytes": 178438144
+          },
+          {
+            "elapsedSeconds": 25.8038375,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 26.804365458,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 27.8048965,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 28.805767708,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 29.805982416,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 30.806628791,
+            "residentSizeBytes": 178814976
+          },
+          {
+            "elapsedSeconds": 31.807115541,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 32.807857875,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 33.808389958,
+            "residentSizeBytes": 177094656
+          },
+          {
+            "elapsedSeconds": 36.381432208,
+            "residentSizeBytes": 177291264
+          },
+          {
+            "elapsedSeconds": 37.393247291,
+            "residentSizeBytes": 181977088
+          },
+          {
+            "elapsedSeconds": 38.393798291,
+            "residentSizeBytes": 182747136
+          },
+          {
+            "elapsedSeconds": 39.394438208,
+            "residentSizeBytes": 182747136
+          },
+          {
+            "elapsedSeconds": 40.394939166,
+            "residentSizeBytes": 182747136
+          },
+          {
+            "elapsedSeconds": 41.395653166,
+            "residentSizeBytes": 182747136
+          },
+          {
+            "elapsedSeconds": 42.396234375,
+            "residentSizeBytes": 182501376
+          },
+          {
+            "elapsedSeconds": 43.397059333,
+            "residentSizeBytes": 182501376
+          },
+          {
+            "elapsedSeconds": 44.397434791,
+            "residentSizeBytes": 179077120
+          },
+          {
+            "elapsedSeconds": 45.0237935,
+            "residentSizeBytes": 179077120
+          }
+        ],
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "remoteImageCount": 0,
+        "speedPointsPerSecond": 2800
+      },
+      "command": "Leaks 90s, --feed-profile"
+    },
+    "leaks-performance": {
+      "appJSON": {
+        "clock": "DispatchTime.uptimeNanoseconds",
+        "completedRoundTrips": 0,
+        "contentWidthPoints": 320,
+        "directionChanges": 0,
+        "elapsedSeconds": 47.435571125,
+        "finalActions": 0,
+        "finalButtons": 0,
+        "finalFactory": 139,
+        "finalLiveWeakViews": 0,
+        "finalUnmount": 139,
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "numberOfLines": 3,
+        "observations": [
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 0,
+            "factory": 12,
+            "liveWeakViews": 12,
+            "offsetPoints": 0,
+            "residentSizeBytes": 101302272,
+            "unmount": 0
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 4.837273459,
+            "factory": 18,
+            "liveWeakViews": 17,
+            "offsetPoints": 560,
+            "residentSizeBytes": 109117440,
+            "unmount": 1
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 6.30600775,
+            "factory": 30,
+            "liveWeakViews": 18,
+            "offsetPoints": 1120,
+            "residentSizeBytes": 114229248,
+            "unmount": 12
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 10.218862875,
+            "factory": 36,
+            "liveWeakViews": 18,
+            "offsetPoints": 1400,
+            "residentSizeBytes": 116539392,
+            "unmount": 18
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 11.355788042,
+            "factory": 43,
+            "liveWeakViews": 13,
+            "offsetPoints": 1960,
+            "residentSizeBytes": 120061952,
+            "unmount": 30
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 12.930331625,
+            "factory": 48,
+            "liveWeakViews": 17,
+            "offsetPoints": 2240,
+            "residentSizeBytes": 121110528,
+            "unmount": 31
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 17.641090459,
+            "factory": 54,
+            "liveWeakViews": 17,
+            "offsetPoints": 2520,
+            "residentSizeBytes": 117669888,
+            "unmount": 37
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 19.074736584,
+            "factory": 66,
+            "liveWeakViews": 18,
+            "offsetPoints": 3080,
+            "residentSizeBytes": 121946112,
+            "unmount": 48
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 21.608851042,
+            "factory": 67,
+            "liveWeakViews": 13,
+            "offsetPoints": 3360,
+            "residentSizeBytes": 117587968,
+            "unmount": 54
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 23.259430792,
+            "factory": 73,
+            "liveWeakViews": 13,
+            "offsetPoints": 3640,
+            "residentSizeBytes": 118538240,
+            "unmount": 60
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 25.695647917,
+            "factory": 84,
+            "liveWeakViews": 17,
+            "offsetPoints": 4200,
+            "residentSizeBytes": 121274368,
+            "unmount": 67
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 30.444089209,
+            "factory": 90,
+            "liveWeakViews": 17,
+            "offsetPoints": 4480,
+            "residentSizeBytes": 117735424,
+            "unmount": 73
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 31.868337167,
+            "factory": 102,
+            "liveWeakViews": 18,
+            "offsetPoints": 5040,
+            "residentSizeBytes": 121225216,
+            "unmount": 84
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 34.412844084,
+            "factory": 103,
+            "liveWeakViews": 13,
+            "offsetPoints": 5320,
+            "residentSizeBytes": 117702656,
+            "unmount": 90
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 36.063919375,
+            "factory": 109,
+            "liveWeakViews": 13,
+            "offsetPoints": 5600,
+            "residentSizeBytes": 118587392,
+            "unmount": 96
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 38.505981084,
+            "factory": 120,
+            "liveWeakViews": 17,
+            "offsetPoints": 6160,
+            "residentSizeBytes": 121307136,
+            "unmount": 103
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 43.282794709,
+            "factory": 126,
+            "liveWeakViews": 17,
+            "offsetPoints": 6440,
+            "residentSizeBytes": 117784576,
+            "unmount": 109
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 44.716239459,
+            "factory": 138,
+            "liveWeakViews": 18,
+            "offsetPoints": 7000,
+            "residentSizeBytes": 121257984,
+            "unmount": 120
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 47.435571125,
+            "factory": 139,
+            "liveWeakViews": 0,
+            "offsetPoints": 0,
+            "residentSizeBytes": 109723648,
+            "unmount": 139
+          }
+        ],
+        "rowCount": 180,
+        "schemaVersion": 1,
+        "speedPointsPerSecond": 2800,
+        "stopSynchronousLiveWeakViews": 0
+      },
+      "command": "Leaks 60s, --performance-profile"
+    },
+    "plain-performance-scroll": {
+      "appJSON": {
+        "clock": "DispatchTime.uptimeNanoseconds",
+        "completedRoundTrips": 3,
+        "contentWidthPoints": 320,
+        "directionChanges": 6,
+        "elapsedSeconds": 45.0201135,
+        "finalActions": 0,
+        "finalButtons": 0,
+        "finalFactory": 2266,
+        "finalLiveWeakViews": 0,
+        "finalUnmount": 2266,
+        "memorySource": "mach_task_basic_info.resident_size (process RSS bytes; not a leak verdict)",
+        "numberOfLines": 3,
+        "observations": [
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 0,
+            "factory": 12,
+            "liveWeakViews": 12,
+            "offsetPoints": 0,
+            "residentSizeBytes": 62554112,
+            "unmount": 0
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 1.002796542,
+            "factory": 60,
+            "liveWeakViews": 17,
+            "offsetPoints": 2618.3333333333335,
+            "residentSizeBytes": 86458368,
+            "unmount": 43
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 2.069889542,
+            "factory": 108,
+            "liveWeakViews": 18,
+            "offsetPoints": 5326.666666666667,
+            "residentSizeBytes": 87277568,
+            "unmount": 90
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 3.086980375,
+            "factory": 156,
+            "liveWeakViews": 17,
+            "offsetPoints": 7987,
+            "residentSizeBytes": 87392256,
+            "unmount": 139
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 4.087208125,
+            "factory": 205,
+            "liveWeakViews": 13,
+            "offsetPoints": 10600,
+            "residentSizeBytes": 87425024,
+            "unmount": 192
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 5.093081458,
+            "factory": 258,
+            "liveWeakViews": 17,
+            "offsetPoints": 13416,
+            "residentSizeBytes": 87457792,
+            "unmount": 241
+          },
+          {
+            "direction": 1,
+            "directionChanges": 0,
+            "elapsedSeconds": 6.104786708,
+            "factory": 306,
+            "liveWeakViews": 17,
+            "offsetPoints": 16248.666666666666,
+            "residentSizeBytes": 87539712,
+            "unmount": 289
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 7.14238425,
+            "factory": 360,
+            "liveWeakViews": 17,
+            "offsetPoints": 18691,
+            "residentSizeBytes": 87572480,
+            "unmount": 343
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 8.177677583,
+            "factory": 409,
+            "liveWeakViews": 13,
+            "offsetPoints": 15962,
+            "residentSizeBytes": 87556096,
+            "unmount": 396
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 9.225036708,
+            "factory": 462,
+            "liveWeakViews": 17,
+            "offsetPoints": 13114.333333333334,
+            "residentSizeBytes": 87703552,
+            "unmount": 445
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 10.275482125,
+            "factory": 516,
+            "liveWeakViews": 17,
+            "offsetPoints": 10173.333333333334,
+            "residentSizeBytes": 87736320,
+            "unmount": 499
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 11.325872083,
+            "factory": 570,
+            "liveWeakViews": 17,
+            "offsetPoints": 7232,
+            "residentSizeBytes": 87736320,
+            "unmount": 553
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 12.376379667,
+            "factory": 624,
+            "liveWeakViews": 17,
+            "offsetPoints": 4291,
+            "residentSizeBytes": 87736320,
+            "unmount": 607
+          },
+          {
+            "direction": -1,
+            "directionChanges": 1,
+            "elapsedSeconds": 13.424716542,
+            "factory": 673,
+            "liveWeakViews": 13,
+            "offsetPoints": 1437.3333333333333,
+            "residentSizeBytes": 87621632,
+            "unmount": 660
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 14.476168208,
+            "factory": 727,
+            "liveWeakViews": 18,
+            "offsetPoints": 1400.6666666666667,
+            "residentSizeBytes": 87703552,
+            "unmount": 709
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 15.478783333,
+            "factory": 776,
+            "liveWeakViews": 13,
+            "offsetPoints": 4208,
+            "residentSizeBytes": 87621632,
+            "unmount": 763
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 16.5438545,
+            "factory": 830,
+            "liveWeakViews": 13,
+            "offsetPoints": 7189,
+            "residentSizeBytes": 87621632,
+            "unmount": 817
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 17.594312958,
+            "factory": 884,
+            "liveWeakViews": 13,
+            "offsetPoints": 10130.333333333334,
+            "residentSizeBytes": 87621632,
+            "unmount": 871
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 18.64465875,
+            "factory": 938,
+            "liveWeakViews": 13,
+            "offsetPoints": 13071,
+            "residentSizeBytes": 87621632,
+            "unmount": 925
+          },
+          {
+            "direction": 1,
+            "directionChanges": 2,
+            "elapsedSeconds": 19.69530625,
+            "factory": 992,
+            "liveWeakViews": 13,
+            "offsetPoints": 16013.333333333334,
+            "residentSizeBytes": 87621632,
+            "unmount": 979
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 20.745469958,
+            "factory": 1046,
+            "liveWeakViews": 13,
+            "offsetPoints": 18884.666666666668,
+            "residentSizeBytes": 87621632,
+            "unmount": 1033
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 21.81397175,
+            "factory": 1094,
+            "liveWeakViews": 13,
+            "offsetPoints": 16165.666666666666,
+            "residentSizeBytes": 88899584,
+            "unmount": 1081
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 22.816528167,
+            "factory": 1147,
+            "liveWeakViews": 17,
+            "offsetPoints": 13529,
+            "residentSizeBytes": 89931776,
+            "unmount": 1130
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 23.867173458,
+            "factory": 1201,
+            "liveWeakViews": 17,
+            "offsetPoints": 10587,
+            "residentSizeBytes": 89997312,
+            "unmount": 1184
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 24.91693,
+            "factory": 1255,
+            "liveWeakViews": 17,
+            "offsetPoints": 7647.666666666667,
+            "residentSizeBytes": 90013696,
+            "unmount": 1238
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 25.967216375,
+            "factory": 1309,
+            "liveWeakViews": 17,
+            "offsetPoints": 4707,
+            "residentSizeBytes": 90013696,
+            "unmount": 1292
+          },
+          {
+            "direction": -1,
+            "directionChanges": 3,
+            "elapsedSeconds": 27.01709175,
+            "factory": 1363,
+            "liveWeakViews": 17,
+            "offsetPoints": 1766,
+            "residentSizeBytes": 90013696,
+            "unmount": 1346
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 28.080870875,
+            "factory": 1412,
+            "liveWeakViews": 17,
+            "offsetPoints": 1120.3333333333333,
+            "residentSizeBytes": 90046464,
+            "unmount": 1395
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 29.087724042,
+            "factory": 1466,
+            "liveWeakViews": 18,
+            "offsetPoints": 3843,
+            "residentSizeBytes": 90308608,
+            "unmount": 1448
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 30.098414333,
+            "factory": 1515,
+            "liveWeakViews": 13,
+            "offsetPoints": 6673.666666666667,
+            "residentSizeBytes": 90226688,
+            "unmount": 1502
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 31.1044795,
+            "factory": 1568,
+            "liveWeakViews": 17,
+            "offsetPoints": 9490,
+            "residentSizeBytes": 90292224,
+            "unmount": 1551
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 32.116049333,
+            "factory": 1616,
+            "liveWeakViews": 17,
+            "offsetPoints": 12322,
+            "residentSizeBytes": 90292224,
+            "unmount": 1599
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 33.16659675,
+            "factory": 1670,
+            "liveWeakViews": 17,
+            "offsetPoints": 15263.666666666666,
+            "residentSizeBytes": 90292224,
+            "unmount": 1653
+          },
+          {
+            "direction": 1,
+            "directionChanges": 4,
+            "elapsedSeconds": 34.217032917,
+            "factory": 1724,
+            "liveWeakViews": 17,
+            "offsetPoints": 18204.333333333332,
+            "residentSizeBytes": 90292224,
+            "unmount": 1707
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 35.217445542,
+            "factory": 1773,
+            "liveWeakViews": 18,
+            "offsetPoints": 17004.333333333332,
+            "residentSizeBytes": 89374720,
+            "unmount": 1755
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 36.287629792,
+            "factory": 1826,
+            "liveWeakViews": 17,
+            "offsetPoints": 14088.666666666666,
+            "residentSizeBytes": 89325568,
+            "unmount": 1809
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 37.338598292,
+            "factory": 1880,
+            "liveWeakViews": 17,
+            "offsetPoints": 11146,
+            "residentSizeBytes": 89325568,
+            "unmount": 1863
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 38.339575667,
+            "factory": 1929,
+            "liveWeakViews": 13,
+            "offsetPoints": 8437,
+            "residentSizeBytes": 89260032,
+            "unmount": 1916
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 39.390377917,
+            "factory": 1983,
+            "liveWeakViews": 13,
+            "offsetPoints": 5494,
+            "residentSizeBytes": 89260032,
+            "unmount": 1970
+          },
+          {
+            "direction": -1,
+            "directionChanges": 5,
+            "elapsedSeconds": 40.441041333,
+            "factory": 2037,
+            "liveWeakViews": 13,
+            "offsetPoints": 2552,
+            "residentSizeBytes": 89260032,
+            "unmount": 2024
+          },
+          {
+            "direction": 1,
+            "directionChanges": 6,
+            "elapsedSeconds": 41.47769325,
+            "factory": 2091,
+            "liveWeakViews": 18,
+            "offsetPoints": 347.3333333333333,
+            "residentSizeBytes": 89341952,
+            "unmount": 2073
+          },
+          {
+            "direction": 1,
+            "directionChanges": 6,
+            "elapsedSeconds": 42.538391167,
+            "factory": 2140,
+            "liveWeakViews": 13,
+            "offsetPoints": 3220.6666666666665,
+            "residentSizeBytes": 89260032,
+            "unmount": 2127
+          },
+          {
+            "direction": 1,
+            "directionChanges": 6,
+            "elapsedSeconds": 43.6058795,
+            "factory": 2194,
+            "liveWeakViews": 13,
+            "offsetPoints": 6209.333333333333,
+            "residentSizeBytes": 89260032,
+            "unmount": 2181
+          },
+          {
+            "direction": 1,
+            "directionChanges": 6,
+            "elapsedSeconds": 44.656898333,
+            "factory": 2248,
+            "liveWeakViews": 13,
+            "offsetPoints": 9152.333333333334,
+            "residentSizeBytes": 89260032,
+            "unmount": 2235
+          },
+          {
+            "direction": 1,
+            "directionChanges": 6,
+            "elapsedSeconds": 45.0201135,
+            "factory": 2266,
+            "liveWeakViews": 0,
+            "offsetPoints": 0,
+            "residentSizeBytes": 76808192,
+            "unmount": 2266
+          }
+        ],
+        "rowCount": 180,
+        "schemaVersion": 1,
+        "speedPointsPerSecond": 2800,
+        "stopSynchronousLiveWeakViews": 0
+      },
+      "command": "devicectl process launch, --performance-profile, no Instruments"
+    }
+  },
+  "schemaVersion": 1
+}

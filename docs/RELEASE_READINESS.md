@@ -21,7 +21,7 @@
 | Swift6.0实际编译器 | R1 已探测，未安装真实 Swift6.0.x，仍未验证；Swift6.4 的 v6 模式不代替，见[R1记录](verification/2026-10-21-minimum-compatibility.md)。C5 起 Demo 依赖的 Kingfisher 8.14.0 要求 swift-tools 6.2，本门槛只覆盖组件 Package 与独立公开 API 消费者（2026-10-29 用户决定：开发统一使用 Xcode 27） |
 | iOS16实际运行 | R1 未发现 iOS16 runtime／可用设备，0宿主＋0UI，仍未验证；部署目标和新SDK编译不代替运行 |
 | 独立公开API消费者 | R1 在Swift6.4／SDK27.1下构建成功（arm64／x86_64、target16.0）；没有运行，不计入上述两项兼容性通过 |
-| 真机 | 部分验证：iPhone 12 Pro Max（iOS 27.0.1）Release 业务图文列表滚动卡顿时间比 0—0.8ms/s（见 [P2 记录](verification/2026-10-31-p2-scroll-performance.md)）；内存、方向、触摸、附件释放与其他设备未验证 |
+| 真机 | 部分验证（iPhone 12 Pro Max，iOS 27.0.1）：业务图文列表卡顿时间比 0—0.8ms/s（[P2 记录](verification/2026-10-31-p2-scroll-performance.md)）；带网络图片时内置加载器 0ms/s、Kingfisher 0.42ms/s，内存平台无持续上涨；业务列表与固定负载页 Leaks 无泄漏；附件 factory／unmount 2266／2266，停止后存活 0；UI 测试 30／30（[真机功能记录](verification/2026-11-02-device-functional.md)）。方向变化、弱网、其他设备与 iOS 16 未验证 |
 | 自动AX语义／激活 | A1完整回归通过；保留原生附件子树 |
 | 人工VoiceOver | 未验证：顺序、停顿、重复朗读、焦点、滚动及按钮体验 |
 | 原生任意后代AX frame部分裁切 | 未验证／不保证；父clipsToBounds不保证后代AX frame |
@@ -32,8 +32,8 @@
 
 2.x 能力（截断 token、特效、网络图片、预排版、选择拷贝、解析器）按 [2.x 路线图](superpowers/plans/2026-10-21-label-roadmap.md) 逐阶段交付，自动检查结果见各阶段验证记录。以下与 1.0 门槛同样独立、仍未验证：
 
-- 真实网络：内置加载器用本地 URLProtocol 桩、模拟加载器和 127.0.0.1 回环 HTTP 服务器（S2 磁盘缓存）测试；C4 在模拟器上对一个公网 PNG（raw.githubusercontent.com）做过一次性加载探测。不同服务器缓存头、弱网与真机未验证。内置加载器功能冻结，生产推荐桥接宿主图片库。
-- Kingfisher 桥接：Demo（仅 Demo App target）固定 Kingfisher 8.14.0（C4 先用 8.12.0，C5 按用户决定升级），桥接 `KingfisherImageLoader.swift` 在 Swift 6 模式编译通过；iOS 27 Simulator 上临时探测测试用真实公网 PNG 验证了内置加载器与 Kingfisher 桥接都能加载、Kingfisher 取消后不回调（探测未保留为常驻测试）。组件 Package 仍无第三方依赖。真机、iOS 16 与不同服务器缓存头仍未验证。
+- 真实网络：内置加载器用本地 URLProtocol 桩、模拟加载器和 127.0.0.1 回环 HTTP 服务器（S2 磁盘缓存）测试；C4 在模拟器上对一个公网 PNG（raw.githubusercontent.com）做过一次性加载探测。2026-11-02 在真机上用同一公网 PNG 的 270 个地址做了列表滚动测试（[真机功能记录](verification/2026-11-02-device-functional.md)）。不同服务器缓存头与弱网未验证。内置加载器功能冻结，生产推荐桥接宿主图片库。
+- Kingfisher 桥接：Demo（仅 Demo App target）固定 Kingfisher 8.14.0（C4 先用 8.12.0，C5 按用户决定升级），桥接 `KingfisherImageLoader.swift` 在 Swift 6 模式编译通过；iOS 27 Simulator 上临时探测测试用真实公网 PNG 验证了内置加载器与 Kingfisher 桥接都能加载、Kingfisher 取消后不回调（探测未保留为常驻测试）。组件 Package 仍无第三方依赖。真机上已用于网络图片列表滚动测试（[真机功能记录](verification/2026-11-02-device-functional.md)）；iOS 16 与不同服务器缓存头仍未验证。
 - 选择拷贝：真实长按与系统菜单拷贝、整段点击与动作分离已有 UI 测试；拖柄已暴露为可调节无障碍元素，拖动有 UI 测试与 RocketSim 录屏（S1、S6），放大镜只有录屏没有断言；人工 VoiceOver 下的拖柄调节、选区、“拷贝”动作与 token 朗读、iPad 指针与外接键盘未验证；iOS 16 没有放大镜。
 - 头部／中间截断：自动测试覆盖 LTR、RTL、附件与跨省略处动作；只作用于最后一条可见行，末尾文字取自最后一个有内容的段落。
 - 预排版：Release 计时为模拟器数据，不代表真机；后台线程上的 UIFont／动态颜色解析在 iOS 16 上未实际运行。

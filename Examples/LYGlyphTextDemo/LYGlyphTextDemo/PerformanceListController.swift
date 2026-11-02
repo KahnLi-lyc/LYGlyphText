@@ -219,7 +219,7 @@ final class PerformanceListController: UIViewController, UITableViewDataSource, 
             elapsedSeconds: Double(now - profileStart) / 1_000_000_000,
             offsetPoints: Double(tableView.contentOffset.y), direction: direction > 0 ? 1 : -1,
             directionChanges: directionChanges, factory: values.factory, unmount: values.unmount,
-            liveWeakViews: values.live, residentSizeBytes: residentSize()
+            liveWeakViews: values.live, residentSizeBytes: Self.residentSize()
         ))
     }
 
@@ -248,7 +248,8 @@ final class PerformanceListController: UIViewController, UITableViewDataSource, 
         }
     }
 
-    private func residentSize() -> UInt64? {
+    /// 进程 RSS（mach_task_basic_info.resident_size），业务图文列表也用它记录内存曲线。
+    static func residentSize() -> UInt64? {
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
         let result = withUnsafeMutablePointer(to: &info) { pointer in
